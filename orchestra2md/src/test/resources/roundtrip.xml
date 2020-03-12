@@ -1,0 +1,2264 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns3:repository xmlns="http://purl.org/dc/elements/1.1/" xmlns:ns2="http://purl.org/dc/terms/" xmlns:ns3="http://fixprotocol.io/2020/orchestra/repository" name="Rules of Engagement version 1.0" version="1.0">
+    <ns3:metadata>
+        <title>Rules of Engagement version 1.0</title>
+        <description>Order messages and their elements.</description>
+    </ns3:metadata>
+    <ns3:datatypes>
+        <ns3:datatype name="UTCTimestamp" baseType="String" added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="206">
+            <ns3:mappedDatatype standard="XML" builtin="false" base="xs:dateTime">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         string field representing date and time combination Universal Time Coordinated (UTC), also known as Greenwich Mean Time (GMT).
+         Its value space is described as the combination of date and time of day in the Chapter 5.4 of ISO 8601.
+         Valid values are in the format YYYY-MM-DDTHH:MM:SS.s where YYYY = 0000-9999 year, MM = 01-12 month, DD = 01-31 day, HH = 00-23 hour, MM = 00-59 minute, SS = 00-60 second (60 only if UTC leap second), and optionally one or more digits representing a decimal fraction of a second.
+         The punctuation of "-", ":" and the string value of "T" to separate the date and time are required. The "." is only required when sub-second time precision is specified.
+         Leap Seconds: Note that UTC includes corrections for leap seconds, which are inserted to account for slowing of the rotation of the earth. Leap second insertion is declared by the International Earth Rotation Service (IERS) and has, since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS considers March 31 and September 30 as secondary dates for leap second insertion, but has never utilized these dates. During a leap second insertion, a UTCTimestamp field may read "1998-12-31T23:59:59", "1998-12-31T23:59:60", "1999-01-01T00:00:00". (see http://tycho.usno.navy.mil/leapsec.html)
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         string field representing time/date combination represented in UTC (Universal Time Coordinated, also known as "GMT") in either YYYYMMDD-HH:MM:SS (whole seconds) or YYYYMMDD-HH:MM:SS.sss* format, colons, dash, and period required.
+         Valid values:
+         YYYY = 0000-9999, MM = 01-12, DD = 01-31, HH = 00-23, MM = 00-59, SS = 00-60 (60 only if UTC leap second), sss* fractions of seconds.
+         The fractions of seconds may be empty when no fractions of seconds are conveyed (in such a case the period is not conveyed), it may include 3 digits to convey milliseconds, 6 digits to convey microseconds, 9 digits to convey nanoseconds, 12 digits to convey picoseconds; Other number of digits may be used with bilateral agreement.
+         Leap Seconds: Note that UTC includes corrections for leap seconds, which are inserted to account for slowing of the rotation of the earth. Leap second insertion is declared by the International Earth Rotation Service (IERS) and has, since 1972, only occurred on the night of Dec. 31 or Jun 30. The IERS considers March 31 and September 30 as secondary dates for leap second insertion, but has never utilized these dates. During a leap second insertion, a UTCTimestamp field may read "19981231-23:59:59", "19981231-23:59:60", "19990101-00:00:00". (see http://tycho.usno.navy.mil/leapsec.html)
+      </ns3:documentation>
+                <ns3:documentation purpose="EXAMPLE">TransactTime(60)="20011217-09:30:47.123" millisecond
+TransactTime(60)="20011217-09:30:47.123456" microseconds
+TransactTime(60)="20011217-09:30:47.123456789" nanoseconds
+TransactTime(60)="20011217-09:30:47.123456789123" picoseconds
+</ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+        <ns3:datatype name="String" added="FIX.4.2">
+            <ns3:mappedDatatype standard="XML" builtin="true" base="xs:string">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+        <ns3:datatype name="Price" baseType="float" added="FIX.4.2">
+            <ns3:mappedDatatype standard="XML" builtin="false" base="xs:decimal">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         float field representing a price. Note the number of decimal places may vary. For certain asset classes prices may be negative values. For example, prices for options strategies can be negative under certain market conditions. Refer to Volume 7: FIX Usage by Product for asset classes that support negative price values.
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         float field representing a price. Note the number of decimal places may vary. For certain asset classes prices may be negative values. For example, prices for options strategies can be negative under certain market conditions. Refer to Volume 7: FIX Usage by Product for asset classes that support negative price values.
+      </ns3:documentation>
+                <ns3:documentation purpose="EXAMPLE">Strk="47.50"</ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+        <ns3:datatype name="Qty" baseType="float" added="FIX.4.2">
+            <ns3:mappedDatatype standard="XML" builtin="false" base="xs:decimal">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         float field capable of storing either a whole number (no decimal places) of "shares" (securities denominated in whole units) or a decimal value containing decimal places for non-share quantity asset classes (securities denominated in fractional units).
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         float field capable of storing either a whole number (no decimal places) of "shares" (securities denominated in whole units) or a decimal value containing decimal places for non-share quantity asset classes (securities denominated in fractional units).
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+        <ns3:datatype name="Percentage" baseType="float" added="FIX.4.3">
+            <ns3:mappedDatatype standard="XML" builtin="false" base="xs:decimal">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         float field representing a percentage (e.g. 0.05 represents 5% and 0.9525 represents 95.25%). Note the number of decimal places may vary.
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         float field representing a percentage (e.g. 0.05 represents 5% and 0.9525 represents 95.25%). Note the number of decimal places may vary.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+        <ns3:datatype name="float" added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="206">
+            <ns3:mappedDatatype standard="XML" builtin="true" base="xs:decimal">
+                <fixr:annotation xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository" xmlns:functx="http://www.functx.com" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+                    <fixr:documentation purpose="SYNOPSIS">
+         Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties. Note that float values may contain leading zeros (e.g. "00023.23" = "23.23") and may contain or omit trailing zeros after the decimal point (e.g. "23.0" = "23.0000" = "23" = "23."). Note that fields which are derived from float may contain negative values unless explicitly specified otherwise.
+      </fixr:documentation>
+				</fixr:annotation>
+            </ns3:mappedDatatype>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Sequence of digits with optional decimal point and sign character (ASCII characters "-", "0" - "9" and "."); the absence of the decimal point within the string will be interpreted as the float representation of an integer value. All float fields must accommodate up to fifteen significant digits. The number of decimal places used should be a factor of business/market needs and mutual agreement between counterparties. Note that float values may contain leading zeros (e.g. "00023.23" = "23.23") and may contain or omit trailing zeros after the decimal point (e.g. "23.0" = "23.0000" = "23" = "23."). Note that fields which are derived from float may contain negative values unless explicitly specified otherwise.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:datatype>
+    </ns3:datatypes>
+    <ns3:codeSets>
+        <ns3:codeSet type="char" id="10001" name="OrdTypeCodeset" scenario="inbound">
+            <ns3:code value="1" name="Market"/>
+            <ns3:code value="2" name="Limit"/>
+        </ns3:codeSet>
+        <ns3:codeSet type="String" id="22" name="SecurityIDSourceCodeSet">
+            <ns3:code value="1" sort="1" id="22001" name="CUSIP" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         CUSIP
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="2" id="22002" name="SEDOL" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         SEDOL
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="3" sort="3" id="22003" name="QUIK" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         QUIK
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="4" sort="4" id="22004" name="ISINNumber" added="FIX.3.0" updated="FIX.5.0SP2" updatedEP="232">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISIN
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="5" sort="5" id="22005" name="RICCode" added="FIX.3.0" updated="FIX.5.0SP2" updatedEP="232">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         RIC
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="6" sort="6" id="22006" name="ISOCurrencyCode" added="FIX.4.1">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISO Currency Code
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="7" sort="7" id="22007" name="ISOCountryCode" added="FIX.4.1">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISO Country Code
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="8" sort="8" id="22008" name="ExchangeSymbol" added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Exchange symbol
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="9" sort="9" id="22009" name="ConsolidatedTapeAssociation" added="FIX.4.2">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Consolidated Tape Association (CTA) Symbol (SIAC CTS/CQS line format)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="A" sort="10" id="22010" name="BloombergSymbol" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Bloomberg Symbol
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="B" sort="11" id="22011" name="Wertpapier" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Wertpapier
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="C" sort="12" id="22012" name="Dutch" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Dutch
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="D" sort="13" id="22013" name="Valoren" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Valoren
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="E" sort="14" id="22014" name="Sicovam" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sicovam
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="F" sort="15" id="22015" name="Belgian" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Belgian
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="G" sort="16" id="22016" name="Common" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         "Common" (Clearstream and Euroclear)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="H" sort="17" id="22017" name="ClearingHouse" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Clearing house / Clearing organization
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="I" sort="18" id="22018" name="ISDAFpMLSpecification" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISDA/FpML product specification (XML in SecurityXML(1185))
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="J" sort="19" id="22019" name="OptionPriceReportingAuthority" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Option Price Reporting Authority
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="K" sort="20" id="22020" name="ISDAFpMLURL" added="FIX.4.4" addedEP="15" updated="FIX.5.0SP2" updatedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISDA/FpML product URL (URL in SecurityID(48))
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="L" sort="21" id="22021" name="LetterOfCredit" added="FIX.4.4" addedEP="8" updated="FIX.5.0SP2" updatedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Letter of credit
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="M" sort="22" id="22022" name="MarketplaceAssignedIdentifier" added="FIX.5.0" addedEP="58">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Marketplace-assigned Identifier
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="N" sort="23" id="22023" name="MarkitREDEntityCLIP" added="FIX.5.0SP2" addedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Markit RED entity CLIP
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="P" sort="24" id="22024" name="MarkitREDPairCLIP" added="FIX.5.0SP2" addedEP="119">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Markit RED pair CLIP
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="Q" sort="25" id="22025" name="CFTCCommodityCode" added="FIX.5.0SP2" addedEP="140">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         CFTC commodity code
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="R" sort="26" id="22026" name="ISDACommodityReferencePrice" added="FIX.5.0SP2" addedEP="140">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISDA Commodity Reference Price
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="S" sort="27" id="22027" name="FinancialInstrumentGlobalIdentifier" added="FIX.5.0SP2" addedEP="158" updated="FIX.5.0SP2" updatedEP="202">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Financial Instrument Global Identifier
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         An Object Management Group (OMG) standard. Also referred to as FIGI. Formerly known as "Bloomberg Open Symbology BBGID".
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="T" sort="28" id="22028" name="LegalEntityIdentifier" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Legal entity identifier
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="U" sort="29" id="22029" name="Synthetic" added="FIX.5.0SP2" addedEP="187">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Synthetic
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Used to specify that the security identifier is synthetic for linking nested underliers when there is no market identifier for the collection.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="V" sort="30" id="22030" name="FidessaInstrumentMnemonic" added="FIX.5.0SP2" addedEP="220">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Fidessa Instrument Mnemonic (FIM)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="W" sort="31" id="22031" name="IndexName" added="FIX.5.0SP2" addedEP="232">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Index name
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Standard name of the index or rate index, e.g. "LIBOR" or "iTraxx Australia.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="X" sort="32" id="22032" name="UniformSymbol" added="FIX.5.0SP2" addedEP="242">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Uniform Symbol (UMTF Symbol)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies class or source of the SecurityID(48) value.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="char" id="447" name="PartyIDSourceCodeSet">
+            <ns3:code value="6" sort="1" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447001" name="UKNationalInsuranceOrPensionNumber" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         UK National Insurance or Pension Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="7" sort="2" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447002" name="USSocialSecurityNumber" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         US Social Security Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="8" sort="3" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447003" name="USEmployerOrTaxIDNumber" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         US Employer or Tax ID Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="9" sort="4" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447004" name="AustralianBusinessNumber" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Australian Business Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="A" sort="5" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447005" name="AustralianTaxFileNumber" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Australian Tax File Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="J" sort="6" group="For PartyRole = &quot;InvestorID&quot; and for CIV" id="447006" name="TaxID" added="FIX.5.0SP2" addedEP="103">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Tax ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="1" sort="1" group="For PartyRole = &quot;InvestorID&quot; and for Equities" id="447007" name="KoreanInvestorID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Korean Investor ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="2" group="For PartyRole = &quot;InvestorID&quot; and for Equities" id="447008" name="TaiwaneseForeignInvestorID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Taiwanese Qualified Foreign Investor ID QFII/FID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="3" sort="3" group="For PartyRole = &quot;InvestorID&quot; and for Equities" id="447009" name="TaiwaneseTradingAcct" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Taiwanese Trading Acct
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="4" sort="4" group="For PartyRole = &quot;InvestorID&quot; and for Equities" id="447010" name="MalaysianCentralDepository" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Malaysian Central Depository (MCD) number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="5" sort="5" group="For PartyRole = &quot;InvestorID&quot; and for Equities" id="447011" name="ChineseInvestorID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Chinese Investor ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="I" sort="1" group="For PartyRole=&quot;Broker of Credit&quot;" id="447012" name="ISITCAcronym" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Directed broker three character acronym as defined in ISITC "ETC Best Practice" guidelines document
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="B" sort="1" group="For all PartyRoles" id="447013" name="BIC" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         BIC (Bank Identification Code - SWIFT managed) code (ISO9362 - See "Appendix 6-B")
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="C" sort="2" group="For all PartyRoles" id="447014" name="GeneralIdentifier" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Generally accepted market participant identifier (e.g. NASD mnemonic)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="D" sort="3" group="For all PartyRoles" id="447015" name="Proprietary" added="FIX.4.3" updated="FIX.5.0SP2" updatedEP="192">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Proprietary / Custom code
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Custom ID schema used between counterparties, trading platforms and repositories.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="E" sort="4" group="For all PartyRoles" id="447016" name="ISOCountryCode" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         ISO Country Code
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="F" sort="5" group="For all PartyRoles" id="447017" name="SettlementEntityLocation" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Settlement Entity Location (note if Local Market Settlement use "E=ISO Country Code") (see "Appendix 6-G" for valid values)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="G" sort="6" group="For all PartyRoles" id="447018" name="MIC" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="236">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market Identifier Code (ISO 10383) MIC
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="H" sort="7" group="For all PartyRoles" id="447019" name="CSDParticipant" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         CSD participant/member code (e.g.. Euroclear, DTC, CREST or Kassenverein number)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="K" sort="8" group="For all PartyRoles" id="447020" name="AustralianCompanyNumber" added="FIX.5.0SP2" addedEP="108">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Australian Company Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="L" sort="9" group="For all PartyRoles" id="447021" name="AustralianRegisteredBodyNumber" added="FIX.5.0SP2" addedEP="108">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Australian Registered Body Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="M" sort="10" group="For all PartyRoles" id="447022" name="CFTCReportingFirmIdentifier" added="FIX.5.0SP2" addedEP="140">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         CFTC reporting firm identifier
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="N" sort="11" group="For all PartyRoles" id="447023" name="LegalEntityIdentifier" added="FIX.5.0SP2" addedEP="156">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Legal Entity Identifier (ISO 17442) LEI
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="O" sort="12" group="For all PartyRoles" id="447024" name="InterimIdentifier" added="FIX.5.0SP2" addedEP="192">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Interim identifier
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         An interim entity identifier assigned by a regulatory agency prior to an LEI (ISO 17442) being assigned.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="P" sort="13" group="For all PartyRoles" id="447025" name="ShortCodeIdentifier" added="FIX.5.0SP2" addedEP="222">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Short code identifier
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         A generic means for trading venues, brokers, investment managers to convey a bilaterally agreed upon "short hand" code for an identifier that is a reference to a mapping between the parties.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="Q" sort="14" group="For all PartyRoles" id="447026" name="NationalIDNaturalPerson" added="FIX.5.0SP2" addedEP="222">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         National ID of natural person
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         An identification number generally assigned by a government authority or agency to a natural person which is unique to the person it is assigned to. Examples include, but not limited to, "social security number", "pension number".
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="R" sort="15" group="For all PartyRoles" id="447027" name="IndiaPermanentAccountNumber" added="FIX.5.0SP2" addedEP="244">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         India Permanent Account Number
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Also referred to as PAN ID. An identifier issued by the Income Tax Department of India.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies class or source of the PartyID (448) value. Required if PartyID is specified. Note: applicable values depend upon PartyRole (452) specified.
+         See "Appendix 6-G - Use of &lt;Parties&gt; Component Block"
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="int" id="452" name="PartyRoleCodeSet">
+            <ns3:code value="1" sort="1" id="452001" name="ExecutingFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Executing Firm (formerly FIX 4.2 ExecBroker)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="2" id="452002" name="BrokerOfCredit" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Broker of Credit (formerly FIX 4.2 BrokerOfCredit)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="3" sort="3" id="452003" name="ClientID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Client ID (formerly FIX 4.2 ClientID)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="4" sort="4" id="452004" name="ClearingFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Clearing Firm (formerly FIX 4.2 ClearingFirm)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="5" sort="5" id="452005" name="InvestorID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Investor ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="6" sort="6" id="452006" name="IntroducingFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Introducing Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="7" sort="7" id="452007" name="EnteringFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Entering Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="8" sort="8" id="452008" name="Locate" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Locate / Lending Firm (for short-sales)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="9" sort="9" id="452009" name="FundManagerClientID" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Fund Manager Client ID (for CIV)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="10" sort="10" id="452010" name="SettlementLocation" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Settlement Location (formerly FIX 4.2 SettlLocation)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="11" sort="11" id="452011" name="OrderOriginationTrader" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Order Origination Trader (associated with Order Origination Firm - i.e. trader who initiates/submits the order)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="12" sort="12" id="452012" name="ExecutingTrader" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Executing Trader (associated with Executing Firm - actually executes)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="13" sort="13" id="452013" name="OrderOriginationFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Order Origination Firm (e.g. buy-side firm)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="14" sort="14" id="452014" name="GiveupClearingFirm" added="FIX.4.3" deprecated="FIX.5.0SP2" deprecatedEP="118">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Giveup Clearing Firm (firm to which trade is given up)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="15" sort="15" id="452015" name="CorrespondantClearingFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Correspondant Clearing Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="16" sort="16" id="452016" name="ExecutingSystem" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Executing System
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="17" sort="17" id="452017" name="ContraFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="18" sort="18" id="452018" name="ContraClearingFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra Clearing Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="19" sort="19" id="452019" name="SponsoringFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sponsoring Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="20" sort="20" id="452020" name="UnderlyingContraFirm" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Underlying Contra Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="21" sort="21" id="452021" name="ClearingOrganization" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Clearing Organization
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="22" sort="22" id="452022" name="Exchange" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Exchange
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identify using PartyIDSource(tag 447) = G (Market Identifier Code) if the MIC exists.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="24" sort="24" id="452023" name="CustomerAccount" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Customer Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="25" sort="25" id="452024" name="CorrespondentClearingOrganization" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Correspondent Clearing Organization
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="26" sort="26" id="452025" name="CorrespondentBroker" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Correspondent Broker
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="27" sort="27" id="452026" name="Buyer" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Buyer/Seller (Receiver/Deliverer)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="28" sort="28" id="452027" name="Custodian" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Custodian
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="29" sort="29" id="452028" name="Intermediary" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Intermediary
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="30" sort="30" id="452029" name="Agent" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Agent
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="31" sort="31" id="452030" name="SubCustodian" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sub-custodian
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="32" sort="32" id="452031" name="Beneficiary" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Beneficiary
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="33" sort="33" id="452032" name="InterestedParty" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Interested party
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="34" sort="34" id="452033" name="RegulatoryBody" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="169">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Regulatory body
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         In the context of regulatory reporting, this identifies the regulator the trade is being reported to.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="35" sort="35" id="452034" name="LiquidityProvider" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Liquidity provider
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="36" sort="36" id="452035" name="EnteringTrader" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Entering trader
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="37" sort="37" id="452036" name="ContraTrader" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra trader
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="38" sort="38" id="452037" name="PositionAccount" added="FIX.4.4" updated="FIX.5.0SP2" updatedEP="155">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Position account
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The account which positions are maintained. Typically represents the aggregation of one or more customer accounts.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="39" sort="39" id="452038" name="ContraInvestorID" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra Investor ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="40" sort="40" id="452039" name="TransferToFirm" added="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Transfer to Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="41" sort="41" id="452040" name="ContraPositionAccount" added="FIX.4.4" addedEP="5">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra Position Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="42" sort="42" id="452041" name="ContraExchange" added="FIX.4.4" addedEP="5">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Contra Exchange
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="43" sort="43" id="452042" name="InternalCarryAccount" added="FIX.4.4" addedEP="5">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Internal Carry Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="44" sort="44" id="452043" name="OrderEntryOperatorID" added="FIX.4.4" addedEP="5">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Order Entry Operator ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="45" sort="45" id="452044" name="SecondaryAccountNumber" added="FIX.4.4" addedEP="5">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Secondary Account Number
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="46" sort="46" id="452045" name="ForeignFirm" added="FIX.4.4" addedEP="8" updated="FIX.5.0SP1" updatedEP="95">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Foreign Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="47" sort="47" id="452046" name="ThirdPartyAllocationFirm" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Third Party Allocation Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="48" sort="48" id="452047" name="ClaimingAccount" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Claiming Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="49" sort="49" id="452048" name="AssetManager" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Asset Manager
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="50" sort="50" id="452049" name="PledgorAccount" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Pledgor Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="51" sort="51" id="452050" name="PledgeeAccount" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Pledgee Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="52" sort="52" id="452051" name="LargeTraderReportableAccount" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Large Trader Reportable Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="53" sort="53" id="452052" name="TraderMnemonic" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Trader mnemonic
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="54" sort="54" id="452053" name="SenderLocation" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sender Location
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="55" sort="55" id="452054" name="SessionID" added="FIX.4.4" addedEP="8">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Session ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="56" sort="56" id="452055" name="AcceptableCounterparty" added="FIX.4.4" addedEP="22">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Acceptable Counterparty
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="57" sort="57" id="452056" name="UnacceptableCounterparty" added="FIX.4.4" addedEP="22">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Unacceptable Counterparty
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="58" sort="58" id="452057" name="EnteringUnit" added="FIX.4.4" addedEP="22">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Entering Unit
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="59" sort="59" id="452058" name="ExecutingUnit" added="FIX.4.4" addedEP="22">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Executing Unit
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="60" sort="60" id="452059" name="IntroducingBroker" added="FIX.4.4" addedEP="4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Introducing Broker
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="61" sort="61" id="452060" name="QuoteOriginator" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Quote originator
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="62" sort="62" id="452061" name="ReportOriginator" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Report originator
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="63" sort="63" id="452062" name="SystematicInternaliser" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Systematic internaliser (SI)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="64" sort="64" id="452063" name="MultilateralTradingFacility" added="FIX.4.4" addedEP="26" updated="FIX.5.0SP2" updatedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Multilateral Trading Facility (MTF)
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identify using PartyIDSource(tag 447) = G (Market Identifier Code) if the MIC exists.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="65" sort="65" id="452064" name="RegulatedMarket" added="FIX.4.4" addedEP="26" updated="FIX.5.0SP2" updatedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Regulated Market (RM)
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identify using PartyIDSource(tag 447) = G (Market Identifier Code) if the MIC exists.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="66" sort="66" id="452065" name="MarketMaker" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market Maker
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="67" sort="67" id="452066" name="InvestmentFirm" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Investment Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="68" sort="68" id="452067" name="HostCompetentAuthority" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Host Competent Authority (Host CA)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="69" sort="69" id="452068" name="HomeCompetentAuthority" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Home Competent Authority (Home CA)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="70" sort="70" id="452069" name="CompetentAuthorityLiquidity" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Competent Authority of the most relevant market in terms of liquidity (CAL)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="71" sort="71" id="452070" name="CompetentAuthorityTransactionVenue" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Competent Authority of the Transaction (Execution) Venue (CATV)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="72" sort="72" id="452071" name="ReportingIntermediary" added="FIX.4.4" addedEP="26" updated="FIX.5.0SP2" updatedEP="229">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Reporting intermediary
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The medium or vendor used to report to a regulator, non-regulatory agency or data repository.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="73" sort="73" id="452072" name="ExecutionVenue" added="FIX.4.4" addedEP="26" updated="FIX.5.0SP2" updatedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Execution Venue
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identify using PartyIDSource(tag 447) = G (Market Identifier Code) if the MIC exists.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="74" sort="74" id="452073" name="MarketDataEntryOriginator" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market data entry originator
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="75" sort="75" id="452074" name="LocationID" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Location ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="76" sort="76" id="452075" name="DeskID" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Desk ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="77" sort="77" id="452076" name="MarketDataMarket" added="FIX.4.4" addedEP="26">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market data market
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="78" sort="78" id="452077" name="AllocationEntity" added="FIX.4.4" addedEP="35">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Allocation Entity
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="79" sort="79" id="452078" name="PrimeBroker" added="FIX.5.0" addedEP="68">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Prime Broker providing General Trade Services
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="80" sort="80" id="452079" name="StepOutFirm" added="FIX.5.0" addedEP="68">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Step-Out Firm (Prime Broker)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="81" sort="81" id="452080" name="BrokerClearingID" added="FIX.5.0" addedEP="68" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Broker cient ID
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="82" sort="82" id="452081" name="CentralRegistrationDepository" added="FIX.5.0SP1" addedEP="79">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Central Registration Depository (CRD)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="83" sort="83" id="452082" name="ClearingAccount" added="FIX.5.0SP1" addedEP="96">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Clearing Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="84" sort="84" id="452083" name="AcceptableSettlingCounterparty" added="FIX.5.0SP1" addedEP="96">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Acceptable Settling Counterparty
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="85" sort="85" id="452084" name="UnacceptableSettlingCounterparty" added="FIX.5.0SP1" addedEP="96">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Unacceptable Settling Counterparty
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="86" sort="86" id="452085" name="CLSMemberBank" added="FIX.5.0SP2" addedEP="100">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         CLS Member Bank
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="87" sort="87" id="452086" name="InConcertGroup" added="FIX.5.0SP2" addedEP="103">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         In Concert Group
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="88" sort="88" id="452087" name="InConcertControllingEntity" added="FIX.5.0SP2" addedEP="103">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         In Concert Controlling Entity
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="89" sort="89" id="452088" name="LargePositionsReportingAccount" added="FIX.5.0SP2" addedEP="103">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Large Positions Reporting Account
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="90" sort="90" id="452089" name="SettlementFirm" added="FIX.5.0SP2" addedEP="105">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Settlement Firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="91" sort="91" id="452090" name="SettlementAccount" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="155">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Settlement account
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The account to which individual payment obligations are aggregated for netting and funds movement. Typically represents the aggregation of many margin (performance bond) accounts.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="92" sort="92" id="452091" name="ReportingMarketCenter" added="FIX.5.0SP2" addedEP="112">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Reporting Market Center
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="93" sort="93" id="452092" name="RelatedReportingMarketCenter" added="FIX.5.0SP2" addedEP="112">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Related Reporting Market Center
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="94" sort="94" id="452093" name="AwayMarket" added="FIX.5.0SP2" addedEP="112" updated="FIX.5.0SP2" updatedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Away Market
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identify using PartyIDSource(tag 447) = G (Market Identifier Code) if the MIC exists.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="95" sort="95" id="452094" name="GiveupTradingFirm" added="FIX.5.0SP2" addedEP="118">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Give-up (trading) firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="96" sort="96" id="452095" name="TakeupTradingFirm" added="FIX.5.0SP2" addedEP="118">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Take-up (trading) firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="98" sort="98" id="452097" name="TakeupClearingFirm" added="FIX.5.0SP2" addedEP="118">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Take-up clearing firm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="99" sort="99" id="452098" name="OriginatingMarket" added="FIX.5.0SP2" addedEP="139">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Originating Market
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Identifies the Market using PartyIDSource(tag 447) = G (Market Identifier Code) where an order originated in the event that the order is sent to an alternative market for execution. Serves as an inverse of an away market.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="100" sort="100" id="452099" name="MarginAccount" added="FIX.5.0SP2" addedEP="155">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Margin account
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Also referred to as "performance bond account". The margin account is the calculated margin requirements. Typically represents the aggregation of one or more position accounts.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="101" sort="101" id="452100" name="CollateralAssetAccount" added="FIX.5.0SP2" addedEP="155">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Collateral asset account
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The account at which individual collateral assets are maintained. Typically, although not always, one-for-one with the settlement account.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="102" sort="102" id="452101" name="DataRepository" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Data repository
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Multiple instances of this PartyRole may appear for reporting purposes.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="103" sort="103" id="452102" name="CalculationAgent" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Calculation agent
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="104" sort="104" id="452103" name="ExerciseNoticeSender" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sender of exercise notice
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="105" sort="105" id="452104" name="ExerciseNoticeReceiver" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Receiver of exercise notice
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="106" sort="106" id="452105" name="RateReferenceBank" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Rate reference bank
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The bank providing the reference rate. Multiple instance of this PartyRole may appear.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="107" sort="107" id="452106" name="Correspondent" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Correspondent
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="109" sort="109" id="452107" name="BeneficiaryBank" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Beneficiary's bank or depository institution
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The institution in which the beneficiary, a person or an entity, has their account with. The institution may be a bank or non-bank institution.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="110" sort="110" id="452108" name="Borrower" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Borrower
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="111" sort="111" id="452109" name="PrimaryObligator" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Primary obligator
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="112" sort="112" id="452110" name="Guarantor" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Guarantor
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="113" sort="113" id="452111" name="ExcludedReferenceEntity" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Excluded reference entity
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="114" sort="114" id="452112" name="DeterminingParty" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Determining party
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="115" sort="115" id="452113" name="HedgingParty" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Hedging party
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="116" sort="116" id="452114" name="ReportingEntity" added="FIX.5.0SP2" addedEP="161">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Reporting entity
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The entity that is reporting the information.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="117" sort="117" id="452115" name="SalesPerson" added="FIX.5.0SP2" addedEP="173">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Sales person
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The person who is involved in the sales activities for their firm.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="118" sort="118" id="452116" name="Operator" added="FIX.5.0SP2" addedEP="173">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Operator
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The person who has the capabilities and authorization to take certain actions; for example, setting entitlements, etc.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="119" sort="119" id="452117" name="CSD" added="FIX.5.0SP2" addedEP="187">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Central Securities Depository (CSD)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="120" sort="120" id="452118" name="ICSD" added="FIX.5.0SP2" addedEP="187">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         International Central Securities Depository (ICSD)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="121" sort="121" id="452119" name="TradingSubAccount" added="FIX.5.0SP2" addedEP="217">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Trading sub-account
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Example of sub-accounts include a clearing account that has multiple trading sub-accounts, a trading account that has multiple trading sub-accounts belonging to different trading firms.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="122" sort="122" id="452120" name="InvestmentDecisionMaker" added="FIX.5.0SP2" addedEP="222">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Investment decision maker
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         In the context of ESMA RTS reporting, this is used to specify party responsible for the investment decision. See RTS 24, Annex, Table 2, Field 4.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="123" sort="123" id="452121" name="PublishingIntermediary" added="FIX.5.0SP2" addedEP="229">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Publishing intermediary
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         The medium or vendor used to publish to the market.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies the type or role of the PartyID (448) specified.
+         See "Appendix 6-G - Use of &lt;Parties&gt; Component Block"
+         (see Volume : "Glossary" for value definitions)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="char" id="10004" name="PartyRoleCodeset" scenario="inbound">
+            <ns3:code value="1" name="ExecutingFirm"/>
+            <ns3:code value="2" name="BrokerOfCredit"/>
+        </ns3:codeSet>
+        <ns3:codeSet type="int" id="1674" name="PartyDetailRoleQualifierCodeSet">
+            <ns3:code value="23" sort="23" group="For all firm / broker type party roles" id="1674001" name="FirmOrLegalEntity" added="FIX.5.0SP2" addedEP="222">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Firm or legal entity
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="18" sort="18" group="For all party roles" id="1674002" name="Current" added="FIX.5.0SP2" addedEP="213" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Current
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Can be used to convey an existing party identifier for the same party role in a single message.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="19" sort="19" group="For all party roles" id="1674003" name="New" added="FIX.5.0SP2" addedEP="213" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         New
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Can be used to convey a future party identifier for the same party role in a single message.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="24" sort="24" group="For all trader / customer type party roles" id="1674004" name="NaturalPerson" added="FIX.5.0SP2" addedEP="222">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Natural person
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="0" sort="0" group="For party role 1 (Executing Firm)" id="1674005" name="Agency" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Agency
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="1" sort="1" group="For party role 1 (Executing Firm)" id="1674006" name="Principal" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Principal
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="2" group="For party role 1 (Executing Firm)" id="1674007" name="RisklessPrincipal" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Riskless principal
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="9" sort="9" group="For party role 102 (Data repository)" id="1674008" name="PrimaryTrdRepository" added="FIX.5.0SP2" addedEP="193" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Primary trade repository
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Used to differentiate the principal trade repository from the Original or Additional trade repositories when there are multiple trade repositories being reported.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="10" sort="10" group="For party role 102 (Data repository)" id="1674009" name="OrigTrdRepository" added="FIX.5.0SP2" addedEP="193" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Original trade repository
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Used to identify the trade repository to which the trade was originally reported if different from the current repository to which the trade is being reported.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="11" sort="11" group="For party role 102 (Data repository)" id="1674010" name="AddtnlIntlTrdRepository" added="FIX.5.0SP2" addedEP="193" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Additional international trade repository
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Used with InternationalSwapIndicator(2526) to identify the trade repository that is in addition to the local swaps data repository as required by U.S. law.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="12" sort="12" group="For party role 102 (Data repository)" id="1674011" name="AddtnlDomesticTrdRepository" added="FIX.5.0SP2" addedEP="193" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Additional domestic trade repository
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Used with MixedSwapIndicator(1929) to identify the trade repository that is in addition to the current trade repository when the assets in the swap are subject to two different domestic regulators.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="25" sort="25" group="For party role 11 (Order Origination Trader), 12 (Executing Trader), 36 (Entering Trader), 37 (Contra Trader)" id="1674012" name="RegularTrader" added="FIX.5.0SP2" addedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Regular trader
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Standard trader profile.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="26" sort="26" group="For party role 11 (Order Origination Trader), 12 (Executing Trader), 36 (Entering Trader), 37 (Contra Trader)" id="1674013" name="HeadTrader" added="FIX.5.0SP2" addedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Head trader
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Senior trader leading a group of regular traders.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="27" sort="27" group="For party role 11 (Order Origination Trader), 12 (Executing Trader), 36 (Entering Trader), 37 (Contra Trader)" id="1674014" name="Supervisor" added="FIX.5.0SP2" addedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Supervisor
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Administrative user that has only limited rights for normal trading but possibly special rights for emergency actions.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="22" sort="22" group="For party role 12 (Executing trader) or 122 (Investment decision maker)" id="1674015" name="Algorithm" added="FIX.5.0SP2" addedEP="222" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Algorithm
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="13" sort="13" group="For party role 22 (Exchange)" id="1674016" name="RelatedExchange" added="FIX.5.0SP2" addedEP="208" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Related exchange
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="14" sort="14" group="For party role 22 (Exchange)" id="1674017" name="OptionsExchange" added="FIX.5.0SP2" addedEP="208" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Options exchange
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="15" sort="15" group="For party role 22 (Exchange)" id="1674018" name="SpecifiedExchange" added="FIX.5.0SP2" addedEP="208" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Specified exchange
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="16" sort="16" group="For party role 22 (Exchange)" id="1674019" name="ConstituentExchange" added="FIX.5.0SP2" addedEP="208" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Constituent exchange
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION"/>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="7" sort="7" group="For party role 29 (Intermediary), 32 (Beneficiary) and 107 (Correspondent)" id="1674020" name="Bank" added="FIX.5.0SP2" addedEP="161" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Bank
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="8" sort="8" group="For party role 29 (Intermediary), 32 (Beneficiary) and 107 (Correspondent)" id="1674021" name="Hub" added="FIX.5.0SP2" addedEP="171" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Hub
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Indicates that the Intermediary party is a hub system or service provider.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="3" sort="3" group="For party role 4 (Clearing Firm)" id="1674022" name="GeneralClearingMember" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         General clearing member
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="4" sort="4" group="For party role 4 (Clearing Firm)" id="1674023" name="IndividualClearingMember" added="FIX.5.0SP2" addedEP="105" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Individual clearing member
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="5" sort="5" group="For party role 66 (Market Maker)" id="1674024" name="PreferredMarketMaker" added="FIX.5.0SP2" addedEP="131" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Preferred market maker
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Market maker getting a part of the matched quantity before primary or default market maker.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="6" sort="6" group="For party role 66 (Market Maker)" id="1674025" name="DirectedMarketMaker" added="FIX.5.0SP2" addedEP="131" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Directed market maker
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Single market maker to handle the order provided.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="20" sort="20" group="For party role 66 (Market Maker)" id="1674026" name="DesignatedSponsor" added="FIX.5.0SP2" addedEP="219" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Designated sponsor
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Market maker jointly providing liquidity for the same security with other market makers.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="21" sort="21" group="For party role 66 (Market Maker)" id="1674027" name="Specialist" added="FIX.5.0SP2" addedEP="219" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Specialist
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         Market maker being the only one providing liquidity for a security.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="17" sort="17" group="For party role 73 (Execution Venue)" id="1674028" name="ExemptFromTradeReporting" added="FIX.5.0SP2" addedEP="209" updated="FIX.5.0SP2" updatedEP="223">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Exempt from trade reporting
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         In the context of FINRA TRACE reporting requirements, this is used to indicate the ATS has been granted a regulatory exemption from reporting.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Qualifies the value of PartyDetailRole(1693).
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="char" id="468" name="RoundingDirectionCodeSet">
+            <ns3:code value="0" sort="1" id="468001" name="RoundToNearest" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Round to nearest
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="1" sort="2" id="468002" name="RoundDown" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Round down
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="3" id="468003" name="RoundUp" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Round up
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Specifies which direction to round For CIV - indicates whether or not the quantity of shares/units is to be rounded and in which direction where CashOrdQty (152) or (for CIV only) OrderPercent (516) are specified on an order.
+         The default is for rounding to be at the discretion of the executing broker or fund manager.
+         e.g. for an order specifying CashOrdQty or OrderPercent if the calculated number of shares/units was 325.76 and RoundingModulus (469) was 0 - "round down" would give 320 units, 1 - "round up" would give 330 units and "round to nearest" would give 320 units.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="char" id="40" name="OrdTypeCodeSet">
+            <ns3:code value="1" sort="1" id="40001" name="Market" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="2" sort="2" id="40002" name="Limit" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Limit
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="3" sort="3" id="40003" name="Stop" added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="166">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Stop/Stop Loss.
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         A stop order that is triggered as a result of a trade in the market at which point the stopped order becomes a market order.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="4" sort="4" id="40004" name="StopLimit" added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="166">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Stop Limit.
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         A stop limit order that is triggered as a result of a trade in the market at which point the stopped order becomes a limit order.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="5" sort="5" id="40005" name="MarketOnClose" added="FIX.2.7" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market On Close (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="6" sort="6" id="40006" name="WithOrWithout" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         With Or Without
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="7" sort="7" id="40007" name="LimitOrBetter" added="FIX.2.7" deprecated="FIX.4.4">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Limit Or Better
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="8" sort="8" id="40008" name="LimitWithOrWithout" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Limit With Or Without
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="9" sort="9" id="40009" name="OnBasis" added="FIX.2.7">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         On Basis
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="A" sort="10" id="40010" name="OnClose" added="FIX.2.7" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         On Close (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="B" sort="11" id="40011" name="LimitOnClose" added="FIX.2.7" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Limit On Close (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="C" sort="12" id="40012" name="ForexMarket" added="FIX.4.0" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Forex Market (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="D" sort="13" id="40013" name="PreviouslyQuoted" added="FIX.4.0">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Previously Quoted
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="E" sort="14" id="40014" name="PreviouslyIndicated" added="FIX.4.0">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Previously Indicated
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="F" sort="15" id="40015" name="ForexLimit" added="FIX.4.1" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Forex Limit (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="G" sort="16" id="40016" name="ForexSwap" added="FIX.4.1">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Forex Swap
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="H" sort="17" id="40017" name="ForexPreviouslyQuoted" added="FIX.4.1" deprecated="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Forex Previously Quoted (No longer used)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="I" sort="18" id="40018" name="Funari" added="FIX.4.2">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Funari (Limit day order with unexecuted portion handles as Market On Close. E.g. Japan)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="J" sort="19" id="40019" name="MarketIfTouched" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market If Touched (MIT)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="K" sort="20" id="40020" name="MarketWithLeftOverAsLimit" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Market With Left Over as Limit (market order with unexecuted quantity becoming limit order at last price)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="L" sort="21" id="40021" name="PreviousFundValuationPoint" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Previous Fund Valuation Point (Historic pricing; for CIV)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="M" sort="22" id="40022" name="NextFundValuationPoint" added="FIX.4.3">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Next Fund Valuation Point (Forward pricing; for CIV)
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="P" sort="23" id="40023" name="Pegged" added="FIX.3.0">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Pegged
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="Q" sort="24" id="40024" name="CounterOrderSelection" added="FIX.4.4" addedEP="22">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Counter-order selection
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="R" sort="25" id="40025" name="StopOnBidOrOffer" added="FIX.5.0SP2" addedEP="166">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Stop on Bid or Offer
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         A stop order that is triggered by a bid or offer price movement (quote) at which point the stopped order becomes a market order, also known as "stop on quote" in some markets (e.g. US markets). In the US equities market it is common to trigger a stop off the National Best Bid or Offer (NBBO).
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="S" sort="26" id="40026" name="StopLimitOnBidOrOffer" added="FIX.5.0SP2" addedEP="166">
+                <ns3:annotation>
+                    <ns3:documentation purpose="SYNOPSIS">
+         Stop Limit on Bid or Offer
+      </ns3:documentation>
+                    <ns3:documentation purpose="ELABORATION">
+         A stop order that is triggered by a bid or offer price movement (quote) at which point the stopped order becomes a limit order, also known as "stop limit on quote" in some markets (e.g. US markets). In the US equities market it is common to trigger a stop off the National Best Bid or Offer (NBBO).
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Order type. *** SOME VALUES ARE NO LONGER USED - See "Deprecated (Phased-out) Features and Supported Approach" *** (see Volume : "Glossary" for value definitions)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+        <ns3:codeSet type="char" id="10007" name="Sides" scenario="inbound">
+            <ns3:code value="1" id="10008" name="Buy"/>
+            <ns3:code value="2" id="10009" name="Sell"/>
+            <ns3:code value="8" id="10010" name="Cross">
+                <ns3:annotation>
+                    <ns3:documentation contentType="text/markdown">Cross (orders where counterparty is an exchange, valid for all messages *except* IOIs)</ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:code value="C" id="10011" name="Opposite">
+                <ns3:annotation>
+                    <ns3:documentation contentType="text/markdown">"Opposite" (for use with multileg instruments)</ns3:documentation>
+                </ns3:annotation>
+            </ns3:code>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">Side of an order</ns3:documentation>
+            </ns3:annotation>
+        </ns3:codeSet>
+    </ns3:codeSets>
+    <ns3:fields>
+        <ns3:field type="Sides" id="54" name="Side" scenario="inbound">
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">Side of order</ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="OrdTypeCodeset" id="40" name="OrdType" scenario="inbound">
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">Order type</ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="UTCTimestamp" id="6234" name="MyUserDefined1">
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">A timestamp</ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="String" discriminatorId="22" added="FIX.2.7" id="48" name="SecurityID" abbrName="ID">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Security identifier value of SecurityIDSource (22) type (e.g. CUSIP, SEDOL, ISIN, etc). Requires SecurityIDSource.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="SecurityIDSourceCodeSet" unionDataType="Reserved100Plus" added="FIX.2.7" updated="FIX.5.0SP2" updatedEP="161" id="22" name="SecurityIDSource" abbrName="Src">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies class or source of the SecurityID(48) value.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="String" discriminatorId="447" added="FIX.4.3" id="448" name="PartyID" abbrName="ID">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Party identifier/code. See PartyIDSource (447) and PartyRole (452).
+         See "Appendix 6-G - Use of &lt;Parties&gt; Component Block"
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="PartyIDSourceCodeSet" added="FIX.4.3" id="447" name="PartyIDSource" abbrName="Src">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies class or source of the PartyID (448) value. Required if PartyID is specified. Note: applicable values depend upon PartyRole (452) specified.
+         See "Appendix 6-G - Use of &lt;Parties&gt; Component Block"
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="PartyRoleCodeSet" added="FIX.4.3" id="452" name="PartyRole" abbrName="R">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Identifies the type or role of the PartyID (448) specified.
+         See "Appendix 6-G - Use of &lt;Parties&gt; Component Block"
+         (see Volume : "Glossary" for value definitions)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="PartyDetailRoleQualifierCodeSet" added="FIX.5.0SP2" addedEP="179" id="2376" name="PartyRoleQualifier" abbrName="Qual">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Used to further qualify the value of PartyRole(452).
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="String" baseCategory="SingleGeneralOrderHandling" baseCategoryAbbrName="ID" added="FIX.2.7" id="11" name="ClOrdID" abbrName="ClOrdID">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Unique identifier for Order as assigned by the buy-side (institution, broker, intermediary etc.) (identified by SenderCompID (49) or OnBehalfOfCompID (5) as appropriate). Uniqueness must be guaranteed within a single trading day. Firms, particularly those which electronically submit multi-day orders, trade globally or throughout market close periods, should ensure uniqueness across days, for example by embedding a date within the ClOrdID field.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="String" added="FIX.2.7" id="1" name="Account" abbrName="Acct">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Account mnemonic as agreed between buy and sell sides, e.g. broker and institution or investor/intermediary and fund manager.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Price" added="FIX.2.7" id="44" name="Price" abbrName="Px">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Price per unit of quantity (e.g. per share)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Price" added="FIX.2.7" id="99" name="StopPx" abbrName="StopPx">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Price per unit of quantity (e.g. per share)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Qty" added="FIX.2.7" id="38" name="OrderQty" abbrName="Qty">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Quantity ordered. This represents the number of shares for equities or par, face or nominal value for FI instruments.
+         (Prior to FIX 4.2 this field was of type int)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Qty" added="FIX.4.1" id="152" name="CashOrderQty" abbrName="Cash">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Specifies the approximate order quantity desired in total monetary units vs. as tradeable units (e.g. number of shares). The broker or fund manager (for CIV orders) would be responsible for converting and calculating a tradeable unit (e.g. share) quantity (OrderQty (38)) based upon this amount to be used for the actual order and subsequent messages.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Percentage" added="FIX.4.3" id="516" name="OrderPercent" abbrName="Pct">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         For CIV specifies the approximate order quantity desired. For a CIV Sale it specifies percentage of investor's total holding to be sold. For a CIV switch/exchange it specifies percentage of investor's cash realised from sales to be re-invested. The executing broker, intermediary or fund manager is responsible for converting and calculating OrderQty (38) in shares/units for subsequent messages.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="RoundingDirectionCodeSet" added="FIX.4.3" id="468" name="RoundingDirection" abbrName="RndDir">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Specifies which direction to round For CIV - indicates whether or not the quantity of shares/units is to be rounded and in which direction where CashOrdQty (152) or (for CIV only) OrderPercent (516) are specified on an order.
+         The default is for rounding to be at the discretion of the executing broker or fund manager.
+         e.g. for an order specifying CashOrdQty or OrderPercent if the calculated number of shares/units was 325.76 and RoundingModulus (469) was 0 - "round down" would give 320 units, 1 - "round up" would give 330 units and "round to nearest" would give 320 units.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="float" added="FIX.4.3" id="469" name="RoundingModulus" abbrName="RndMod">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         For CIV - a float value indicating the value to which rounding is required.
+         i.e. 0 means round to a multiple of 0 units/shares; 0.5 means round to a multiple of 0.5 units/shares.
+         The default, if RoundingDirection (468) is specified without RoundingModulus, is to round to a whole unit/share.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="OrdTypeCodeSet" baseCategory="SingleGeneralOrderHandling" baseCategoryAbbrName="Typ" added="FIX.2.7" id="40" name="OrdType" abbrName="OrdTyp">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Order type. *** SOME VALUES ARE NO LONGER USED - See "Deprecated (Phased-out) Features and Supported Approach" *** (see Volume : "Glossary" for value definitions)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="String" added="FIX.2.7" id="37" name="OrderID" abbrName="OrdID">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Unique identifier for Order as assigned by sell-side (broker, exchange, ECN). Uniqueness must be guaranteed within a single trading day. Firms which accept multi-day orders should consider embedding a date within the OrderID field to assure uniqueness across days.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Price" added="FIX.2.7" id="31" name="LastPx" abbrName="LastPx">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Price of this (last) fill.
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Qty" added="FIX.2.7" id="32" name="LastQty" abbrName="LastQty">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Quantity (e.g. shares) bought/sold on this (last) fill.
+         (Prior to FIX 4.2 this field was of type int)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Qty" added="FIX.4.1" id="151" name="LeavesQty" abbrName="LeavesQty">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Quantity open for further execution. If the OrdStatus (39) is Canceled, DoneForTheDay, Expired, Calculated, or Rejected (in which case the order is no longer active) then LeavesQty could be 0, otherwise LeavesQty = OrderQty (38) - CumQty (14).
+         (Prior to FIX 4.2 this field was of type int)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+        <ns3:field type="Qty" added="FIX.2.7" id="14" name="CumQty" abbrName="CumQty">
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         Total quantity (e.g. number of shares) filled.
+         (Prior to FIX 4.2 this field was of type int)
+      </ns3:documentation>
+            </ns3:annotation>
+        </ns3:field>
+    </ns3:fields>
+    <ns3:components>
+        <ns3:component id="10002" name="Instrument" scenario="inbound">
+            <ns3:fieldRef id="48" presence="required"/>
+            <ns3:fieldRef id="22" presence="constant" value="8"/>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">The `Instrument` component block contains all the fields commonly used to describe a security or instrument.</ns3:documentation>
+            </ns3:annotation>
+        </ns3:component>
+        <ns3:component category="Common" id="1011" name="OrderQtyData" abbrName="OrdQty" added="FIX.4.3">
+            <ns3:fieldRef added="FIX.4.3" id="38">
+                <ns3:annotation>
+                    <ns3:documentation>
+         One of CashOrderQty, OrderQty, or (for CIV only) OrderPercent is required. Note that unless otherwise specified, only one of CashOrderQty, OrderQty, or OrderPercent should be specified.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:fieldRef>
+            <ns3:fieldRef added="FIX.4.3" id="152">
+                <ns3:annotation>
+                    <ns3:documentation>
+         One of CashOrderQty, OrderQty, or (for CIV only) OrderPercent is required. Note that unless otherwise specified, only one of CashOrderQty, OrderQty, or OrderPercent should be specified. Specifies the approximate "monetary quantity" for the order. Broker is responsible for converting and calculating OrderQty in tradeable units (e.g. shares) for subsequent messages.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:fieldRef>
+            <ns3:fieldRef added="FIX.4.3" id="516">
+                <ns3:annotation>
+                    <ns3:documentation>
+         For CIV - Optional. One of CashOrderQty, OrderQty or (for CIV only) OrderPercent is required. Note that unless otherwise specified, only one of CashOrderQty, OrderQty, or OrderPercent should be specified.
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:fieldRef>
+            <ns3:fieldRef added="FIX.4.3" id="468">
+                <ns3:annotation>
+                    <ns3:documentation>
+         For CIV - Optional
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:fieldRef>
+            <ns3:fieldRef added="FIX.4.3" id="469">
+                <ns3:annotation>
+                    <ns3:documentation>
+         For CIV - Optional
+      </ns3:documentation>
+                </ns3:annotation>
+            </ns3:fieldRef>
+            <ns3:annotation>
+                <ns3:documentation purpose="SYNOPSIS">
+         The OrderQtyData component block contains the fields commonly used for indicating the amount or quantity of an order. Note that when this component block is marked as "required" in a message either one of these three fields must be used to identify the amount: OrderQty, CashOrderQty or OrderPercent (in the case of CIV).
+      </ns3:documentation>
+                <ns3:documentation purpose="ELABORATION"/>
+            </ns3:annotation>
+        </ns3:component>
+    </ns3:components>
+    <ns3:groups>
+        <ns3:group id="10003" name="Parties" scenario="inbound">
+            <ns3:numInGroup id="453"/>
+            <ns3:fieldRef id="448" presence="required"/>
+            <ns3:fieldRef id="447"/>
+            <ns3:fieldRef id="452" scenario="inbound" presence="required"/>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">The Parties component block is used to identify and convey information on the entities both central and peripheral to the financial transaction represented by the FIX message containing the `Parties` Block. </ns3:documentation>
+            </ns3:annotation>
+        </ns3:group>
+        <ns3:group id="10005" name="Parties" scenario="outbound">
+            <ns3:numInGroup id="453"/>
+            <ns3:fieldRef id="448" presence="required"/>
+            <ns3:fieldRef id="447"/>
+            <ns3:fieldRef id="452" presence="required"/>
+            <ns3:fieldRef id="2376"/>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">The Parties component block is used to identify and convey information on the entities both central and peripheral to the financial transaction represented by the FIX message containing the `Parties` Block. </ns3:documentation>
+            </ns3:annotation>
+        </ns3:group>
+    </ns3:groups>
+    <ns3:messages>
+        <ns3:message msgType="D" id="14" name="NewOrderSingle">
+            <ns3:structure>
+                <ns3:fieldRef id="11" presence="required"/>
+                <ns3:fieldRef id="1"/>
+                <ns3:componentRef id="10002" scenario="inbound"/>
+                <ns3:fieldRef id="54" scenario="inbound" presence="required"/>
+                <ns3:fieldRef id="44"/>
+                <ns3:fieldRef id="99" presence="required"/>
+                <ns3:componentRef presence="required" id="1011"/>
+                <ns3:fieldRef id="40" presence="required"/>
+                <ns3:fieldRef id="6234"/>
+                <ns3:fieldRef id="6235"/>
+                <ns3:groupRef id="10003" scenario="inbound"/>
+            </ns3:structure>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">The new order message type is used by institutions wishing to electronically submit securities and forex orders to a broker for execution.</ns3:documentation>
+            </ns3:annotation>
+        </ns3:message>
+        <ns3:message id="10006" name="ExeuctionReport" scenario="trade">
+            <ns3:structure>
+                <ns3:fieldRef id="11"/>
+                <ns3:fieldRef id="37" presence="required"/>
+                <ns3:fieldRef id="1"/>
+                <ns3:componentRef id="10002" scenario="inbound"/>
+                <ns3:fieldRef id="54" scenario="inbound" presence="required"/>
+                <ns3:fieldRef id="31"/>
+                <ns3:fieldRef id="32"/>
+                <ns3:fieldRef id="151" presence="required"/>
+                <ns3:fieldRef id="14" presence="required"/>
+                <ns3:groupRef id="10005" scenario="outbound"/>
+            </ns3:structure>
+            <ns3:annotation>
+                <ns3:documentation contentType="text/markdown">Relay fill information on a working order.</ns3:documentation>
+            </ns3:annotation>
+        </ns3:message>
+    </ns3:messages>
+</ns3:repository>
