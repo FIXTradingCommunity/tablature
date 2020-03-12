@@ -8,7 +8,7 @@ The intial target of md2spec is FIX Orchestra, "machine readable rules of engage
 
 See these projects for the Orchestra standard and related resources:
 
-* [fix-orchestra-spec](https://github.com/FIXTradingCommunity/fix-orchestra-spec) - the standard. The inital implementation of this project is based FIX Orchestra version 1.0 Draft Standard.
+* [fix-orchestra-spec](https://github.com/FIXTradingCommunity/fix-orchestra-spec) - the standard. The inital implementation of this project is based on FIX Orchestra version 1.0 Draft Standard.
 * [fix-orchestra](https://github.com/FIXTradingCommunity/fix-orchestra) - XML schemas, utilities, and demonstration code
 
 ## Modules
@@ -19,11 +19,11 @@ Translates a markdown document to an Orchestra repository file. Currently, only 
 
 ### orchestra2md
 
-Translates an Orchestra repository file to a markdown document. Markdown can automatcially be rendered as a web page in GitHub or other sites. This is a easy way to publish rules of engagement.
+Translates an Orchestra repository file to a markdown document. Markdown can automatcially be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Currently, only message structures are supported.
 
 ### md-grammar
 
-A library to parse and write markdown files. Generic data structures act as an intermediary between markdown parser and writer logic and applications that use them. In other words, the part of an application that reads or writes a specification like Orchestra needs no special knowledge of markdown.
+A library to parse and write markdown files. Generic data structures act as an intermediary between the markdown parser and writer logic and applications that use them. In other words, the part of an application that reads or writes a specification like Orchestra needs no special knowledge of markdown.
 
 ## Prerequisites
 This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including OpenJDK.
