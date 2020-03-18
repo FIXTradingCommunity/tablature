@@ -4,4 +4,5 @@ module md2orchestra {
   requires org.apache.logging.log4j;
   requires repository;
   requires commons.cli;
+  requires org.apache.logging.log4j.core;
 }

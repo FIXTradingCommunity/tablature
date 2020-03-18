@@ -14,14 +14,13 @@ class Md2OrchestraTest {
    * 
    * Equivalent to command line:
    * <pre>
-   * java io.fixprotocol.md2orchestra.Md2Orchestra -i "dsl example.txt" -o target/test/main1.xml -r FixRepository50SP2EP247.xml
+   * java io.fixprotocol.md2orchestra.Md2Orchestra -i "md2orchestra-proto.md"" -o target/test/main1.xml -r FixRepository50SP2EP247.xml -e target/test/main1-err.txt
    * </pre>
    */
-  @Disabled
   @Test
   void mainWithReference() throws Exception {
     final String args[] = new String[] {"-i", "md2orchestra-proto.md", "-o", "target/test/main1.xml",
-        "-r", "FixRepository50SP2EP247.xml"};
+        "-r", "FixRepository50SP2EP247.xml", "-e", "target/test/main1-err.txt"};
     Md2Orchestra.main(args);
   }
 

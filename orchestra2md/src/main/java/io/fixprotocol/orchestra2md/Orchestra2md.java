@@ -22,8 +22,19 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.ConsoleAppender;
+import org.apache.logging.log4j.core.config.AppenderRef;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
+import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
+import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import org.purl.dc.elements._1.SimpleLiteral;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
@@ -48,6 +59,8 @@ import io.fixprotocol.md.util.StringUtil;
 
 public class Orchestra2md {
   public static class Builder {
+    public String logFile;
+    public boolean verbose;
     private String inputFile;
     private String outputFile;
 
@@ -67,48 +80,31 @@ public class Orchestra2md {
   }
 
   private static final String DEFAULT_SCENARIO = "base";
-
   private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
 
   public static Builder builder() {
     return new Builder();
   }
+  
+  /**
+   * Construct and run Md2Orchestra with command line arguments
+   * 
+   * <pre>
+ usage: Md2Orchestra
+ -?,--help             display usage
+ -e,--eventlog <arg>   path of log file
+ -i,--input <arg>      path of Orchestra input file
+ -o,--output <arg>     path of markdown output file
+ -v,--verbose          verbose event log
+   * </pre>
+   * @param args
+   * @throws Exception
+   */
 
   public static void main(String[] args) throws Exception {
-    Orchestra2md orchestra2md = Orchestra2md.parseArgs(args).build();
+    Orchestra2md orchestra2md = new Orchestra2md();
+    orchestra2md = orchestra2md.parseArgs(args).build();
     orchestra2md.generate();
-  }
-
-  private static Builder parseArgs(String[] args) throws ParseException {
-    Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of Orchestra input file").longOpt("input")
-        .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of markdown output file").longOpt("output")
-        .numberOfArgs(1).required().build());
-    options.addOption(
-        Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
-
-    DefaultParser parser = new DefaultParser();
-    CommandLine cmd;
-
-    Builder builder = new Builder();
-
-    try {
-      cmd = parser.parse(options, args);
-
-      if (cmd.hasOption("?")) {
-        showHelp(options);
-        System.exit(0);
-      }
-
-      builder.inputFile = cmd.getOptionValue("i");
-      builder.outputFile = cmd.getOptionValue("o");
-
-      return builder;
-    } catch (ParseException e) {
-      showHelp(options);
-      throw e;
-    }
   }
 
   private static void showHelp(Options options) {
@@ -118,39 +114,27 @@ public class Orchestra2md {
 
   private final ContextFactory contextFactory = new ContextFactory();
   private File inputFile;
-  private final Logger logger = LogManager.getLogger(getClass());
+  private File logFile;
+  private Logger logger = null;
   private File outputFile;
+  private boolean verbose;
 
   private Orchestra2md(Builder builder) {
     this.inputFile = new File(builder.inputFile);
     this.outputFile = new File(builder.outputFile);
+    this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
+    this.verbose = builder.verbose;
   }
-  
+
   /**
-   * For use with {@link #generate(InputStream, OutputStreamWriter)}
+   * For use with {@link #generate(InputStream, OutputStreamWriter)} or {@link #main(String[])}
    */
   Orchestra2md() {
-    
+
   }
 
   public void generate() throws Exception {
-    generate(inputFile, outputFile);
-  }
-
-  private void addMembers(MutableDetailTable table, Repository repository, List<Object> members) {
-    for (Object member : members) {
-      MutableDetailProperties row = table.newRow();
-      if (member instanceof FieldRefType) {
-        FieldRefType fieldRef = (FieldRefType) member;
-        addFieldRef(repository, fieldRef, row);
-      } else if (member instanceof GroupRefType) {
-        GroupRefType groupRef = (GroupRefType) member;
-        addGroupRef(repository, groupRef, row);
-      } else if (member instanceof ComponentRefType) {
-        ComponentRefType componentRef = (ComponentRefType) member;
-        addComponentRef(repository, componentRef, row);
-      }
-    }
+    generate(inputFile, outputFile, logFile);
   }
 
   private void addComponentRef(Repository repository, ComponentRefType componentRef,
@@ -166,22 +150,6 @@ public class Orchestra2md {
       row.addProperty("scenario", scenario);
     }
     PresenceT presence = componentRef.getPresence();
-    row.addProperty("presence", presence.toString().toLowerCase());
-  }
-
-  private void addGroupRef(Repository repository, GroupRefType groupRef,
-      MutableDetailProperties row) {
-    int tag = groupRef.getId().intValue();
-    String scenario = groupRef.getScenario();
-    GroupType group = findGroupByTag(repository, tag, scenario);
-    if (group != null) {
-      row.addProperty("name", group.getName());
-    }
-    row.addProperty("tag", "group");
-    if (!scenario.equals(DEFAULT_SCENARIO)) {
-      row.addProperty("scenario", scenario);
-    }
-    PresenceT presence = groupRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
   }
 
@@ -207,21 +175,43 @@ public class Orchestra2md {
     }
   }
 
+  private void addGroupRef(Repository repository, GroupRefType groupRef,
+      MutableDetailProperties row) {
+    int tag = groupRef.getId().intValue();
+    String scenario = groupRef.getScenario();
+    GroupType group = findGroupByTag(repository, tag, scenario);
+    if (group != null) {
+      row.addProperty("name", group.getName());
+    }
+    row.addProperty("tag", "group");
+    if (!scenario.equals(DEFAULT_SCENARIO)) {
+      row.addProperty("scenario", scenario);
+    }
+    PresenceT presence = groupRef.getPresence();
+    row.addProperty("presence", presence.toString().toLowerCase());
+  }
+
+  private void addMembers(MutableDetailTable table, Repository repository, List<Object> members) {
+    for (Object member : members) {
+      MutableDetailProperties row = table.newRow();
+      if (member instanceof FieldRefType) {
+        FieldRefType fieldRef = (FieldRefType) member;
+        addFieldRef(repository, fieldRef, row);
+      } else if (member instanceof GroupRefType) {
+        GroupRefType groupRef = (GroupRefType) member;
+        addGroupRef(repository, groupRef, row);
+      } else if (member instanceof ComponentRefType) {
+        ComponentRefType componentRef = (ComponentRefType) member;
+        addComponentRef(repository, componentRef, row);
+      }
+    }
+  }
+
   private ComponentType findComponentByTag(Repository repository, int tag, String scenario) {
     List<ComponentType> components = repository.getComponents().getComponent();
     for (ComponentType component : components) {
       if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
         return component;
-      }
-    }
-    return null;
-  }
-
-  private GroupType findGroupByTag(Repository repository, int tag, String scenario) {
-    List<GroupType> groups = repository.getGroups().getGroup();
-    for (GroupType group : groups) {
-      if (group.getId().intValue() == tag && group.getScenario().equals(scenario)) {
-        return group;
       }
     }
     return null;
@@ -237,12 +227,23 @@ public class Orchestra2md {
     return null;
   }
 
+  private GroupType findGroupByTag(Repository repository, int tag, String scenario) {
+    List<GroupType> groups = repository.getGroups().getGroup();
+    for (GroupType group : groups) {
+      if (group.getId().intValue() == tag && group.getScenario().equals(scenario)) {
+        return group;
+      }
+    }
+    return null;
+  }
+
   private void generateCodesets(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     List<CodeSetType> codesets = repository.getCodeSets().getCodeSet().stream()
         .sorted(Comparator.comparing(CodeSetType::getName)).collect(Collectors.toList());
     if (!codesets.isEmpty()) {
-      MutableDocumentation documentation = contextFactory.createDocumentation(new String[] {"Codesets"}, 2);
+      MutableDocumentation documentation =
+          contextFactory.createDocumentation(new String[] {"Codesets"}, 2);
       documentWriter.write(documentation);
     }
     for (CodeSetType codeset : codesets) {
@@ -274,7 +275,8 @@ public class Orchestra2md {
     List<ComponentType> components = repository.getComponents().getComponent().stream()
         .sorted(Comparator.comparing(ComponentType::getName)).collect(Collectors.toList());
     if (!components.isEmpty()) {
-      MutableDocumentation documentation = contextFactory.createDocumentation(new String[] {"Components"}, 2);
+      MutableDocumentation documentation =
+          contextFactory.createDocumentation(new String[] {"Components"}, 2);
       documentWriter.write(documentation);
     }
     for (ComponentType component : components) {
@@ -334,7 +336,8 @@ public class Orchestra2md {
     List<GroupType> groups = repository.getGroups().getGroup().stream()
         .sorted(Comparator.comparing(GroupType::getName)).collect(Collectors.toList());
     if (!groups.isEmpty()) {
-      MutableDocumentation documentation = contextFactory.createDocumentation(new String[] {"Groups"}, 2);
+      MutableDocumentation documentation =
+          contextFactory.createDocumentation(new String[] {"Groups"}, 2);
       documentWriter.write(documentation);
     }
     for (GroupType group : groups) {
@@ -385,7 +388,7 @@ public class Orchestra2md {
     if (!repository.getName().toLowerCase().contains("version")) {
       documentation.addKey(repository.getVersion());
     }
-    
+
     StringBuilder sb = new StringBuilder();
     List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     for (JAXBElement<SimpleLiteral> element : elements) {
@@ -417,15 +420,93 @@ public class Orchestra2md {
     }
   }
 
+  private Logger initializeDefaultLogger(Level level) {
+    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
+    final Configuration config = ctx.getConfiguration();
+    ConsoleAppender appender = ConsoleAppender.newBuilder().setName("Console").build();
+    config.addAppender(appender);
+    AppenderRef ref = AppenderRef.createAppenderRef("Console", level, null);
+    AppenderRef[] refs = new AppenderRef[] {ref};
+    LoggerConfig loggerConfig = LoggerConfig.createLogger(true, level, getClass().getName(), null,
+        refs, null, config, null);
+    config.addLogger(getClass().getName(), loggerConfig);
+    ctx.updateLoggers();
+    return LogManager.getLogger(getClass());
+  }
+
+  private Logger initializeFileLogger(String fileName, Level level) {
+    ConfigurationBuilder<BuiltConfiguration> builder =
+        ConfigurationBuilderFactory.newConfigurationBuilder();
+    AppenderComponentBuilder appenderBuilder =
+        builder.newAppender("file", "File").addAttribute("fileName", fileName);
+    builder.add(appenderBuilder);
+    builder.add(builder.newLogger(getClass().getCanonicalName(), level)
+        .add(builder.newAppenderRef("file")));
+    builder.add(builder.newRootLogger(level).add(builder.newAppenderRef("file")));
+    LoggerContext ctx = Configurator.initialize(builder.build());
+    return LogManager.getLogger(getClass());
+  }
+
+  private Builder parseArgs(String[] args) throws ParseException {
+    Options options = new Options();
+    options.addOption(Option.builder("i").desc("path of Orchestra input file").longOpt("input")
+        .numberOfArgs(1).required().build());
+    options.addOption(Option.builder("o").desc("path of markdown output file").longOpt("output")
+        .numberOfArgs(1).required().build());
+    options.addOption(
+        Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
+    options.addOption(
+        Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());
+    options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
+
+    DefaultParser parser = new DefaultParser();
+    CommandLine cmd;
+
+    Builder builder = new Builder();
+
+    try {
+      cmd = parser.parse(options, args);
+
+      if (cmd.hasOption("?")) {
+        showHelp(options);
+        System.exit(0);
+      }
+
+      builder.inputFile = cmd.getOptionValue("i");
+      builder.outputFile = cmd.getOptionValue("o");
+
+      if (cmd.hasOption("e")) {
+        builder.logFile = cmd.getOptionValue("e");
+      }
+
+      if (cmd.hasOption("v")) {
+        builder.verbose = true;
+      }
+
+      return builder;
+    } catch (ParseException e) {
+      showHelp(options);
+      throw e;
+    }
+  }
+
   private Repository unmarshal(InputStream is) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     return (Repository) jaxbUnmarshaller.unmarshal(is);
   }
 
-  void generate(File inputFile, File outputFile) throws Exception {
+  void generate(File inputFile, File outputFile, File logFile) throws Exception {
     Objects.requireNonNull(inputFile, "Input File is missing");
     Objects.requireNonNull(outputFile, "Output File is missing");
+
+    final Level level = verbose ? Level.DEBUG : Level.ERROR;
+    if (logFile != null) {
+      logger = initializeFileLogger(logFile.getCanonicalPath(), level);
+    } else {
+      initializeDefaultLogger(level);
+    }
+
     File outputDir = outputFile.getParentFile();
     if (outputDir != null) {
       outputDir.mkdirs();
