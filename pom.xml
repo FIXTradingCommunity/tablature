@@ -5,11 +5,11 @@
 	<groupId>io.fixprotocol.md2spec</groupId>
 	<artifactId>md2spec-parent</artifactId>
 	<version>0.1.0</version>
-	<packaging>pom</packaging>	
+	<packaging>pom</packaging>
 	<prerequisites>
 		<maven>3.0.5</maven>
 	</prerequisites>
-	
+
 	<organization>
 		<name>FIX Trading Community</name>
 		<url>http://https://www.fixtrading.org/</url>
@@ -46,7 +46,7 @@
 			<url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
 		</repository>
 	</distributionManagement>
-	
+
 	<modules>
 		<module>md-grammar</module>
 		<module>md2orchestra</module>
@@ -105,7 +105,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-resources-plugin</artifactId>
-					<version>3.0.1</version>
+					<version>3.1.0</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>

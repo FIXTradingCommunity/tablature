@@ -16,6 +16,7 @@ package io.fixprotocol.md2orchestra;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -39,6 +40,7 @@ import io.fixprotocol._2020.orchestra.repository.Components;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
 import io.fixprotocol._2020.orchestra.repository.Datatypes;
 import io.fixprotocol._2020.orchestra.repository.FieldRefType;
+import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.Fields;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
@@ -61,6 +63,10 @@ class RepositoryBuilder implements Consumer<Context> {
   private static final String DEFAULT_SCENARIO = "base";
   private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
   private static final int NAME_POSITION = 1;
+  
+  // todo: integrate into markdown grammar
+  public static final String WHEN_KEYWORD = "when";
+  public static final String ASSIGN_KEYWORD = "assign";
 
   private int id = 10000;
   private final Logger logger = LogManager.getLogger(getClass());
@@ -606,7 +612,7 @@ class RepositoryBuilder implements Consumer<Context> {
       }
     }
 
-    final PresenceT presence = populatePresence(StringUtil.stripCell(detail.getProperty("presence")));
+    final PresenceT presence = stringToPresence(StringUtil.stripCell(detail.getProperty("presence")));
     if (presence != PresenceT.OPTIONAL) {
       componentRefType.setPresence(presence);
     }
@@ -651,36 +657,68 @@ class RepositoryBuilder implements Consumer<Context> {
       logger.error("RepositoryBuilder unknown fieldRef id; name={}", name);
     }
 
-    final PresenceT presence =
-        populatePresence(StringUtil.stripCell(detail.getProperty("presence")));
-    if (presence != PresenceT.OPTIONAL) {
+    List<FieldRuleType> rules = fieldRefType.getRule();
+
+    String presenceString = detail.getProperty("presence");
+    String[] presenceWords = presenceString.split("[ \t]");
+    PresenceT presence = null;
+    boolean inWhen = false;
+    List<String> whenWords = new ArrayList<>();
+    for (String word : presenceWords) {
+      if (isPresence(word)) {
+        if (!whenWords.isEmpty()) {
+          FieldRuleType rule = new FieldRuleType();
+          rule.setPresence(presence);
+          rule.setWhen(String.join(" ", whenWords));
+          rules.add(rule);
+        }
+        presence = stringToPresence(word);
+        inWhen = false;
+        whenWords.clear();
+      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+        inWhen = true;
+      } else if (inWhen) {
+        whenWords.add(word);
+      }
+    }
+
+    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
       fieldRefType.setPresence(presence);
+    } else if (!whenWords.isEmpty()) {
+      FieldRuleType rule = new FieldRuleType();
+      rule.setPresence(presence);
+      rule.setWhen(String.join(" ", whenWords));
+      rules.add(rule);
     }
 
     String values = StringUtil.stripCell(detail.getProperty("values"));
     if (values != null && !values.isEmpty()) {
-      if (presence == PresenceT.CONSTANT) {
-        fieldRefType.setValue(values);
-        if (!DEFAULT_SCENARIO.equals(scenario)) {
-          fieldRefType.setScenario(scenario);
+      int keywordPos = values.indexOf(ASSIGN_KEYWORD);
+      if (keywordPos != -1) {       
+        fieldRefType.setAssign(values.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
+      } else if (values != null && !values.isEmpty()) {
+        if (presence == PresenceT.CONSTANT) {
+          fieldRefType.setValue(values);
+          if (!DEFAULT_SCENARIO.equals(scenario)) {
+            fieldRefType.setScenario(scenario);
+          }
+        } else {
+          // use the scenario of the parent element
+          if (DEFAULT_SCENARIO.equals(scenario)) {
+            scenario = detail.getContext().getKeyValue("scenario");
+          }
+          String[] valueTokens = values.split("[ =\t]");
+          String codesetName = name + "Codeset";
+          createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
+          logger.warn("RepositoryBuilder unknown codeset datatype; name={} scenario={}",
+              codesetName, scenario);
         }
-      } else {
-        // use the scenario of the parent element
-        if (DEFAULT_SCENARIO.equals(scenario)) {
-          scenario = detail.getContext().getKeyValue("scenario");
-        }
-        String[] valueTokens = values.split("[ =\t]");
-        String codesetName = name + "Codeset";
-        createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
-        logger.warn("RepositoryBuilder unknown codeset datatype; name={} scenario={}", codesetName,
-            scenario);
       }
     }
 
     if (!DEFAULT_SCENARIO.equals(scenario)) {
       fieldRefType.setScenario(scenario);
     }
-
 
     return fieldRefType;
   }
@@ -705,7 +743,7 @@ class RepositoryBuilder implements Consumer<Context> {
       }
     }
 
-    final PresenceT presence = populatePresence(StringUtil.stripCell(detail.getProperty("presence")));
+    final PresenceT presence = stringToPresence(StringUtil.stripCell(detail.getProperty("presence")));
     if (presence != PresenceT.OPTIONAL) {
       groupRefType.setPresence(presence);
     }
@@ -722,19 +760,33 @@ class RepositoryBuilder implements Consumer<Context> {
     group.setNumInGroup(numInGroup);
   }
 
-  private PresenceT populatePresence(String presence) {
-    if (presence == null || presence.isEmpty()) {
+  private PresenceT stringToPresence(String word) {
+    if (word == null || word.isEmpty()) {
       return PresenceT.OPTIONAL;
-    } else if ("required".startsWith(presence.toLowerCase())) {
-      return PresenceT.REQUIRED;
-    } else if ("forbidden".startsWith(presence.toLowerCase())) {
-      return PresenceT.FORBIDDEN;
-    } else if ("ignored".startsWith(presence.toLowerCase())) {
-      return PresenceT.IGNORED;
-    } else if ("constant".startsWith(presence.toLowerCase())) {
-      return PresenceT.CONSTANT;
     } else {
-      return PresenceT.OPTIONAL;
+      String lcWord = word.toLowerCase();
+      if ("required".startsWith(lcWord)) {
+        return PresenceT.REQUIRED;
+      } else if ("forbidden".startsWith(lcWord)) {
+        return PresenceT.FORBIDDEN;
+      } else if ("ignored".startsWith(lcWord)) {
+        return PresenceT.IGNORED;
+      } else if ("constant".startsWith(lcWord)) {
+        return PresenceT.CONSTANT;
+      } else {
+        return PresenceT.OPTIONAL;
+      }
+    }
+  }
+  
+  private boolean isPresence(String word) {
+    if (word == null || word.isEmpty()) {
+      return false;
+    } else {
+      String lcWord = word.toLowerCase();
+      return "required".startsWith(lcWord) || "optional".startsWith(lcWord)
+          || "forbidden".startsWith(lcWord) || "ignored".startsWith(lcWord)
+          || "constant".startsWith(lcWord);
     }
   }
 

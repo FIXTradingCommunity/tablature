@@ -43,6 +43,7 @@ import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
 import io.fixprotocol._2020.orchestra.repository.FieldRefType;
+import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
@@ -58,6 +59,11 @@ import io.fixprotocol.md.event.MutableDocumentation;
 import io.fixprotocol.md.util.StringUtil;
 
 public class Orchestra2md {
+  
+  // todo: integrate into markdown grammar
+  public static final String WHEN_KEYWORD = "when";
+  public static final String ASSIGN_KEYWORD = "assign";
+
   public static class Builder {
     public String logFile;
     public boolean verbose;
@@ -130,7 +136,7 @@ public class Orchestra2md {
    * For use with {@link #generate(InputStream, OutputStreamWriter)} or {@link #main(String[])}
    */
   Orchestra2md() {
-
+    this.verbose = true;
   }
 
   public void generate() throws Exception {
@@ -144,6 +150,8 @@ public class Orchestra2md {
     ComponentType component = findComponentByTag(repository, tag, scenario);
     if (component != null) {
       row.addProperty("name", component.getName());
+    } else {
+      logger.warn("Orchestra2md unknown component; id={} scenario={}", tag, scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -160,18 +168,39 @@ public class Orchestra2md {
     FieldType field = findFieldByTag(repository, tag, scenario);
     if (field != null) {
       row.addProperty("name", field.getName());
+    } else {
+      logger.warn("Orchestra2md unknown field; id={} scenario={}", tag, scenario);
     }
     row.addProperty("tag", Integer.toString(tag));
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       row.addProperty("scenario", scenario);
     }
     PresenceT presence = fieldRef.getPresence();
-    row.addProperty("presence", presence.toString().toLowerCase());
+    StringBuilder presenceString = new StringBuilder();
+    List<FieldRuleType> rules = fieldRef.getRule();
+    if (rules.isEmpty()) {
+      presenceString.append(presence.toString().toLowerCase());
+    } else {    
+      for (FieldRuleType rule : rules) {
+        PresenceT rulePresence = rule.getPresence();
+        if (rulePresence != null) {
+          presenceString.append(rulePresence.toString().toLowerCase());
+        }
+        String when = rule.getWhen();
+        if (when != null) {
+          presenceString.append(" " + WHEN_KEYWORD + " " + when + " ");
+        }
+      }
+    }
+    row.addProperty("presence", presenceString.toString());
+    String assign = fieldRef.getAssign();
     if (presence == PresenceT.CONSTANT) {
       String value = fieldRef.getValue();
       if (value != null) {
         row.addProperty("values", value);
       }
+    } else if (assign != null) {
+      row.addProperty("values", ASSIGN_KEYWORD + " " + assign);
     }
   }
 
@@ -182,6 +211,8 @@ public class Orchestra2md {
     GroupType group = findGroupByTag(repository, tag, scenario);
     if (group != null) {
       row.addProperty("name", group.getName());
+    } else {
+      logger.warn("Orchestra2md unknown group; id={} scenario={}", tag, scenario);
     }
     row.addProperty("tag", "group");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -258,11 +289,14 @@ public class Orchestra2md {
       table.addKey(String.format("(%d)", codeset.getId().intValue()));
       for (CodeType code : codeset.getCode()) {
         MutableDetailProperties row = table.newRow();
-        row.addProperty("name", code.getName());
+        final String name = code.getName();
+        row.addProperty("name", name);
         row.addProperty("value", code.getValue());
         final BigInteger id = code.getId();
         if (id != null) {
           row.addProperty("id", id.toString());
+        } else {
+          logger.warn("Orchestra2md unknown code id; name={} scenario={}", name, scenario);
         }
         row.addProperty("documentation", getDocumentation(code.getAnnotation()));
       }
@@ -342,7 +376,8 @@ public class Orchestra2md {
     }
     for (GroupType group : groups) {
       MutableDetailTable table = contextFactory.createDetailTable(3);
-      table.addPair("Group", group.getName());
+      final String name = group.getName();
+      table.addPair("Group", name);
       String scenario = group.getScenario();
       if (!scenario.equals(DEFAULT_SCENARIO)) {
         table.addPair("scenario", scenario);
@@ -350,8 +385,12 @@ public class Orchestra2md {
       table.addKey(String.format("(%d)", group.getId().intValue()));
       table.documentation(getDocumentation(group.getAnnotation()));
       FieldRefType numInGroup = group.getNumInGroup();
-      MutableDetailProperties row = table.newRow();
-      addFieldRef(repository, numInGroup, row);
+      if (numInGroup != null) {
+        MutableDetailProperties row = table.newRow();
+        addFieldRef(repository, numInGroup, row);
+      } else {
+        logger.warn("Orchestra2md unknown numInGroup for group; name={} scenario={}", name, scenario);
+      }
       List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
       addMembers(table, repository, members);
       documentWriter.write((DetailTable) table);
@@ -434,6 +473,7 @@ public class Orchestra2md {
     return LogManager.getLogger(getClass());
   }
 
+  // todo: move to a common utility package
   private Logger initializeFileLogger(String fileName, Level level) {
     ConfigurationBuilder<BuiltConfiguration> builder =
         ConfigurationBuilderFactory.newConfigurationBuilder();
@@ -443,7 +483,7 @@ public class Orchestra2md {
     builder.add(builder.newLogger(getClass().getCanonicalName(), level)
         .add(builder.newAppenderRef("file")));
     builder.add(builder.newRootLogger(level).add(builder.newAppenderRef("file")));
-    LoggerContext ctx = Configurator.initialize(builder.build());
+    Configurator.initialize(builder.build());
     return LogManager.getLogger(getClass());
   }
 

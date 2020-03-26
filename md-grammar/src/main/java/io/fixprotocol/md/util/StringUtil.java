@@ -28,6 +28,29 @@ public final class StringUtil {
   }
   
   /**
+   * Trim leading whitespace or pipe characters, leaving just the first word 
+   * within a markdown table cell.
+   * 
+   * @param str string to strip
+   * @return a string without leading or trailing whitespace
+   */
+  public static String stripCellWord(String str) {
+    if (str == null) {
+      return null;
+    }
+    final int strLen = str.length();
+    int end = strLen - 1;
+    int begin = 0;
+
+    while ((begin < strLen)
+        && (str.charAt(begin) == ' ' || str.charAt(begin) == '\t' || str.charAt(begin) == '|')) {
+      begin++;
+    }
+    for (end = begin+1; (end < strLen) && (str.charAt(end) == ' ' || str.charAt(end) == '\t'); end++);
+    return ((begin > 0) || (end < strLen)) ? str.substring(begin, end + 1) : str;
+  }
+  
+  /**
    * Trim leading and trailing whitespace and convert any internal linefeeds to spaces
    * 
    * @param str string to strip
