@@ -35,6 +35,7 @@ import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
+import io.fixprotocol._2020.orchestra.repository.ComponentRuleType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
 import io.fixprotocol._2020.orchestra.repository.Components;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
@@ -612,9 +613,38 @@ class RepositoryBuilder implements Consumer<Context> {
       }
     }
 
-    final PresenceT presence = stringToPresence(StringUtil.stripCell(detail.getProperty("presence")));
-    if (presence != PresenceT.OPTIONAL) {
+    List<ComponentRuleType> rules = componentRefType.getRule();
+
+    String presenceString = detail.getProperty("presence");
+    String[] presenceWords = presenceString.split("[ \t]");
+    PresenceT presence = null;
+    boolean inWhen = false;
+    List<String> whenWords = new ArrayList<>();
+    for (String word : presenceWords) {
+      if (isPresence(word)) {
+        if (!whenWords.isEmpty()) {
+          ComponentRuleType rule = new ComponentRuleType();
+          rule.setPresence(presence);
+          rule.setWhen(String.join(" ", whenWords));
+          rules.add(rule);
+        }
+        presence = stringToPresence(word);
+        inWhen = false;
+        whenWords.clear();
+      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+        inWhen = true;
+      } else if (inWhen) {
+        whenWords.add(word);
+      }
+    }
+
+    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
       componentRefType.setPresence(presence);
+    } else if (!whenWords.isEmpty()) {
+      ComponentRuleType rule = new ComponentRuleType();
+      rule.setPresence(presence);
+      rule.setWhen(String.join(" ", whenWords));
+      rules.add(rule);
     }
 
     if (!DEFAULT_SCENARIO.equals(scenario)) {
@@ -743,9 +773,38 @@ class RepositoryBuilder implements Consumer<Context> {
       }
     }
 
-    final PresenceT presence = stringToPresence(StringUtil.stripCell(detail.getProperty("presence")));
-    if (presence != PresenceT.OPTIONAL) {
+    List<ComponentRuleType> rules = groupRefType.getRule();
+
+    String presenceString = detail.getProperty("presence");
+    String[] presenceWords = presenceString.split("[ \t]");
+    PresenceT presence = null;
+    boolean inWhen = false;
+    List<String> whenWords = new ArrayList<>();
+    for (String word : presenceWords) {
+      if (isPresence(word)) {
+        if (!whenWords.isEmpty()) {
+          ComponentRuleType rule = new ComponentRuleType();
+          rule.setPresence(presence);
+          rule.setWhen(String.join(" ", whenWords));
+          rules.add(rule);
+        }
+        presence = stringToPresence(word);
+        inWhen = false;
+        whenWords.clear();
+      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+        inWhen = true;
+      } else if (inWhen) {
+        whenWords.add(word);
+      }
+    }
+
+    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
       groupRefType.setPresence(presence);
+    } else if (!whenWords.isEmpty()) {
+      ComponentRuleType rule = new ComponentRuleType();
+      rule.setPresence(presence);
+      rule.setWhen(String.join(" ", whenWords));
+      rules.add(rule);
     }
 
     if (!DEFAULT_SCENARIO.equals(scenario)) {
