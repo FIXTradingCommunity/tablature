@@ -20,6 +20,8 @@ import java.util.stream.Collectors;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.TerminalNode;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import io.fixprotocol.md.antlr.MarkdownParser.BlockContext;
 import io.fixprotocol.md.antlr.MarkdownParser.CellContext;
 import io.fixprotocol.md.antlr.MarkdownParser.DocumentContext;
@@ -42,7 +44,7 @@ import io.fixprotocol.md.event.mutable.DocumentationImpl;
 
 /**
  * Generates events for document consumers
- * 
+ *
  * @author Don Mendelson
  *
  */
@@ -51,16 +53,15 @@ public class MarkdownEventSource implements MarkdownListener {
   private static final String CELL_NONTEXT = " |\t";
   private static final String WHITESPACE_REGEX = "[ \t]";
 
+  static String normalizeList(List<ListlineContext> textlines) {
+    return textlines.stream().map(p -> p.LISTLINE().getText()).collect(Collectors.joining("\n"));
+  }
+
   static String normalizeParagraph(List<ParagraphlineContext> textlines) {
     return textlines.stream().map(p -> p.PARAGRAPHLINE().getText())
         .collect(Collectors.joining(" "));
   }
-  
-  static String normalizeList(List<ListlineContext> textlines) {
-    return textlines.stream().map(p -> p.LISTLINE().getText())
-        .collect(Collectors.joining("\n"));
-  }
-  
+
   static String trimCell(String text) {
     int beginIndex = 0;
     int endIndex = text.length();
@@ -70,6 +71,7 @@ public class MarkdownEventSource implements MarkdownListener {
         && (CELL_NONTEXT.indexOf(text.charAt(endIndex - 1)) != -1); endIndex--);
     return text.substring(beginIndex, endIndex);
   }
+
   private final Consumer<Context> contextConsumer;
   private boolean inTableHeading = false;
   private final List<String> lastBlocks = new ArrayList<>();
@@ -79,6 +81,8 @@ public class MarkdownEventSource implements MarkdownListener {
 
   private final List<String> lastRowValues = new ArrayList<>();
   private final List<String> lastTableHeadings = new ArrayList<>();
+
+  private final Logger logger = LogManager.getLogger(getClass());
 
   public MarkdownEventSource(Consumer<Context> contextConsumer) {
     this.contextConsumer = contextConsumer;
@@ -117,13 +121,13 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void enterList(ListContext ctx) {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
   public void enterListline(ListlineContext ctx) {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
@@ -169,7 +173,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitCell(CellContext ctx) {
-    String cellText = trimCell(ctx.CELLTEXT().getText());
+    final String cellText = trimCell(ctx.CELLTEXT().getText());
     if (inTableHeading) {
       lastTableHeadings.add(cellText);
     } else {
@@ -191,7 +195,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitHeading(HeadingContext ctx) {
-    String headingLine = ctx.HEADINGLINE().getText();
+    final String headingLine = ctx.HEADINGLINE().getText();
     // Heading level is length of first word formed with '#'
     lastHeadingLevel = headingLine.indexOf(" ");
     lastHeadingWords = headingLine.substring(lastHeadingLevel + 1).split(WHITESPACE_REGEX);
@@ -200,19 +204,19 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitList(ListContext ctx) {
-    List<ListlineContext> textlines = ctx.listline();
-    lastBlocks.add(normalizeList(textlines));    
+    final List<ListlineContext> textlines = ctx.listline();
+    lastBlocks.add(normalizeList(textlines));
   }
 
   @Override
   public void exitListline(ListlineContext ctx) {
     // TODO Auto-generated method stub
-    
+
   }
 
   @Override
   public void exitParagraph(ParagraphContext ctx) {
-    List<ParagraphlineContext> textlines = ctx.paragraphline();
+    final List<ParagraphlineContext> textlines = ctx.paragraphline();
     lastBlocks.add(normalizeParagraph(textlines));
   }
 
@@ -225,15 +229,19 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void exitTable(TableContext ctx) {
     if (!inTableHeading) {
-      DetailTableImpl detailTable = new DetailTableImpl(lastHeadingWords, lastHeadingLevel);
-      List<TablerowContext> tablerows = ctx.tablerow();
+      final DetailTableImpl detailTable = new DetailTableImpl(lastHeadingWords, lastHeadingLevel);
+      final List<TablerowContext> tablerows = ctx.tablerow();
 
-      for (TablerowContext tablerow : tablerows) {
-        MutableDetailProperties detail = detailTable.newRow();
-        
+      for (final TablerowContext tablerow : tablerows) {
+        final MutableDetailProperties detail = detailTable.newRow();
+
         for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
-          CellContext cell = tablerow.cell(i);
-          detail.addProperty(lastTableHeadings.get(i), cell.getText());
+          final CellContext cell = tablerow.cell(i);
+          if (cell != null) {
+            detail.addProperty(lastTableHeadings.get(i), cell.getText());
+          } else {
+            logger.error("MarkdownEventSource table cell missing in column {}", i);
+          }
         }
       }
       if (contextConsumer != null) {
@@ -256,7 +264,7 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void exitTablerow(TablerowContext ctx) {
     if (!inTableHeading) {
-      DetailImpl detail = new DetailImpl(lastHeadingWords, lastHeadingLevel);
+      final DetailImpl detail = new DetailImpl(lastHeadingWords, lastHeadingLevel);
       for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
         detail.addProperty(lastTableHeadings.get(i), lastRowValues.get(i));
       }
@@ -280,8 +288,8 @@ public class MarkdownEventSource implements MarkdownListener {
 
   private void supplyLastDocumentation() {
     if (!lastBlocks.isEmpty()) {
-      String paragraphs = normalizeParagraphs();
-      Documentation documentation =
+      final String paragraphs = normalizeParagraphs();
+      final Documentation documentation =
           new DocumentationImpl(lastHeadingWords, lastHeadingLevel, paragraphs);
       contextConsumer.accept(documentation);
     }
@@ -291,4 +299,4 @@ public class MarkdownEventSource implements MarkdownListener {
     return String.join("\n", lastBlocks);
   }
 
- }
+}

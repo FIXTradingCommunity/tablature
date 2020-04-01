@@ -26,8 +26,6 @@ import org.antlr.v4.runtime.Recognizer;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
-import io.fixprotocol.md.antlr.MarkdownLexer;
-import io.fixprotocol.md.antlr.MarkdownParser;
 import io.fixprotocol.md.antlr.MarkdownParser.BlockContext;
 import io.fixprotocol.md.antlr.MarkdownParser.CellContext;
 import io.fixprotocol.md.antlr.MarkdownParser.DocumentContext;
@@ -38,6 +36,7 @@ import io.fixprotocol.md.antlr.MarkdownParser.TableContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
 
+@Disabled
 class MdGrammarTest {
 
   @ParameterizedTest

@@ -30,7 +30,7 @@ class TableColumnImpl implements TableColumn {
   @Override
   public String getHeading() {
     if (display == null) {
-      StringBuilder sb = new StringBuilder();
+      final StringBuilder sb = new StringBuilder();
       sb.append(Character.toUpperCase(key.charAt(0)));
       for (int i = 1; i < key.length(); i++) {
         if (Character.isWhitespace(key.charAt(i - 1))) {

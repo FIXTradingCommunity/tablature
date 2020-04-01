@@ -9,11 +9,11 @@ public class ContextFactory {
   public MutableContext createContext(int level) {
     return new ContextImpl(level);
   }
-   
+
   public MutableContext createContext(String[] keys, int level) {
     return new ContextImpl(keys, level);
   }
-  
+
   public MutableDetail createDetail(int level) {
     return new DetailImpl(level);
   }
@@ -21,7 +21,7 @@ public class ContextFactory {
   public MutableDetail createDetail(String[] keys, int level) {
     return new DetailImpl(keys, level);
   }
-  
+
   public MutableDetailTable createDetailTable(int level) {
     return new DetailTableImpl(level);
   }
@@ -29,7 +29,7 @@ public class ContextFactory {
   public MutableDetailTable createDetailTable(String[] keys, int level) {
     return new DetailTableImpl(keys, level);
   }
-  
+
   public MutableDocumentation createDocumentation(int level) {
     return new DocumentationImpl(level);
   }

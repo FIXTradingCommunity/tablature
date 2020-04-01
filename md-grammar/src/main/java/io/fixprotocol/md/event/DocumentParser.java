@@ -12,10 +12,10 @@ import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import io.fixprotocol.md.antlr.MarkdownEventSource;
 import io.fixprotocol.md.antlr.MarkdownLexer;
 import io.fixprotocol.md.antlr.MarkdownParser;
 import io.fixprotocol.md.antlr.MarkdownParser.DocumentContext;
-import io.fixprotocol.md.antlr.MarkdownEventSource;
 
 public final class DocumentParser {
 
@@ -24,6 +24,10 @@ public final class DocumentParser {
 
     private int errors = 0;
 
+    public int getErrors() {
+      return errors;
+    }
+
     @Override
     public void syntaxError(Recognizer<?, ?> recognizer, Object offendingSymbol, int line,
         int charPositionInLine, String msg, RecognitionException e) {
@@ -31,22 +35,16 @@ public final class DocumentParser {
       logger.error("Markdown parser failed at line {} position {} due to {}", line,
           charPositionInLine, msg);
     }
-
-    public int getErrors() {
-      return errors;
-    }
   }
 
-  public void parse(InputStream inputStream, Consumer<Context> contextConsumer)
-      throws IOException {
-    MarkdownLexer lexer = new MarkdownLexer(CharStreams.fromStream(inputStream));
-    MarkdownParser parser = new MarkdownParser(new CommonTokenStream(lexer));
-    SyntaxErrorListener errorListener = new SyntaxErrorListener();
+  public void parse(InputStream inputStream, Consumer<Context> contextConsumer) throws IOException {
+    final MarkdownLexer lexer = new MarkdownLexer(CharStreams.fromStream(inputStream));
+    final MarkdownParser parser = new MarkdownParser(new CommonTokenStream(lexer));
+    final SyntaxErrorListener errorListener = new SyntaxErrorListener();
     parser.addErrorListener(errorListener);
-    ParseTreeListener listener =
-        new MarkdownEventSource(contextConsumer);
-    ParseTreeWalker walker = new ParseTreeWalker();
-    DocumentContext documentContext = parser.document();
+    final ParseTreeListener listener = new MarkdownEventSource(contextConsumer);
+    final ParseTreeWalker walker = new ParseTreeWalker();
+    final DocumentContext documentContext = parser.document();
     walker.walk(listener, documentContext);
 
     final int errors = errorListener.getErrors();

@@ -68,7 +68,7 @@ HEADINGLINE
 
 LISTLINE
 :
-	[  \t]* (BULLET | LISTNUMBER) [  \t]+ LINECHAR*
+	WS* (BULLET | LISTNUMBER) WS+ LINECHAR*
 ;
 
 PARAGRAPHLINE
@@ -94,12 +94,17 @@ NEWLINE
 
 IGNORE_WS
 :
-	[  \t] -> skip
+	WS -> skip
 ;
 
 PIPE
 :
 	'|'
+;
+
+fragment WS
+: 
+	[  \t] 
 ;
 
 fragment LISTNUMBER

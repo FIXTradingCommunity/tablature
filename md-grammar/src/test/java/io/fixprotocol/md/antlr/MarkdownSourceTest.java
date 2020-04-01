@@ -3,8 +3,11 @@ package io.fixprotocol.md.antlr;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+// black box testing for now
+@Disabled
 class MarkdownSourceTest {
 
   @Test

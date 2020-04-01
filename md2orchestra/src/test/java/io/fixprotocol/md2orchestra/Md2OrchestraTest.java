@@ -1,9 +1,9 @@
 package io.fixprotocol.md2orchestra;
 
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import io.fixprotocol.md2orchestra.Md2Orchestra;
 
 class Md2OrchestraTest {
 
@@ -32,6 +32,13 @@ class Md2OrchestraTest {
         .outputFile("target/test/builder1.xml").build();
     md2Orchestra1.generate();
 
+  }
+  
+  @Test
+  void roundtrip() throws Exception {
+    Md2Orchestra md2Orchestra = new Md2Orchestra();
+    md2Orchestra.generate(new FileInputStream("mit_2016.md"),
+        new FileOutputStream("target/test/mit_2016.xml"), null);
   }
   
   @Test

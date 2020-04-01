@@ -7,18 +7,18 @@ public class DocumentationImpl extends ContextImpl implements MutableDocumentati
 
   private String documentation;
 
-  public DocumentationImpl(String documentation) {
-    this(EMPTY_CONTEXT, 0, documentation);
-  }
-  
   public DocumentationImpl(int level) {
     super(EMPTY_CONTEXT, level);
   }
-  
+
+  public DocumentationImpl(String documentation) {
+    this(EMPTY_CONTEXT, 0, documentation);
+  }
+
   public DocumentationImpl(String[] keys, int level) {
     super(keys, level);
   }
-  
+
   public DocumentationImpl(String[] keys, int level, String documentation) {
     super(keys, level);
     this.documentation = documentation;
@@ -27,16 +27,16 @@ public class DocumentationImpl extends ContextImpl implements MutableDocumentati
   public DocumentationImpl(String[] keys, String documentation) {
     this(keys, 0, documentation);
   }
-  
-  @Override
-  public String getDocumentation() {
-    return documentation;
-  }
 
   @Override
   public MutableDocumentation documentation(String documentation) {
     this.documentation = documentation;
     return this;
+  }
+
+  @Override
+  public String getDocumentation() {
+    return documentation;
   }
 
   @Override

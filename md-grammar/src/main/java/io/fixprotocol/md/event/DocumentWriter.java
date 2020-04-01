@@ -48,18 +48,18 @@ public class DocumentWriter implements AutoCloseable {
   public void write(DetailTable detailTable) throws IOException {
     try {
       write((Documentation) detailTable);
-      Collection<? extends TableColumn> tableColumns = detailTable.getTableColumns();
+      final Collection<? extends TableColumn> tableColumns = detailTable.getTableColumns();
       writeTableHeadings(tableColumns);
       writeTableDelimiters(tableColumns);
       detailTable.rows().get().forEach(row -> {
         try {
           writeTableRow(tableColumns, row);
-        } catch (IOException e) {
+        } catch (final IOException e) {
           throw new RuntimeException(e);
         }
       });
-    } catch (RuntimeException e) {
-      Throwable cause = e.getCause();
+    } catch (final RuntimeException e) {
+      final Throwable cause = e.getCause();
       if (cause instanceof IOException) {
         throw (IOException) cause;
       } else {
@@ -79,7 +79,7 @@ public class DocumentWriter implements AutoCloseable {
   }
 
   public void write(Iterable<Context> contextSupplier) throws IOException {
-    Consumer<? super Context> action = (Consumer<Context>) t -> {
+    final Consumer<? super Context> action = (Consumer<Context>) t -> {
       try {
         if (t instanceof Documentation) {
           write((Documentation) t);
@@ -88,10 +88,10 @@ public class DocumentWriter implements AutoCloseable {
         } else if (t instanceof Detail) {
           write((Detail) t);
         } else {
-          write((Context) t);
+          write(t);
         }
 
-      } catch (IOException e) {
+      } catch (final IOException e) {
         // TODO Auto-generated catch block
         e.printStackTrace();
       }
@@ -102,15 +102,15 @@ public class DocumentWriter implements AutoCloseable {
   private void writeCell(String value, int length) throws IOException {
     writer.write(CELL_PREFIX);
     writer.write(value);
-    int spaces = Math.min(length - value.length() + 1, SPACES.length-1);
+    final int spaces = Math.min(length - value.length() + 1, SPACES.length - 1);
     writer.write(SPACES, 0, spaces);
   }
 
   private void writeTableDelimiters(Collection<? extends TableColumn> tableColumns)
       throws IOException {
-    for (TableColumn column : tableColumns) {
+    for (final TableColumn column : tableColumns) {
       writer.write("|");
-      int hyphens = Math.min(column.getWidth() + 2, HYPHENS.length-1);
+      final int hyphens = Math.min(column.getWidth() + 2, HYPHENS.length - 1);
       writer.write(HYPHENS, 0, hyphens);
     }
     writer.write("|\n");
@@ -118,18 +118,20 @@ public class DocumentWriter implements AutoCloseable {
 
   private void writeTableHeadings(Collection<? extends TableColumn> tableColumns)
       throws IOException {
-    for (TableColumn column : tableColumns) {
+    for (final TableColumn column : tableColumns) {
       writer.write(CELL_PREFIX);
       writer.write(column.getHeading());
-      int spaces = Math.min(column.getWidth() - column.getHeading().length() + 1, SPACES.length-1);
+      final int spaces =
+          Math.min(column.getWidth() - column.getHeading().length() + 1, SPACES.length - 1);
       writer.write(SPACES, 0, spaces);
     }
     writer.write("|\n");
   }
 
-  private void writeTableRow(Collection<? extends TableColumn> tableColumns, DetailProperties row) throws IOException {
-    for (TableColumn column : tableColumns) {
-      String key = column.getKey();
+  private void writeTableRow(Collection<? extends TableColumn> tableColumns, DetailProperties row)
+      throws IOException {
+    for (final TableColumn column : tableColumns) {
+      final String key = column.getKey();
       String value = row.getProperty(key);
       if (value == null) {
         value = "";

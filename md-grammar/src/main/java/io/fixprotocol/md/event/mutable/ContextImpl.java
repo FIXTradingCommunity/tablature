@@ -34,10 +34,11 @@ public class ContextImpl implements MutableContext {
 
   /**
    * Returns a key by its position
-   * 
+   *
    * @param position position in a key array, 0-based
    * @return the key or {@code null} if position exceeds the size of the key array
    */
+  @Override
   public String getKey(int position) {
     if (keys.size() > position) {
       return keys.get(position);
@@ -48,17 +49,18 @@ public class ContextImpl implements MutableContext {
 
   @Override
   public String[] getKeys() {
-    String[] a = new String[keys.size()];
+    final String[] a = new String[keys.size()];
     return keys.toArray(a);
   }
 
   /**
    * Returns a value assuming that context keys are formed as key-value pairs (possibly after
    * positional keys)
-   * 
+   *
    * @param key key to match
    * @return the value after the matching key or {@code null} if the key is not found
    */
+  @Override
   public String getKeyValue(String key) {
     for (int i = 2; i < keys.size() - 1; i++) {
       if (keys.get(i).equalsIgnoreCase(key)) {

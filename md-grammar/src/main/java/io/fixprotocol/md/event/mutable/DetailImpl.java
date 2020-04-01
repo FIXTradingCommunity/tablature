@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.MutableDetail;
+import io.fixprotocol.md.util.StringUtil;
 
 public class DetailImpl extends ContextImpl implements MutableDetail {
 
@@ -19,13 +20,18 @@ public class DetailImpl extends ContextImpl implements MutableDetail {
   public DetailImpl(int level) {
     this(EMPTY_CONTEXT, level);
   }
-  
+
   public DetailImpl(String[] keys) {
     this(keys, 0);
   }
 
   public DetailImpl(String[] keys, int level) {
     super(keys, level);
+  }
+
+  @Override
+  public void addIntProperty(String key, int value) {
+    addProperty(key, Integer.toString(value));
   }
 
   @Override
@@ -38,13 +44,27 @@ public class DetailImpl extends ContextImpl implements MutableDetail {
     return this;
   }
 
+  @Override
+  public Integer getIntProperty(String key) {
+    final String property = getProperty(key);
+    if (property != null) {
+      try {
+        return Integer.valueOf(property);
+      } catch (final NumberFormatException e) {
+        return null;
+      }
+    } else
+      return null;
+  }
+
+  @Override
   public Stream<Entry<String, String>> getProperties() {
     return properties.entrySet().stream();
   }
 
   @Override
   public String getProperty(String key) {
-    return properties.get(key.toLowerCase());
+    return StringUtil.stripCell(properties.get(key.toLowerCase()));
   }
 
   @Override

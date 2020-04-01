@@ -28,24 +28,14 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.ConsoleAppender;
-import org.apache.logging.log4j.core.config.AppenderRef;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.config.builder.api.AppenderComponentBuilder;
-import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilder;
-import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFactory;
-import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 import io.fixprotocol.md.event.DocumentParser;
+import io.fixprotocol.md2orchestra.util.LogUtil;
 
 
 /**
  * Translates markdown to an Orchestra file
- * 
+ *
  * @author Don Mendelson
  *
  */
@@ -94,17 +84,17 @@ public class Md2Orchestra {
 
   /**
    * Construct and run Md2Orchestra with command line arguments
-   * 
+   *
    * <pre>
-usage: Md2Orchestra
--?,--help              display usage
--e,--eventlog <arg>    path of log file
--i,--input <arg>       path of markdown input file
--o,--output <arg>      path of output Orchestra file
--r,--reference <arg>   path of reference Orchestra file
--v,--verbose           verbose event log
+  usage: Md2Orchestra
+  -?,--help              display usage
+  -e,--eventlog <arg>    path of log file
+  -i,--input <arg>       path of markdown input file
+  -o,--output <arg>      path of output Orchestra file
+  -r,--reference <arg>   path of reference Orchestra file
+  -v,--verbose           verbose event log
    * </pre>
-   * 
+   *
    * @param args command line arguments
    */
   public static void main(String[] args) {
@@ -112,7 +102,7 @@ usage: Md2Orchestra
     try {
       mdl2Orchestra = mdl2Orchestra.parseArgs(args).build();
       mdl2Orchestra.generate();
-    } catch (Exception e) {
+    } catch (final Exception e) {
       if (mdl2Orchestra.logger != null) {
         mdl2Orchestra.logger.fatal("Md2Orchestra: exception occurred", e);
       } else {
@@ -122,7 +112,7 @@ usage: Md2Orchestra
   }
 
   private static void showHelp(Options options) {
-    HelpFormatter formatter = new HelpFormatter();
+    final HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("Md2Orchestra", options);
   }
 
@@ -153,33 +143,10 @@ usage: Md2Orchestra
     generate(inputFile, outputFile, referenceFile, logFile);
   }
 
-  private Logger initializeDefaultLogger(Level level) {
-    final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
-    final Configuration config = ctx.getConfiguration();
-    ConsoleAppender appender = ConsoleAppender.newBuilder().setName("Console").build();
-    config.addAppender(appender);
-    AppenderRef ref = AppenderRef.createAppenderRef("Console", level, null);
-    AppenderRef[] refs = new AppenderRef[] {ref};
-    LoggerConfig loggerConfig = LoggerConfig.createLogger(true, level, getClass().getName(), null, refs, null, config, null);
-    config.addLogger(getClass().getName(), loggerConfig);
-    ctx.updateLoggers();
-    return LogManager.getLogger(getClass());
-  }
 
-  private Logger initializeFileLogger(String fileName, Level level) {
-    ConfigurationBuilder<BuiltConfiguration> builder =
-        ConfigurationBuilderFactory.newConfigurationBuilder();
-    AppenderComponentBuilder appenderBuilder = builder.newAppender("file", "File").addAttribute("fileName", fileName);
-    builder.add(appenderBuilder);
-    builder.add(builder.newLogger(getClass().getCanonicalName(), level)
-        .add(builder.newAppenderRef("file")));
-    builder.add(builder.newRootLogger(level).add(builder.newAppenderRef("file")));
-    LoggerContext ctx = Configurator.initialize(builder.build());
-    return LogManager.getLogger(getClass());
-  }
 
   private Builder parseArgs(String[] args) throws ParseException {
-    Options options = new Options();
+    final Options options = new Options();
     options.addOption(Option.builder("i").desc("path of markdown input file").longOpt("input")
         .numberOfArgs(1).required().build());
     options.addOption(Option.builder("o").desc("path of output Orchestra file").longOpt("output")
@@ -192,10 +159,10 @@ usage: Md2Orchestra
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
-    DefaultParser parser = new DefaultParser();
+    final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
 
-    Builder builder = new Builder();
+    final Builder builder = new Builder();
 
     try {
       cmd = parser.parse(options, args);
@@ -221,7 +188,7 @@ usage: Md2Orchestra
       }
 
       return builder;
-    } catch (ParseException e) {
+    } catch (final ParseException e) {
       showHelp(options);
       throw e;
     }
@@ -231,15 +198,15 @@ usage: Md2Orchestra
       throws IOException {
     Objects.requireNonNull(inputFile, "Input File is missing");
     Objects.requireNonNull(outputFile, "Output File is missing");
-    
+
     final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFile != null) {     
-      logger = initializeFileLogger(logFile.getCanonicalPath(), level);
+    if (logFile != null) {
+      logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
     } else {
-      initializeDefaultLogger(level);
+      LogUtil.initializeDefaultLogger(level, getClass());
     }
-    
-    File outputDir = outputFile.getParentFile();
+
+    final File outputDir = outputFile.getParentFile();
     if (outputDir != null) {
       outputDir.mkdirs();
     }
@@ -253,7 +220,7 @@ usage: Md2Orchestra
       }
 
       generate(inputStream, outputStream, referenceStream);
-    } catch (JAXBException e) {
+    } catch (final JAXBException e) {
       logger.fatal("Md2Orchestra failed to process XML", e);
       throw new IOException(e);
     }
@@ -263,19 +230,19 @@ usage: Md2Orchestra
       throws JAXBException, IOException {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputStream, "Output stream is missing");
-    
+
     if (logger == null) {
-      logger = initializeDefaultLogger(Level.ERROR);
+      logger = LogUtil.initializeDefaultLogger(Level.ERROR, getClass());
     }
-    
-    RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
+
+    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
 
     if (referenceStream != null) {
-      RepositoryBuilder referenceRepositoryBuilder = new RepositoryBuilder(referenceStream);
+      final RepositoryBuilder referenceRepositoryBuilder = new RepositoryBuilder(referenceStream);
       outputRepositoryBuilder.setReference(referenceRepositoryBuilder);
     }
 
-    DocumentParser parser = new DocumentParser();
+    final DocumentParser parser = new DocumentParser();
     parser.parse(inputStream, outputRepositoryBuilder);
 
     outputRepositoryBuilder.marshal(outputStream);
