@@ -37,7 +37,7 @@ class Md2OrchestraTest {
   @Test
   void roundtrip() throws Exception {
     Md2Orchestra md2Orchestra = new Md2Orchestra();
-    md2Orchestra.generate(new FileInputStream("mit_2016.md"),
+    md2Orchestra.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.md"),
         new FileOutputStream("target/test/mit_2016.xml"), null);
   }
   

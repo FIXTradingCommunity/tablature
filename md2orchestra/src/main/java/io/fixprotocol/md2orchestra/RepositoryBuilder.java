@@ -798,7 +798,7 @@ class RepositoryBuilder implements Consumer<Context> {
     }
 
     final Integer length = detail.getIntProperty("implLength");
-    if (maxLength != null) {
+    if (length != null) {
       fieldRefType.setImplLength(length.shortValue());
     }
 

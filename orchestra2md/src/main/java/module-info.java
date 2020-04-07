@@ -5,8 +5,8 @@ module orchestra2md {
   
   requires md.grammar;
   requires java.xml.bind;
-  requires org.apache.logging.log4j;
-  requires repository;
+  requires orchestra.repository;
   requires commons.cli;
+  requires org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
  }
