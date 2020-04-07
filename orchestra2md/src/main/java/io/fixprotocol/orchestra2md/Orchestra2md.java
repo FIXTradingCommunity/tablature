@@ -445,24 +445,23 @@ public class Orchestra2md {
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final MutableDocumentation documentation = contextFactory.createDocumentation(1);
-    documentation.addKey(repository.getName());
+    final MutableDetailTable table = contextFactory.createDetailTable(1);
+    table.addKey(repository.getName());
     if (!repository.getName().toLowerCase().contains("version")) {
-      documentation.addKey(repository.getVersion());
+      table.addKey(repository.getVersion());
     }
-
+ 
     final StringBuilder sb = new StringBuilder();
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
+      MutableDetailProperties row = table.newRow();
       final String name = element.getName().getLocalPart();
       final String value = String.join(" ", element.getValue().getContent());
-      sb.append(String.format("*%s*: %s%n%n", name, value));
+      row.addProperty("term", name);
+      row.addProperty("value", value);
     }
-    final String text = sb.toString();
-    if (!text.isEmpty()) {
-      documentation.documentation(text);
-    }
-    documentWriter.write(documentation);
+
+    documentWriter.write((DetailTable)table);
   }
 
   private String getDocumentation(Annotation annotation) {

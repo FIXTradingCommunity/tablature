@@ -17,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -25,9 +26,9 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.namespace.QName;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.purl.dc.elements._1.ObjectFactory;
 import org.purl.dc.elements._1.SimpleLiteral;
 import org.purl.dc.terms.ElementOrRefinementContainer;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
@@ -72,6 +73,11 @@ class RepositoryBuilder implements Consumer<Context> {
   private final Logger logger = LogManager.getLogger(getClass());
   private RepositoryBuilder reference = null;
   private final Repository repository;
+  
+  // sorted array of valid Dublin Core Terms
+  private static final String[] dcTerms = new String[] {"contributor", "coverage", "creator", "date", "description",
+      "format", "identifier", "language", "publisher", "relation", "rights", "source",
+      "subject", "type"};
 
   public RepositoryBuilder() {
     this.repository = createRepository();
@@ -467,18 +473,26 @@ class RepositoryBuilder implements Consumer<Context> {
     if (version != null) {
       repository.setVersion(version);
     }
-    if (context instanceof Documentation) {
-      final Documentation detail = (Documentation) context;
+    if (context instanceof DetailTable) {
+      DetailTable detailTable = (DetailTable) context;
       final ElementOrRefinementContainer container = repository.getMetadata();
       final List<JAXBElement<SimpleLiteral>> literals = container.getAny();
-      final ObjectFactory objectFactory = new ObjectFactory();
-      final SimpleLiteral title = new SimpleLiteral();
-      title.getContent().add(name);
-      literals.add(objectFactory.createTitle(title));
 
-      final SimpleLiteral description = new SimpleLiteral();
-      description.getContent().add(detail.getDocumentation());
-      literals.add(objectFactory.createDescription(description));
+      detailTable.rows().get().forEach(detail -> {
+        final String term = detail.getProperty("term");
+        if (Arrays.binarySearch(dcTerms, term) == -1) {
+          logger.error("RepositoryBuilder invalid metadata term {}", term);
+        } else {
+          final String value = detail.getProperty("value");
+          final SimpleLiteral literal = new SimpleLiteral();
+          literal.getContent().add(value);
+
+          QName qname = new QName("http://purl.org/dc/elements/1.1/", term);
+          JAXBElement<SimpleLiteral> element =
+              new JAXBElement<SimpleLiteral>(qname, SimpleLiteral.class, null, literal);
+          literals.add(element);
+        }
+      });
     }
   }
 
