@@ -17,6 +17,12 @@ class Orchestra2mdTest {
   
   @Disabled
   @Test
+  void main() throws Exception {
+    Orchestra2md.main(new String[] {"-i", "mit_2016.xml", "-o", "target/test/mit_2016.md"});
+  }
+  
+  @Disabled
+  @Test
   void ep() throws Exception {
     Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("FixRepository50SP2EP247.xml").outputFile("target/test/FixRepository50SP2EP247.md").build();
     orchestra2md.generate();

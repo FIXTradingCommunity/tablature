@@ -538,7 +538,7 @@ public class Orchestra2md {
     if (logFile != null) {
       logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
     } else {
-      LogUtil.initializeDefaultLogger(level, getClass());
+      logger = LogUtil.initializeDefaultLogger(level, getClass());
     }
 
     final File outputDir = outputFile.getParentFile();

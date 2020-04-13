@@ -3,8 +3,10 @@ module md2orchestra {
 
   opens io.fixprotocol.md2orchestra;
 
+  requires java.xml.bind;
+  requires jaxb2.basics.runtime;
   requires md.grammar;
-  requires orchestra.repository;
+  requires repository;
   requires commons.cli;
   requires org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
