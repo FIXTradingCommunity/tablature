@@ -8,7 +8,10 @@ document
 
 block
 :
-	heading | paragraph | list | table
+	heading
+	| paragraph
+	| list
+	| table
 ;
 
 heading
@@ -23,7 +26,11 @@ paragraph
 
 paragraphline
 :
-	PARAGRAPHLINE (NEWLINE | EOF)
+	PARAGRAPHLINE
+	(
+		NEWLINE
+		| EOF
+	)
 ;
 
 list
@@ -33,7 +40,11 @@ list
 
 listline
 :
-	LISTLINE (NEWLINE | EOF)
+	LISTLINE
+	(
+		NEWLINE
+		| EOF
+	)
 ;
 
 table
@@ -48,7 +59,11 @@ tableheading
 
 tablerow
 :
-	cell+ PIPE? (NEWLINE | EOF)
+	cell+ PIPE?
+	(
+		NEWLINE
+		| EOF
+	)
 ;
 
 cell
@@ -68,12 +83,31 @@ HEADINGLINE
 
 LISTLINE
 :
-	WS* (BULLET | LISTNUMBER) WS+ LINECHAR*
+	WS*
+	(
+		BULLET
+		| LISTNUMBER
+	) WS+ LINECHAR*
 ;
 
 PARAGRAPHLINE
 :
 	INITIALPARACHAR LINECHAR*
+;
+
+TABLEDELIMINATORCELL
+:
+	PIPE? ':'? '-'+ ':'?
+;
+
+IGNORE_WS
+:
+	WS -> skip
+;
+
+NEWLINE
+:
+	'\r'? '\n'
 ;
 
 /* low priority since it can match empty string */
@@ -82,45 +116,70 @@ CELLTEXT
 	PIPE IGNORE_WS CELLCHAR*
 ;
 
-TABLEDELIMINATORCELL
-:
-	PIPE? ':'? '-'+ ':'?
-;
-
-NEWLINE
-:
-	'\r'? '\n'
-;
-
-IGNORE_WS
-:
-	WS -> skip
-;
-
+/* Unescaped pipe character; not preceded by backslash */
 PIPE
 :
+	{_input.LA(-1) != 92}?
+
 	'|'
 ;
 
-fragment WS
-: 
-	[  \t] 
+/* disallow unescaped pipe, newline, literal within a table cell */
+fragment
+CELLCHAR
+:
+	(
+		ESCAPEDCHAR
+		| ESCAPEDPIPE
+		| WS
+		| ALPHANUMERIC
+		| PUNCTUATION
+	)
 ;
 
-fragment LISTNUMBER
+/* Escaped punctuation, includes escaped backslash */
+fragment
+ESCAPEDCHAR
+:
+	'\\' [\\!"#$%&'()*+,\-./:;<=>?@[\]^_{|}~`]
+;
+
+fragment
+ALPHANUMERIC
+:
+	[a-zA-Z0-9\u0080-\uFFFF]
+;
+
+fragment
+PUNCTUATION
+:
+	[!"#$%&'()*+,\-./:;<=>?@[\]^_{}]
+;
+
+fragment
+ESCAPEDPIPE
+:
+	{_input.LA(-1) == 92}?
+
+	'|'
+;
+
+fragment
+WS
+:
+	[  \t]
+;
+
+fragment
+LISTNUMBER
 :
 	[1-9] [.)]
 ;
 
-fragment BULLET
+fragment
+BULLET
 :
 	[-+*]
-;
-
-fragment
-CELLCHAR
-:
-	~[|\n\r]
 ;
 
 fragment

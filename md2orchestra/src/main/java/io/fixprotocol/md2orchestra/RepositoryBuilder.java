@@ -707,10 +707,10 @@ class RepositoryBuilder implements Consumer<Context> {
 
     final FieldRefType fieldRefType = new FieldRefType();
 
-    FieldType fieldType;
+    FieldType fieldType = null;
     if (tag != -1) {
       fieldType = this.findFieldByTag(tag, scenario);
-    } else {
+    } else if (name != null) {
       fieldType = this.findFieldByName(name, scenario);
     }
 
@@ -735,26 +735,29 @@ class RepositoryBuilder implements Consumer<Context> {
 
     final List<FieldRuleType> rules = fieldRefType.getRule();
 
+    PresenceT presence = PresenceT.OPTIONAL;
     final String presenceString = detail.getProperty("presence");
-    final String[] presenceWords = presenceString.split("[ \t]");
-    PresenceT presence = null;
-    boolean inWhen = false;
     final List<String> whenWords = new ArrayList<>();
-    for (final String word : presenceWords) {
-      if (isPresence(word)) {
-        if (!whenWords.isEmpty()) {
-          final FieldRuleType rule = new FieldRuleType();
-          rule.setPresence(presence);
-          rule.setWhen(String.join(" ", whenWords));
-          rules.add(rule);
+
+    if (presenceString != null) {
+      final String[] presenceWords = presenceString.split("[ \t]");
+      boolean inWhen = false;
+      for (final String word : presenceWords) {
+        if (isPresence(word)) {
+          if (!whenWords.isEmpty()) {
+            final FieldRuleType rule = new FieldRuleType();
+            rule.setPresence(presence);
+            rule.setWhen(String.join(" ", whenWords));
+            rules.add(rule);
+          }
+          presence = stringToPresence(word);
+          inWhen = false;
+          whenWords.clear();
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          inWhen = true;
+        } else if (inWhen) {
+          whenWords.add(word);
         }
-        presence = stringToPresence(word);
-        inWhen = false;
-        whenWords.clear();
-      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-        inWhen = true;
-      } else if (inWhen) {
-        whenWords.add(word);
       }
     }
 

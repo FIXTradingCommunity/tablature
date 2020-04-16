@@ -62,3 +62,76 @@ Side of an order
 | Sell     | 2     |               |
 | Cross    | 8     | Cross (orders where counterparty is an exchange, valid for all messages *except* IOIs) 
 | Opposite | C     | "Opposite" (for use with multileg instruments) 
+
+## Message CrossOrderCancelReplaceRequest type t (53)
+
+Used to modify a cross order previously submitted using the New Order - Cross message. See Order Cancel Replace Request for details concerning message usage.
+
+| Name                       | Tag       | Presence                                                 |
+|----------------------------|-----------|----------------------------------------------------------|
+| StandardHeader             | component | required                                                 |
+| OrderID                    | 37        | optional                                                 |
+| OrderRequestID             | 2422      | optional                                                 |
+| CrossID                    | 548       | required                                                 |
+| OrigCrossID                | 551       | required                                                 |
+| HostCrossID                | 961       | optional                                                 |
+| CrossType                  | 549       | required                                                 |
+| CrossPrioritization        | 550       | required                                                 |
+| RootParties                | group     | optional                                                 |
+| SideCrossOrdModGrp         | group     | required                                                 |
+| Instrument                 | component | required                                                 |
+| UndInstrmtGrp              | group     | optional                                                 |
+| InstrmtLegGrp              | group     | optional                                                 |
+| SettlType                  | 63        | optional                                                 |
+| SettlDate                  | 64        | optional                                                 |
+| HandlInst                  | 21        | optional                                                 |
+| ExecInst                   | 18        | optional                                                 |
+| MinQty                     | 110       | optional                                                 |
+| MinQtyMethod               | 1822      | optional                                                 |
+| MatchIncrement             | 1089      | optional                                                 |
+| MaxPriceLevels             | 1090      | optional                                                 |
+| DisplayInstruction         | component | optional                                                 |
+| MaxFloor                   | 111       | optional                                                 |
+| MarketSegmentID            | 1300      | optional                                                 |
+| ExDestination              | 100       | optional                                                 |
+| ExDestinationIDSource      | 1133      | optional                                                 |
+| TrdgSesGrp                 | group     | optional                                                 |
+| ProcessCode                | 81        | optional                                                 |
+| PrevClosePx                | 140       | optional                                                 |
+| LocateReqd                 | 114       | optional                                                 |
+| TransactTime               | 60        | required                                                 |
+| TransBkdTime               | 483       | optional                                                 |
+| Stipulations               | group     | optional                                                 |
+| OrdType                    | 40        | required                                                 |
+| PriceType                  | 423       | optional                                                 |
+| Price                      | 44        | optional                                                 |
+| PriceProtectionScope       | 1092      | optional                                                 |
+| StopPx                     | 99        | required when OrdType == ^Stop \|\| OrdType == ^StopLimit |
+| TriggeringInstruction      | component | optional                                                 |
+| SpreadOrBenchmarkCurveData | component | optional                                                 |
+| YieldData                  | component | optional                                                 |
+| Currency                   | 15        | optional                                                 |
+| ComplianceID               | 376       | optional                                                 |
+| IOIID                      | 23        | optional                                                 |
+| QuoteID                    | 117       | optional                                                 |
+| TimeInForce                | 59        | optional                                                 |
+| EffectiveTime              | 168       | optional                                                 |
+| ExpireDate                 | 432       | optional                                                 |
+| ExpireTime                 | 126       | optional                                                 |
+| GTBookingInst              | 427       | optional                                                 |
+| ExposureDuration           | 1629      | optional                                                 |
+| ExposureDurationUnit       | 1916      | optional                                                 |
+| TradingCapacity            | 1815      | optional                                                 |
+| MaxShow                    | 210       | optional                                                 |
+| PegInstructions            | component | optional                                                 |
+| DiscretionInstructions     | component | optional                                                 |
+| TargetStrategy             | 847       | optional                                                 |
+| StrategyParametersGrp      | group     | optional                                                 |
+| TargetStrategyParameters   | 848       | optional                                                 |
+| ParticipationRate          | 849       | optional                                                 |
+| CancellationRights         | 480       | optional                                                 |
+| MoneyLaunderingStatus      | 481       | optional                                                 |
+| RegistID                   | 513       | optional                                                 |
+| Designation                | 494       | optional                                                 |
+| ThrottleInst               | 1685      | optional                                                 |
+| StandardTrailer            | component | required                                                 |
