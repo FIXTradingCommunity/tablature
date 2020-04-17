@@ -184,14 +184,14 @@ class RepositoryBuilder implements Consumer<Context> {
         codeType.setValue(codeValue);
         codeType.setId(BigInteger.valueOf(codeTag));
         codes.add(codeType);
-        final String documentation = detail.getProperty("documentation");
-        if (documentation != null && !documentation.isEmpty()) {
+        final String markdown = detail.getProperty("documentation");
+        if (markdown != null && !markdown.isEmpty()) {
           Annotation annotation = codeType.getAnnotation();
           if (annotation == null) {
             annotation = new Annotation();
             codeType.setAnnotation(annotation);
           }
-          addDocumentation(documentation, annotation);
+          addDocumentation(markdown, annotation);
         }
       });
     } else if (context instanceof Documentation) {
@@ -266,12 +266,12 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
-  private void addDocumentation(String doc, Annotation annotation) {
+  private void addDocumentation(String markdown, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final io.fixprotocol._2020.orchestra.repository.Documentation documentation =
         new io.fixprotocol._2020.orchestra.repository.Documentation();
     documentation.setContentType(MARKDOWN_MEDIA_TYPE);
-    documentation.getContent().add(doc);
+    documentation.getContent().add(markdown);
     elements.add(documentation);
   }
 
@@ -320,14 +320,14 @@ class RepositoryBuilder implements Consumer<Context> {
         field.setImplLength(length.shortValue());
       }
 
-      final String documentation = detail.getProperty("documentation");
-      if (documentation != null) {
+      final String markdown = detail.getProperty("documentation");
+      if (markdown != null) {
         Annotation annotation = field.getAnnotation();
         if (annotation == null) {
           annotation = new Annotation();
           field.setAnnotation(annotation);
         }
-        addDocumentation(documentation, annotation);
+        addDocumentation(markdown, annotation);
       }
       addFieldAndType(field);
     }

@@ -180,7 +180,7 @@ public class Orchestra2md {
         }
         final String when = rule.getWhen();
         if (when != null) {
-          presenceString.append(" " + WHEN_KEYWORD + " " + when + " ");
+          presenceString.append(" " + WHEN_KEYWORD + " " +  StringUtil.plainTextToMarkdown(when) + " ");
         }
       }
     }
@@ -475,7 +475,7 @@ public class Orchestra2md {
             if (d.getContentType().contentEquals(MARKDOWN_MEDIA_TYPE)) {
               return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
             } else
-              return d.getContent().stream().map(c -> StringUtil.stripWhitespace(c.toString()))
+              return d.getContent().stream().map(c -> StringUtil.plainTextToMarkdown(c.toString()))
                   .collect(Collectors.joining(" "));
           }).collect(Collectors.joining(" "));
     }
