@@ -42,7 +42,7 @@ import io.fixprotocol.md2orchestra.util.LogUtil;
 public class Md2Orchestra {
 
   public static class Builder {
-    public boolean verbose;
+    private boolean verbose;
     private String inputFile;
     private String logFile;
     private String outputFile;
