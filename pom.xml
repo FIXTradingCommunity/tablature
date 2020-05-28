@@ -2,8 +2,8 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>io.fixprotocol.md2spec</groupId>
-	<artifactId>md2spec-parent</artifactId>
+	<groupId>io.fixprotocol.tablature</groupId>
+	<artifactId>tablature-parent</artifactId>
 	<version>0.1.0</version>
 	<packaging>pom</packaging>
 	<prerequisites>
@@ -29,12 +29,12 @@
 		</developer>
 	</developers>
 	<scm>
-		<developerConnection>scm:git:ssh://git@github.com/FIXTradingCommunity/md2spec.git</developerConnection>
-		<url>https://github.com/FIXTradingCommunity/md2spec</url>
+		<developerConnection>scm:git:ssh://git@github.com/FIXTradingCommunity/tablature.git</developerConnection>
+		<url>https://github.com/FIXTradingCommunity/tablature</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub</system>
-		<url>http://github.com/FIXTradingCommunity/md2spec/issues</url>
+		<url>http://github.com/FIXTradingCommunity/tablature/issues</url>
 	</issueManagement>
 	<distributionManagement>
 		<snapshotRepository>
@@ -59,7 +59,7 @@
 		<commons-cli.version>1.4</commons-cli.version>
 		<java.version>11</java.version>
 		<junit.version>5.6.1</junit.version>
-		<log4j.version>2.13.1</log4j.version>
+		<log4j.version>2.13.3</log4j.version>
 		<orchestra.version>1.6.1-SNAPSHOT</orchestra.version>
 		<stringtemplate.version>4.1</stringtemplate.version>
 	</properties>

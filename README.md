@@ -1,10 +1,12 @@
-# md2spec
+# tablature
+
+*(formerly md2spec)*
 
 Converts a markdown document to a specification and documents a specification as markdown. Roundtrip is thus supported, allowing a user to update a specification iteratively with an ordinary text editor.
 
 ## FIX Orchestra
 
-The intial target of md2spec is FIX Orchestra, "machine readable rules of engagement". 
+The intial target of tablature is FIX Orchestra, "machine readable rules of engagement". 
 
 See these projects for the Orchestra standard and related resources:
 
@@ -16,6 +18,8 @@ See these projects for the Orchestra standard and related resources:
 ### md2orchestra
 
 Translates a markdown document to an Orchestra repository file. Currently, only message structures are supported. Future enhancments may also include workflow.
+
+See the [User Guide](https://github.com/FIXTradingCommunity/tablature/wiki/md2orchestra-User-Guide)
 
 ### orchestra2md
 
@@ -29,7 +33,7 @@ A library to parse and write markdown files. Generic data structures act as an i
 This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including OpenJDK.
 
 ## Build
-The project is built with Maven version 3.0 or later. 
+The project is built with Maven version 3.0 or later. See [Building this Project](https://github.com/FIXTradingCommunity/tablature/wiki/Building-this-Project)
 
 ## License
 © Copyright 2020 FIX Protocol Limited

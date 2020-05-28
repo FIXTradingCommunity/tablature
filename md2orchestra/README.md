@@ -25,7 +25,7 @@ There are several variations of markdown in use. This utility follows the [GitHu
 
 ## User Guide
 
-See wiki page [md2orchestra User Guide](https://github.com/FIXTradingCommunity/md2spec/wiki/md2orchestra-User-Guide)
+See wiki page [md2orchestra User Guide](https://github.com/FIXTradingCommunity/tablature/wiki/md2orchestra-User-Guide)
 
 ## Running md2orchestra
 

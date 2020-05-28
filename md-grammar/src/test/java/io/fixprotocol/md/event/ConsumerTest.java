@@ -38,7 +38,7 @@ public class ConsumerTest {
     };
 
 
-    InputStream inputStream = new FileInputStream(fileName);
+    InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
     DocumentParser parser = new DocumentParser();
     parser.parse(inputStream, contextConsumer);
   }
