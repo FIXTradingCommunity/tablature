@@ -5,4 +5,5 @@ module md.grammar {
 
   requires org.apache.logging.log4j;
   requires org.antlr.antlr4.runtime;
+  requires antlr4;
 }
