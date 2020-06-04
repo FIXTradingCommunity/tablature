@@ -36,9 +36,12 @@ import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
+import io.fixprotocol._2020.orchestra.repository.MessageType.Responses;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.Repository;
+import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentWriter;
@@ -71,10 +74,10 @@ public class Orchestra2md {
     }
   }
 
+  public static final String ASSIGN_KEYWORD = "assign";
+
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
-
-  public static final String ASSIGN_KEYWORD = "assign";
 
   private static final String DEFAULT_SCENARIO = "base";
   private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
@@ -180,7 +183,8 @@ public class Orchestra2md {
         }
         final String when = rule.getWhen();
         if (when != null) {
-          presenceString.append(" " + WHEN_KEYWORD + " " +  StringUtil.plainTextToMarkdown(when) + " ");
+          presenceString
+              .append(" " + WHEN_KEYWORD + " " + StringUtil.plainTextToMarkdown(when) + " ");
         }
       }
     }
@@ -275,6 +279,33 @@ public class Orchestra2md {
     return null;
   }
 
+  private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
+      throws IOException {
+    final MutableDetailTable table = contextFactory.createDetailTable(3);
+    table.documentation(getDocumentation(codeset.getAnnotation()));
+    table.addPair("Codeset", codeset.getName());
+    final String scenario = codeset.getScenario();
+    if (!scenario.equals(DEFAULT_SCENARIO)) {
+      table.addPair("scenario", scenario);
+    }
+    table.addPair("type", codeset.getType());
+    table.addKey(String.format("(%d)", codeset.getId().intValue()));
+    for (final CodeType code : codeset.getCode()) {
+      final MutableDetailProperties row = table.newRow();
+      final String name = code.getName();
+      row.addProperty("name", name);
+      row.addProperty("value", code.getValue());
+      final BigInteger id = code.getId();
+      if (id != null) {
+        row.addProperty("id", id.toString());
+      } else {
+        logger.warn("Orchestra2md unknown code id; name={} scenario={}", name, scenario);
+      }
+      row.addProperty("documentation", getDocumentation(code.getAnnotation()));
+    }
+    documentWriter.write((DetailTable) table);
+  }
+
   private void generateCodesets(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet().stream()
@@ -285,30 +316,23 @@ public class Orchestra2md {
       documentWriter.write(documentation);
     }
     for (final CodeSetType codeset : codesets) {
-      final MutableDetailTable table = contextFactory.createDetailTable(3);
-      table.documentation(getDocumentation(codeset.getAnnotation()));
-      table.addPair("Codeset", codeset.getName());
-      final String scenario = codeset.getScenario();
-      if (!scenario.equals(DEFAULT_SCENARIO)) {
-        table.addPair("scenario", scenario);
-      }
-      table.addPair("type", codeset.getType());
-      table.addKey(String.format("(%d)", codeset.getId().intValue()));
-      for (final CodeType code : codeset.getCode()) {
-        final MutableDetailProperties row = table.newRow();
-        final String name = code.getName();
-        row.addProperty("name", name);
-        row.addProperty("value", code.getValue());
-        final BigInteger id = code.getId();
-        if (id != null) {
-          row.addProperty("id", id.toString());
-        } else {
-          logger.warn("Orchestra2md unknown code id; name={} scenario={}", name, scenario);
-        }
-        row.addProperty("documentation", getDocumentation(code.getAnnotation()));
-      }
-      documentWriter.write((DetailTable) table);
+      generateCodeset(documentWriter, codeset);
     }
+  }
+
+  private void generateComponent(Repository repository, DocumentWriter documentWriter,
+      final ComponentType component) throws IOException {
+    final MutableDetailTable table = contextFactory.createDetailTable(3);
+    table.addPair("Component", component.getName());
+    final String scenario = component.getScenario();
+    if (!scenario.equals(DEFAULT_SCENARIO)) {
+      table.addPair("scenario", scenario);
+    }
+    table.addKey(String.format("(%d)", component.getId().intValue()));
+    table.documentation(getDocumentation(component.getAnnotation()));
+    final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
+    addMembers(table, repository, members);
+    documentWriter.write((DetailTable) table);
   }
 
   private void generateComponents(Repository repository, DocumentWriter documentWriter)
@@ -321,17 +345,7 @@ public class Orchestra2md {
       documentWriter.write(documentation);
     }
     for (final ComponentType component : components) {
-      final MutableDetailTable table = contextFactory.createDetailTable(3);
-      table.addPair("Component", component.getName());
-      final String scenario = component.getScenario();
-      if (!scenario.equals(DEFAULT_SCENARIO)) {
-        table.addPair("scenario", scenario);
-      }
-      table.addKey(String.format("(%d)", component.getId().intValue()));
-      table.documentation(getDocumentation(component.getAnnotation()));
-      final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
-      addMembers(table, repository, members);
-      documentWriter.write((DetailTable) table);
+      generateComponent(repository, documentWriter, component);
     }
   }
 
@@ -387,6 +401,29 @@ public class Orchestra2md {
     documentWriter.write((DetailTable) table);
   }
 
+  private void generateGroup(Repository repository, DocumentWriter documentWriter,
+      final GroupType group) throws IOException {
+    final MutableDetailTable table = contextFactory.createDetailTable(3);
+    final String name = group.getName();
+    table.addPair("Group", name);
+    final String scenario = group.getScenario();
+    if (!scenario.equals(DEFAULT_SCENARIO)) {
+      table.addPair("scenario", scenario);
+    }
+    table.addKey(String.format("(%d)", group.getId().intValue()));
+    table.documentation(getDocumentation(group.getAnnotation()));
+    final FieldRefType numInGroup = group.getNumInGroup();
+    if (numInGroup != null) {
+      final MutableDetailProperties row = table.newRow();
+      addFieldRef(repository, numInGroup, row);
+    } else {
+      logger.warn("Orchestra2md unknown numInGroup for group; name={} scenario={}", name, scenario);
+    }
+    final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
+    addMembers(table, repository, members);
+    documentWriter.write((DetailTable) table);
+  }
+
   private void generateGroups(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     final List<GroupType> groups = repository.getGroups().getGroup().stream()
@@ -397,25 +434,36 @@ public class Orchestra2md {
       documentWriter.write(documentation);
     }
     for (final GroupType group : groups) {
+      generateGroup(repository, documentWriter, group);
+    }
+  }
+
+  private void generateMessageResponses(Repository repository, DocumentWriter documentWriter,
+      MessageType message) throws IOException {
+    final Responses responses = message.getResponses();
+    if (responses != null) {
       final MutableDetailTable table = contextFactory.createDetailTable(3);
-      final String name = group.getName();
-      table.addPair("Group", name);
-      final String scenario = group.getScenario();
+      table.addKey("Responses:");
+      table.addPair("message", message.getName());
+      final String scenario = message.getScenario();
       if (!scenario.equals(DEFAULT_SCENARIO)) {
         table.addPair("scenario", scenario);
       }
-      table.addKey(String.format("(%d)", group.getId().intValue()));
-      table.documentation(getDocumentation(group.getAnnotation()));
-      final FieldRefType numInGroup = group.getNumInGroup();
-      if (numInGroup != null) {
-        final MutableDetailProperties row = table.newRow();
-        addFieldRef(repository, numInGroup, row);
-      } else {
-        logger.warn("Orchestra2md unknown numInGroup for group; name={} scenario={}", name,
-            scenario);
+      table.addKey(String.format("(%d)", message.getId().intValue()));
+
+      final List<ResponseType> responseList = responses.getResponse();
+      for (final ResponseType response : responseList) {
+        final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
+        for (final Object responseRef : responseRefs) {
+          if (responseRef instanceof MessageRefType) {
+            final MessageRefType messageRef = (MessageRefType) responseRef;
+            final MutableDetailProperties row = table.newRow();
+            row.addProperty("Message", messageRef.getName());
+            row.addProperty("Scenario", messageRef.getScenario());
+            row.addProperty("When", response.getWhen());
+          }
+        }
       }
-      final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
-      addMembers(table, repository, members);
       documentWriter.write((DetailTable) table);
     }
   }
@@ -425,22 +473,28 @@ public class Orchestra2md {
     final List<MessageType> messages = repository.getMessages().getMessage().stream()
         .sorted(Comparator.comparing(MessageType::getName)).collect(Collectors.toList());
     for (final MessageType message : messages) {
-      final MutableDetailTable table = contextFactory.createDetailTable(2);
-      table.addPair("Message", message.getName());
-      final String scenario = message.getScenario();
-      if (!scenario.equals(DEFAULT_SCENARIO)) {
-        table.addPair("scenario", scenario);
-      }
-      final String msgType = message.getMsgType();
-      if (msgType != null) {
-        table.addPair("type", msgType);
-      }
-      table.addKey(String.format("(%d)", message.getId().intValue()));
-      table.documentation(getDocumentation(message.getAnnotation()));
-      final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
-      addMembers(table, repository, members);
-      documentWriter.write((DetailTable) table);
+      generateMessageStructure(repository, documentWriter, message);
+      generateMessageResponses(repository, documentWriter, message);
     }
+  }
+
+  private void generateMessageStructure(Repository repository, DocumentWriter documentWriter,
+      final MessageType message) throws IOException {
+    final MutableDetailTable table = contextFactory.createDetailTable(2);
+    table.addPair("Message", message.getName());
+    final String scenario = message.getScenario();
+    if (!scenario.equals(DEFAULT_SCENARIO)) {
+      table.addPair("scenario", scenario);
+    }
+    final String msgType = message.getMsgType();
+    if (msgType != null) {
+      table.addPair("type", msgType);
+    }
+    table.addKey(String.format("(%d)", message.getId().intValue()));
+    table.documentation(getDocumentation(message.getAnnotation()));
+    final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
+    addMembers(table, repository, members);
+    documentWriter.write((DetailTable) table);
   }
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
@@ -450,7 +504,7 @@ public class Orchestra2md {
     if (!repository.getName().toLowerCase().contains("version")) {
       table.addKey(repository.getVersion());
     }
- 
+
     final StringBuilder sb = new StringBuilder();
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
@@ -461,7 +515,7 @@ public class Orchestra2md {
       row.addProperty("value", value);
     }
 
-    documentWriter.write((DetailTable)table);
+    documentWriter.write((DetailTable) table);
   }
 
   private String getDocumentation(Annotation annotation) {
@@ -550,14 +604,14 @@ public class Orchestra2md {
         OutputStreamWriter outputWriter =
             new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8)) {
       generate(inputStream, outputWriter);
-    } 
+    }
   }
 
   void generate(InputStream inputStream, OutputStreamWriter outputWriter) throws Exception {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputWriter, "Output writer is missing");
-    
-    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)){
+
+    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       Repository repository = unmarshal(inputStream);
       generateRepositoryMetadata(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
@@ -570,7 +624,7 @@ public class Orchestra2md {
       logger.fatal("Orchestra2md failed to parse XML", e);
       throw new IOException(e);
     } catch (Exception e1) {
-      logger.fatal("Orchestra2md IO error", e1);
+      logger.fatal("Orchestra2md error", e1);
       throw e1;
     }
   }
