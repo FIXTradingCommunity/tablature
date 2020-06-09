@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 import io.fixprotocol.md.event.Context;
@@ -27,7 +28,7 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
     @Override
     public void addProperty(String key, String value) {
-      properties.put(key.toLowerCase(), value);
+      properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(), value);
     }
 
     @Override
@@ -55,7 +56,7 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
     @Override
     public String getProperty(String key) {
-      return StringUtil.stripCell(properties.get(key.toLowerCase()));
+      return StringUtil.stripCell(properties.get(Objects.requireNonNull(key, "Missing property key").toLowerCase()));
     }
 
     @Override

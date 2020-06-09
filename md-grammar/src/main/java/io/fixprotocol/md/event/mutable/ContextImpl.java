@@ -62,7 +62,7 @@ public class ContextImpl implements MutableContext {
    */
   @Override
   public String getKeyValue(String key) {
-    for (int i = 2; i < keys.size() - 1; i++) {
+    for (int i = 0; i < keys.size() - 1; i++) {
       if (keys.get(i).equalsIgnoreCase(key)) {
         return keys.get(i + 1);
       }

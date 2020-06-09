@@ -1,12 +1,15 @@
 package io.fixprotocol.orchestra2md.util;
 
 public final class StringUtil {
-  
+
   /**
    * Translate plaintext to markdown
    * 
-   * Escape these characters: pipe
-   * Pass through XML/HTML entity references
+   * <ul>
+   * <li>Escape these characters: pipe '|'</li>
+   * <li>Convert internal line break to a space</li>
+   * <li>Pass through XML/HTML entity references/li>
+   * </ul>
    * 
    * @param text plaintext
    * @return a markdown string
@@ -14,12 +17,20 @@ public final class StringUtil {
   public static String plainTextToMarkdown(String text) {
     final StringBuilder sb = new StringBuilder(text.length());
     final String stripped = text.strip();
-    for (int i=0; i<stripped.length(); i++) {
+    for (int i = 0; i < stripped.length(); i++) {
       char c = stripped.charAt(i);
-      if (c == '|') {
-        sb.append('\\');
+      switch (c) {
+        case '|':
+          sb.append('\\');
+          sb.append(c);
+          break;
+        case '\n':
+          sb.append(' ');
+          break;
+        default:
+          sb.append(c);
       }
-      sb.append(c);
+
     }
     return sb.toString();
   }

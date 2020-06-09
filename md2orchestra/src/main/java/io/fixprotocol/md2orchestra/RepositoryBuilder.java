@@ -48,10 +48,12 @@ import io.fixprotocol._2020.orchestra.repository.Fields;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.Groups;
+import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.Repository;
+import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.Detail;
 import io.fixprotocol.md.event.DetailProperties;
@@ -60,24 +62,24 @@ import io.fixprotocol.md.event.Documentation;
 
 class RepositoryBuilder implements Consumer<Context> {
 
-  private static final String DEFAULT_CODE_TYPE = "char";
-  private static final String DEFAULT_SCENARIO = "base";
-  private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
-  private static final int NAME_POSITION = 1;
-
+  public static final String ASSIGN_KEYWORD = "assign";
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
-  public static final String ASSIGN_KEYWORD = "assign";
+  // sorted array of valid Dublin Core Terms
+  private static final String[] dcTerms =
+      new String[] {"contributor", "coverage", "creator", "date", "description", "format",
+          "identifier", "language", "publisher", "relation", "rights", "source", "subject", "type"};
+  private static final String DEFAULT_CODE_TYPE = "char";
 
+  private static final String DEFAULT_SCENARIO = "base";
+  private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
+
+  private static final int NAME_POSITION = 1;
   private int id = 10000;
   private final Logger logger = LogManager.getLogger(getClass());
   private RepositoryBuilder reference = null;
+
   private final Repository repository;
-  
-  // sorted array of valid Dublin Core Terms
-  private static final String[] dcTerms = new String[] {"contributor", "coverage", "creator", "date", "description",
-      "format", "identifier", "language", "publisher", "relation", "rights", "source",
-      "subject", "type"};
 
   public RepositoryBuilder() {
     this.repository = createRepository();
@@ -114,7 +116,10 @@ class RepositoryBuilder implements Consumer<Context> {
           addGroup(context);
           break;
         case "message":
-          addMessage(context);
+          addMessageMembers(context);
+          break;
+        case "responses":
+          addMessageResponses(context);
           break;
         default:
           if (context.getLevel() == 1) {
@@ -412,18 +417,44 @@ class RepositoryBuilder implements Consumer<Context> {
     });
   }
 
-  private void addMessage(Context context) {
+  private void addMessageMembers(Context context) {
     if (context instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) context;
       final String name = detailTable.getKey(NAME_POSITION);
       int tag = tagToInt(detailTable.getKeyValue("tag"));
       final String scenario = scenarioOrDefault(detailTable.getKeyValue("scenario"));
       String msgType = detailTable.getKeyValue("type");
+      MessageType message = getOrAddMessage(name, scenario, tag, msgType);
 
-      final MessageType message = new MessageType();
+      final MessageType.Structure structure = new MessageType.Structure();
+      message.setStructure(structure);
+      final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
+      addMembers(detailTable.rows().get(), members);
+    } else if (context instanceof Documentation) {
+      final Documentation detail = (Documentation) context;
+      final String name = detail.getKey(NAME_POSITION);
+      final String scenario = scenarioOrDefault(detail.getKeyValue("scenario"));
+      final String scenarioOrDefault = scenarioOrDefault(scenario);
+      final MessageType message = this.findMessageByName(name, scenarioOrDefault);
+      if (message != null) {
+        Annotation annotation = message.getAnnotation();
+        if (annotation == null) {
+          annotation = new Annotation();
+          message.setAnnotation(annotation);
+        }
+        updateDocumentation(detail.getDocumentation(), annotation);
+      }
+    }
+  }
+
+  private MessageType getOrAddMessage(String name, String scenario, int tag, String msgType) {
+    final String scenarioOrDefault = scenarioOrDefault(scenario);
+    MessageType message = this.findMessageByName(name, scenarioOrDefault);
+    if (message == null) {
+      message = new MessageType();
       MessageType refMessage = null;
       if (reference != null) {
-        refMessage = reference.findMessageByName(name, scenario);
+        refMessage = reference.findMessageByName(name, scenarioOrDefault);
       }
 
       if (tag == -1 && refMessage != null) {
@@ -434,8 +465,8 @@ class RepositoryBuilder implements Consumer<Context> {
       }
       message.setId(BigInteger.valueOf(tag));
       message.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenario)) {
-        message.setScenario(scenario);
+      if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+        message.setScenario(scenarioOrDefault);
       }
       if (msgType == null && refMessage != null) {
         msgType = refMessage.getMsgType();
@@ -443,26 +474,50 @@ class RepositoryBuilder implements Consumer<Context> {
       if (msgType != null) {
         message.setMsgType(msgType);
       }
-      final MessageType.Structure structure = new MessageType.Structure();
-      message.setStructure(structure);
-      final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
-      addMembers(detailTable.rows().get(), members);
-      repository.getMessages().getMessage().add(message);
-
-    } else if (context instanceof Documentation) {
-      final Documentation detail = (Documentation) context;
-      final String name = detail.getKey(NAME_POSITION);
-      final String scenario = scenarioOrDefault(detail.getKeyValue("scenario"));
-
-      final MessageType message = this.findMessageByName(name, scenario);
-      if (message != null) {
-        Annotation annotation = message.getAnnotation();
-        if (annotation == null) {
-          annotation = new Annotation();
-          message.setAnnotation(annotation);
-        }
-        updateDocumentation(detail.getDocumentation(), annotation);
+      if (!repository.getMessages().getMessage().contains(message)) {
+        repository.getMessages().getMessage().add(message);
       }
+    }
+    return message;
+  }
+
+  private void addMessageResponses(Context context) {
+    if (context instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) context;
+      final String name = detailTable.getKeyValue("message");
+      int tag = tagToInt(detailTable.getKeyValue("tag"));
+      final String scenario = scenarioOrDefault(detailTable.getKeyValue("scenario"));
+      String msgType = detailTable.getKeyValue("type");
+      MessageType message = getOrAddMessage(name, scenario, tag, msgType);
+      MessageType.Responses responses = new MessageType.Responses();
+      message.setResponses(responses);
+      List<ResponseType> responseList = responses.getResponse();
+      detailTable.rows().get().forEach(detail -> {
+        ResponseType response = new ResponseType();
+        final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
+        MessageRefType messageRef = new MessageRefType();
+        messageRef.setName(detail.getProperty("name"));
+
+        final String refScenario = detail.getProperty("scenario");
+        if (!DEFAULT_SCENARIO.equals(refScenario) && !refScenario.isBlank()) {
+          messageRef.setScenario(refScenario);
+        }
+        
+        messageRef.setMsgType(detail.getProperty("msgType"));
+        response.setWhen(detail.getProperty("when"));
+        final String markdown = detail.getProperty("documentation");
+        if (markdown != null) {
+          Annotation annotation = response.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+            response.setAnnotation(annotation);
+          }
+          addDocumentation(markdown, annotation);
+        }
+        responseRefs.add(messageRef);
+        responseList.add(response);
+      });
+
     }
   }
 
@@ -1036,7 +1091,7 @@ class RepositoryBuilder implements Consumer<Context> {
   MessageType findMessageByName(String name, String scenario) {
     final List<MessageType> messages = repository.getMessages().getMessage();
     for (final MessageType message : messages) {
-      if (message.getName().equals(name) && message.getScenario().equals(scenario)) {
+      if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
         return message;
       }
     }

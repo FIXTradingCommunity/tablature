@@ -12,6 +12,7 @@ block
 	| paragraph
 	| list
 	| table
+	| NEWLINE
 ;
 
 heading

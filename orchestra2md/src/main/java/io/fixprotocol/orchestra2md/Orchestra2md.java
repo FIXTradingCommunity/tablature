@@ -443,13 +443,12 @@ public class Orchestra2md {
     final Responses responses = message.getResponses();
     if (responses != null) {
       final MutableDetailTable table = contextFactory.createDetailTable(3);
-      table.addKey("Responses:");
+      table.addKey("Responses");
       table.addPair("message", message.getName());
       final String scenario = message.getScenario();
       if (!scenario.equals(DEFAULT_SCENARIO)) {
         table.addPair("scenario", scenario);
       }
-      table.addKey(String.format("(%d)", message.getId().intValue()));
 
       final List<ResponseType> responseList = responses.getResponse();
       for (final ResponseType response : responseList) {
@@ -458,9 +457,17 @@ public class Orchestra2md {
           if (responseRef instanceof MessageRefType) {
             final MessageRefType messageRef = (MessageRefType) responseRef;
             final MutableDetailProperties row = table.newRow();
-            row.addProperty("Message", messageRef.getName());
-            row.addProperty("Scenario", messageRef.getScenario());
-            row.addProperty("When", response.getWhen());
+            row.addProperty("name", messageRef.getName());
+            final String refScenario = messageRef.getScenario();
+            if (!refScenario.equals(DEFAULT_SCENARIO)) {
+              row.addProperty("scenario", refScenario);
+            }
+            final String msgType = messageRef.getMsgType();
+            if (msgType != null) {
+              row.addProperty("msgType", msgType);
+            }
+            row.addProperty("when", response.getWhen());
+            row.addProperty("documentation", getDocumentation(response.getAnnotation()));
           }
         }
       }
