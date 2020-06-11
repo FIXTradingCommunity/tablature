@@ -483,41 +483,47 @@ class RepositoryBuilder implements Consumer<Context> {
 
   private void addMessageResponses(Context context) {
     if (context instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) context;
-      final String name = detailTable.getKeyValue("message");
-      int tag = tagToInt(detailTable.getKeyValue("tag"));
-      final String scenario = scenarioOrDefault(detailTable.getKeyValue("scenario"));
-      String msgType = detailTable.getKeyValue("type");
-      MessageType message = getOrAddMessage(name, scenario, tag, msgType);
-      MessageType.Responses responses = new MessageType.Responses();
-      message.setResponses(responses);
-      List<ResponseType> responseList = responses.getResponse();
-      detailTable.rows().get().forEach(detail -> {
-        ResponseType response = new ResponseType();
-        final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
-        MessageRefType messageRef = new MessageRefType();
-        messageRef.setName(detail.getProperty("name"));
+      Context messageContext = context.getParent();
+      if (messageContext != null) {
+        String messageName = messageContext.getKeyValue("message");
+        int tag = tagToInt(messageContext.getKeyValue("tag"));
+        String scenario = scenarioOrDefault(messageContext.getKeyValue("scenario"));
+        String msgType = messageContext.getKeyValue("type");
 
-        final String refScenario = detail.getProperty("scenario");
-        if (!DEFAULT_SCENARIO.equals(refScenario) && !refScenario.isBlank()) {
-          messageRef.setScenario(refScenario);
-        }
-        
-        messageRef.setMsgType(detail.getProperty("msgType"));
-        response.setWhen(detail.getProperty("when"));
-        final String markdown = detail.getProperty("documentation");
-        if (markdown != null) {
-          Annotation annotation = response.getAnnotation();
-          if (annotation == null) {
-            annotation = new Annotation();
-            response.setAnnotation(annotation);
+        MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
+        MessageType.Responses responses = new MessageType.Responses();
+        message.setResponses(responses);
+        List<ResponseType> responseList = responses.getResponse();
+        final DetailTable detailTable = (DetailTable) context;
+        detailTable.rows().get().forEach(detail -> {
+          ResponseType response = new ResponseType();
+          final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
+          MessageRefType messageRef = new MessageRefType();
+          messageRef.setName(detail.getProperty("name"));
+
+          final String refScenario = detail.getProperty("scenario");
+          if (!DEFAULT_SCENARIO.equals(refScenario) && !refScenario.isBlank()) {
+            messageRef.setScenario(refScenario);
           }
-          addDocumentation(markdown, annotation);
-        }
-        responseRefs.add(messageRef);
-        responseList.add(response);
-      });
 
+          messageRef.setMsgType(detail.getProperty("msgType"));
+          response.setWhen(detail.getProperty("when"));
+          final String markdown = detail.getProperty("documentation");
+          if (markdown != null) {
+            Annotation annotation = response.getAnnotation();
+            if (annotation == null) {
+              annotation = new Annotation();
+              response.setAnnotation(annotation);
+            }
+            addDocumentation(markdown, annotation);
+          }
+          responseRefs.add(messageRef);
+          responseList.add(response);
+        });
+      } else {
+        logger.error("RepositoryBuilder unknown message for responses; keys={}",
+            String.join(" ", context.getKeys()));
+      }
     }
   }
 
@@ -544,7 +550,7 @@ class RepositoryBuilder implements Consumer<Context> {
 
           QName qname = new QName("http://purl.org/dc/elements/1.1/", term);
           JAXBElement<SimpleLiteral> element =
-              new JAXBElement<SimpleLiteral>(qname, SimpleLiteral.class, null, literal);
+                  new JAXBElement<>(qname, SimpleLiteral.class, null, literal);
           literals.add(element);
         }
       });
@@ -830,7 +836,7 @@ class RepositoryBuilder implements Consumer<Context> {
       final int keywordPos = values.indexOf(ASSIGN_KEYWORD);
       if (keywordPos != -1) {
         fieldRefType.setAssign(values.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
-      } else if (values != null && !values.isEmpty()) {
+      } else {
         if (presence == PresenceT.CONSTANT) {
           fieldRefType.setValue(values);
           if (!DEFAULT_SCENARIO.equals(scenario)) {

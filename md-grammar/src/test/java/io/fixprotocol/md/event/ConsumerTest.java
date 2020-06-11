@@ -1,6 +1,5 @@
 package io.fixprotocol.md.event;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.function.Consumer;
@@ -22,7 +21,7 @@ public class ConsumerTest {
           System.out.format("Detail context=%s level=%d%n", keys.length > 0 ? keys[0] : "None",
               detail.getLevel());
           detail.getProperties().forEach(property -> System.out.format("Property key=%s value=%s%n",
-              property.getKey(), property.getValue()));
+              property.getKey(), property.getValue()));        
         } else if (context instanceof Documentation) {
           Documentation documentation = (Documentation) context;
           final String[] keys = documentation.getKeys();
@@ -33,6 +32,12 @@ public class ConsumerTest {
           final String[] keys = context.getKeys();
           System.out.format("Context=%s level=%d%n", keys.length > 0 ? keys[0] : "None",
               context.getLevel());
+        }
+        Context parent = context.getParent();
+        if (parent != null) {
+          final String[] parentKeys = parent.getKeys();
+          System.out.format("Parent=%s level=%d%n", parentKeys.length > 0 ? parentKeys[0] : "None",
+              parent.getLevel());
         }
       }
     };

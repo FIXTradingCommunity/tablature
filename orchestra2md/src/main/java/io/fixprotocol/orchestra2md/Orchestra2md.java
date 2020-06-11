@@ -443,12 +443,8 @@ public class Orchestra2md {
     final Responses responses = message.getResponses();
     if (responses != null) {
       final MutableDetailTable table = contextFactory.createDetailTable(3);
+      // md2orchestra should be able to get message identifiers from higher level message header
       table.addKey("Responses");
-      table.addPair("message", message.getName());
-      final String scenario = message.getScenario();
-      if (!scenario.equals(DEFAULT_SCENARIO)) {
-        table.addPair("scenario", scenario);
-      }
 
       final List<ResponseType> responseList = responses.getResponse();
       for (final ResponseType response : responseList) {

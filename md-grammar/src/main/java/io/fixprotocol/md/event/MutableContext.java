@@ -19,4 +19,10 @@ public interface MutableContext extends Context {
     addKey(key);
     addKey(value);
   }
+  
+  /**
+   * Set a parent Context to build a hierarchy
+   * @param parent parent Context
+   */
+  void setParent(Context parent);
 }

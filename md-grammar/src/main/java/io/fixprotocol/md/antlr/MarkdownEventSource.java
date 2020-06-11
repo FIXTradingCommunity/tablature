@@ -13,7 +13,9 @@
  */
 package io.fixprotocol.md.antlr;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -36,6 +38,7 @@ import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.Documentation;
+import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.mutable.ContextImpl;
 import io.fixprotocol.md.event.mutable.DetailImpl;
@@ -73,15 +76,14 @@ public class MarkdownEventSource implements MarkdownListener {
   }
 
   private final Consumer<Context> contextConsumer;
+  private final Deque<MutableContext> contexts = new ArrayDeque<>();
   private boolean inTableHeading = false;
   private final List<String> lastBlocks = new ArrayList<>();
   private int lastColumnNo;
   private int lastHeadingLevel = 0;
   private String[] lastHeadingWords = null;
-
   private final List<String> lastRowValues = new ArrayList<>();
   private final List<String> lastTableHeadings = new ArrayList<>();
-
   private final Logger logger = LogManager.getLogger(getClass());
 
   public MarkdownEventSource(Consumer<Context> contextConsumer) {
@@ -90,25 +92,25 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void enterBlock(BlockContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterCell(CellContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterDocument(DocumentContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterEveryRule(ParserRuleContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -120,13 +122,13 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void enterList(ListContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterListline(ListlineContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -137,19 +139,19 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void enterParagraphline(ParagraphlineContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterTable(TableContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void enterTabledelimiterrow(TabledelimiterrowContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -167,7 +169,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitBlock(BlockContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -189,17 +191,21 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitEveryRule(ParserRuleContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
   @Override
   public void exitHeading(HeadingContext ctx) {
     final String headingLine = ctx.HEADINGLINE().getText();
+    // Only a new heading changes the context
     // Heading level is length of first word formed with '#'
     lastHeadingLevel = headingLine.indexOf(" ");
     lastHeadingWords = headingLine.substring(lastHeadingLevel + 1).split(WHITESPACE_REGEX);
-    contextConsumer.accept(new ContextImpl(lastHeadingWords, lastHeadingLevel));
+    final ContextImpl context = new ContextImpl(lastHeadingWords, lastHeadingLevel);
+    updateParentContext(context);
+
+    contextConsumer.accept(context);
   }
 
   @Override
@@ -210,7 +216,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitListline(ListlineContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -222,7 +228,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitParagraphline(ParagraphlineContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -244,6 +250,7 @@ public class MarkdownEventSource implements MarkdownListener {
           }
         }
       }
+      setSiblingContext(detailTable);
       if (contextConsumer != null) {
         contextConsumer.accept(detailTable);
       }
@@ -252,7 +259,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void exitTabledelimiterrow(TabledelimiterrowContext ctx) {
-    // TODO Auto-generated method stub
+    // no action
 
   }
 
@@ -261,6 +268,7 @@ public class MarkdownEventSource implements MarkdownListener {
     inTableHeading = false;
   }
 
+
   @Override
   public void exitTablerow(TablerowContext ctx) {
     if (!inTableHeading) {
@@ -268,6 +276,7 @@ public class MarkdownEventSource implements MarkdownListener {
       for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
         detail.addProperty(lastTableHeadings.get(i), lastRowValues.get(i));
       }
+      setSiblingContext(detail);
       if (contextConsumer != null) {
         contextConsumer.accept(detail);
       }
@@ -276,27 +285,49 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void visitErrorNode(ErrorNode node) {
-    // TODO Auto-generated method stub
+    // TODO should error node be logged?
 
   }
 
   @Override
   public void visitTerminal(TerminalNode node) {
-    // TODO Auto-generated method stub
+    // no action
 
+  }
+
+  private void setSiblingContext(MutableContext context) {
+    MutableContext lastContext = contexts.peekLast();
+    if (lastContext != null && lastContext.getLevel() == context.getLevel()) {
+      context.setParent(lastContext.getParent());
+    }
   }
 
   private void supplyLastDocumentation() {
     if (!lastBlocks.isEmpty()) {
       final String paragraphs = normalizeParagraphs();
-      final Documentation documentation =
+      final DocumentationImpl documentation =
           new DocumentationImpl(lastHeadingWords, lastHeadingLevel, paragraphs);
+      setSiblingContext(documentation);
       contextConsumer.accept(documentation);
     }
   }
 
   String normalizeParagraphs() {
     return String.join("\n", lastBlocks);
+  }
+
+  void updateParentContext(final MutableContext context) {
+    // Remove previous contexts at same or lower level
+    contexts.removeIf(c -> context.getLevel() <= c.getLevel());
+    MutableContext lastContext = contexts.peekLast();
+
+    // Add top level context or lower level than parent
+    if (lastContext == null) {
+      contexts.add(context);
+    } else if (context.getLevel() > lastContext.getLevel()) {
+      context.setParent(lastContext);
+      contexts.add(context);
+    }
   }
 
 }

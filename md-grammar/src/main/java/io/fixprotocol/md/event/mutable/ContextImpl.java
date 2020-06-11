@@ -3,12 +3,14 @@ package io.fixprotocol.md.event.mutable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.MutableContext;
 
 public class ContextImpl implements MutableContext {
 
   private final List<String> keys = new ArrayList<>();
   private final int level;
+  private Context parent = null;
 
   public ContextImpl() {
     this(EMPTY_CONTEXT, DEFAULT_LEVEL);
@@ -78,6 +80,16 @@ public class ContextImpl implements MutableContext {
   @Override
   public String toString() {
     return "ContextImpl [keys=" + keys + ", level=" + level + "]";
+  }
+
+  @Override
+  public Context getParent() {
+    return parent;
+  }
+
+  @Override
+  public void setParent(Context parent) {
+    this.parent = parent;
   }
 
 }

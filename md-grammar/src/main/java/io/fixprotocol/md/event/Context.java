@@ -1,9 +1,12 @@
 package io.fixprotocol.md.event;
 
+/**
+ * A semantic context for subsequent contents
+ */
 public interface Context {
 
-  String[] EMPTY_CONTEXT = new String[0];
   int DEFAULT_LEVEL = 1;
+  String[] EMPTY_CONTEXT = new String[0];
 
   /**
    * Returns a key by its position
@@ -34,5 +37,12 @@ public interface Context {
    * @return outline level, 1-based
    */
   int getLevel();
+
+  /**
+   * A broader Context
+   * 
+   * @return a parent Context or {@code null} if there is no parent
+   */
+  Context getParent();
 
 }

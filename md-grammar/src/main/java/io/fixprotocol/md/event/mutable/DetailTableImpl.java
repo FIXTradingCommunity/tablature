@@ -115,7 +115,7 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
   @Override
   public Supplier<Stream<? extends DetailProperties>> rows() {
-    return () -> propertiesList.stream();
+    return propertiesList::stream;
 
   }
 
