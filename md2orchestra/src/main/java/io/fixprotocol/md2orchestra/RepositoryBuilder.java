@@ -48,6 +48,7 @@ import io.fixprotocol._2020.orchestra.repository.Fields;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.Groups;
+import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
@@ -264,10 +265,52 @@ class RepositoryBuilder implements Consumer<Context> {
     if (context instanceof Detail) {
       final Detail detail = (Detail) context;
       final String name = detail.getProperty("name");
-      final io.fixprotocol._2020.orchestra.repository.Datatype datatype =
-          new io.fixprotocol._2020.orchestra.repository.Datatype();
-      datatype.setName(name);
-      repository.getDatatypes().getDatatype().add(datatype);
+      io.fixprotocol._2020.orchestra.repository.Datatype datatype = findDatatypeByName(name);
+      if (datatype == null) {
+        datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
+        datatype.setName(name);
+        repository.getDatatypes().getDatatype().add(datatype);
+        final String markdown = detail.getProperty("documentation");
+        if (markdown != null && !markdown.isEmpty()) {
+          Annotation annotation = datatype.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+            datatype.setAnnotation(annotation);
+          }
+          addDocumentation(markdown, annotation);
+        }
+      }
+      final String standard = detail.getProperty("standard");
+      if (standard != null && !standard.isEmpty()) {
+        List<MappedDatatype> mappings = datatype.getMappedDatatype();
+        MappedDatatype mapping = new MappedDatatype();
+        mappings.add(mapping);
+        mapping.setStandard(standard);
+        final String base = detail.getProperty("base");
+        if (base != null && !base.isEmpty()) {
+          mapping.setBase(base);
+        }
+        final String element = detail.getProperty("element");
+        if (element != null && !element.isEmpty()) {
+          mapping.setElement(element);
+        }
+        final String parameter = detail.getProperty("parameter");
+        if (parameter != null && !parameter.isEmpty()) {
+          mapping.setParameter(parameter);
+        }
+        final String pattern = detail.getProperty("pattern");
+        if (pattern != null && !pattern.isEmpty()) {
+          mapping.setPattern(pattern);
+        }
+        final String min = detail.getProperty("minInclusive");
+        if (min != null && !min.isEmpty()) {
+          mapping.setMinInclusive(min);
+        }
+        final String max = detail.getProperty("maxInclusive");
+        if (max != null && !max.isEmpty()) {
+          mapping.setMaxInclusive(max);
+        }
+      }
     }
   }
 

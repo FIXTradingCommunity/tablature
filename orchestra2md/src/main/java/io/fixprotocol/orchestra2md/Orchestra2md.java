@@ -36,6 +36,7 @@ import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.MessageType.Responses;
@@ -358,9 +359,40 @@ public class Orchestra2md {
         .collect(Collectors.toList());
 
     for (final Datatype datatype : datatypes) {
-      final MutableDetailProperties row = table.newRow();
+      final List<MappedDatatype> mappings = datatype.getMappedDatatype();
+      MutableDetailProperties row = table.newRow();
       row.addProperty("name", datatype.getName());
       row.addProperty("documentation", getDocumentation(datatype.getAnnotation()));
+      for (MappedDatatype mapping : mappings) {
+        row = table.newRow();     
+        row.addProperty("name", datatype.getName());
+        String standard = mapping.getStandard();
+        row.addProperty("standard", standard);
+        String base = mapping.getBase();
+        if (base != null) {
+          row.addProperty("base", base);
+        }
+        String element = mapping.getElement();
+        if (element != null) {
+          row.addProperty("element", element);
+        }        
+        String parameter = mapping.getParameter();
+        if (parameter != null) {
+          row.addProperty("parameter", parameter);
+        }   
+        String pattern = mapping.getPattern();
+        if (pattern != null) {
+          row.addProperty("pattern", pattern);
+        }   
+        String min = mapping.getMinInclusive();
+        if (min != null) {
+          row.addProperty("minInclusive", min);
+        }  
+        String max = mapping.getMaxInclusive();
+        if (max != null) {
+          row.addProperty("maxInclusive", max);
+        } 
+      }
     }
     documentWriter.write((DetailTable) table);
   }
