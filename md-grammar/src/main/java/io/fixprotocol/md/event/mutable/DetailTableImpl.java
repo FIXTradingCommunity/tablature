@@ -13,7 +13,6 @@ import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
-import io.fixprotocol.md.util.StringUtil;
 
 public class DetailTableImpl extends DocumentationImpl implements MutableDetailTable {
 

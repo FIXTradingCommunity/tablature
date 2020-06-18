@@ -46,11 +46,11 @@ import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentWriter;
+import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
 import io.fixprotocol.orchestra2md.util.LogUtil;
-import io.fixprotocol.orchestra2md.util.StringUtil;
 
 public class Orchestra2md {
 
@@ -64,6 +64,11 @@ public class Orchestra2md {
       return new Orchestra2md(this);
     }
 
+    public Builder eventLog(String logFile) {
+      this.logFile = logFile;
+      return this;
+    }
+    
     public Builder inputFile(String inputFile) {
       this.inputFile = inputFile;
       return this;
@@ -71,6 +76,11 @@ public class Orchestra2md {
 
     public Builder outputFile(String outputFile) {
       this.outputFile = outputFile;
+      return this;
+    }
+    
+    public Builder verbose(boolean verbose) {
+      this.verbose = verbose;
       return this;
     }
   }
@@ -81,7 +91,7 @@ public class Orchestra2md {
   public static final String WHEN_KEYWORD = "when";
 
   private static final String DEFAULT_SCENARIO = "base";
-  private static final String MARKDOWN_MEDIA_TYPE = "text/markdown";
+
 
   public static Builder builder() {
     return new Builder();
@@ -185,7 +195,7 @@ public class Orchestra2md {
         final String when = rule.getWhen();
         if (when != null) {
           presenceString
-              .append(" " + WHEN_KEYWORD + " " + StringUtil.plainTextToMarkdown(when) + " ");
+              .append(" " + WHEN_KEYWORD + " " + MarkdownUtil.plainTextToMarkdown(when) + " ");
         }
       }
     }
@@ -540,7 +550,6 @@ public class Orchestra2md {
       table.addKey(repository.getVersion());
     }
 
-    final StringBuilder sb = new StringBuilder();
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
       MutableDetailProperties row = table.newRow();
@@ -561,10 +570,10 @@ public class Orchestra2md {
       return objects.stream()
           .filter(o -> o instanceof io.fixprotocol._2020.orchestra.repository.Documentation)
           .map(o -> (io.fixprotocol._2020.orchestra.repository.Documentation) o).map(d -> {
-            if (d.getContentType().contentEquals(MARKDOWN_MEDIA_TYPE)) {
+            if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
               return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
             } else
-              return d.getContent().stream().map(c -> StringUtil.plainTextToMarkdown(c.toString()))
+              return d.getContent().stream().map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
                   .collect(Collectors.joining(" "));
           }).collect(Collectors.joining(" "));
     }

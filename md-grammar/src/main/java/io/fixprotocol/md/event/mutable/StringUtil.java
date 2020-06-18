@@ -1,6 +1,6 @@
-package io.fixprotocol.md.util;
+package io.fixprotocol.md.event.mutable;
 
-public final class StringUtil {
+final class StringUtil {
 
   /**
    * Trim leading and trailing whitespace or pipe characters, leaving just the text within a

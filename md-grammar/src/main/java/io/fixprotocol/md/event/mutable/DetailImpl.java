@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 import java.util.stream.Stream;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.MutableDetail;
-import io.fixprotocol.md.util.StringUtil;
 
 public class DetailImpl extends ContextImpl implements MutableDetail {
 
