@@ -1,3 +1,17 @@
+/*
+ * Copyright 2020 FIX Protocol Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package io.fixprotocol.orchestra2md;
 
 import java.io.File;
@@ -68,7 +82,7 @@ public class Orchestra2md {
       this.logFile = logFile;
       return this;
     }
-    
+
     public Builder inputFile(String inputFile) {
       this.inputFile = inputFile;
       return this;
@@ -78,7 +92,7 @@ public class Orchestra2md {
       this.outputFile = outputFile;
       return this;
     }
-    
+
     public Builder verbose(boolean verbose) {
       this.verbose = verbose;
       return this;
@@ -108,9 +122,9 @@ public class Orchestra2md {
   -o,--output <arg>     path of markdown output file
   -v,--verbose          verbose event log
    * </pre>
-   * 
-   * @param args
-   * @throws Exception
+   *
+   * @param args command line arguments
+   * @throws Exception if the application fails
    */
 
   public static void main(String[] args) throws Exception {
@@ -131,13 +145,6 @@ public class Orchestra2md {
   private File outputFile;
   private final boolean verbose;
 
-  private Orchestra2md(Builder builder) {
-    this.inputFile = new File(builder.inputFile);
-    this.outputFile = new File(builder.outputFile);
-    this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
-    this.verbose = builder.verbose;
-  }
-
   /**
    * For use with {@link #generate(InputStream, OutputStreamWriter)} or {@link #main(String[])}
    */
@@ -145,8 +152,60 @@ public class Orchestra2md {
     this.verbose = true;
   }
 
+  private Orchestra2md(Builder builder) {
+    this.inputFile = new File(builder.inputFile);
+    this.outputFile = new File(builder.outputFile);
+    this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
+    this.verbose = builder.verbose;
+  }
+
   public void generate() throws Exception {
     generate(inputFile, outputFile, logFile);
+  }
+
+  void generate(File inputFile, File outputFile, File logFile) throws Exception {
+    Objects.requireNonNull(inputFile, "Input File is missing");
+    Objects.requireNonNull(outputFile, "Output File is missing");
+
+    final Level level = verbose ? Level.DEBUG : Level.ERROR;
+    if (logFile != null) {
+      logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
+    } else {
+      logger = LogUtil.initializeDefaultLogger(level, getClass());
+    }
+
+    final File outputDir = outputFile.getParentFile();
+    if (outputDir != null) {
+      outputDir.mkdirs();
+    }
+
+    try (InputStream inputStream = new FileInputStream(inputFile);
+        OutputStreamWriter outputWriter =
+            new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8)) {
+      generate(inputStream, outputWriter);
+    }
+  }
+
+  void generate(InputStream inputStream, OutputStreamWriter outputWriter) throws Exception {
+    Objects.requireNonNull(inputStream, "Input stream is missing");
+    Objects.requireNonNull(outputWriter, "Output writer is missing");
+
+    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
+      final Repository repository = unmarshal(inputStream);
+      generateRepositoryMetadata(repository, documentWriter);
+      generateDatatypes(repository, documentWriter);
+      generateCodesets(repository, documentWriter);
+      generateFields(repository, documentWriter);
+      generateComponents(repository, documentWriter);
+      generateGroups(repository, documentWriter);
+      generateMessages(repository, documentWriter);
+    } catch (final JAXBException e) {
+      logger.fatal("Orchestra2md failed to parse XML", e);
+      throw new IOException(e);
+    } catch (final Exception e1) {
+      logger.fatal("Orchestra2md error", e1);
+      throw e1;
+    }
   }
 
   private void addComponentRef(Repository repository, ComponentRefType componentRef,
@@ -194,8 +253,7 @@ public class Orchestra2md {
         }
         final String when = rule.getWhen();
         if (when != null) {
-          presenceString
-              .append(" " + WHEN_KEYWORD + " " + MarkdownUtil.plainTextToMarkdown(when) + " ");
+          presenceString.append(" " + WHEN_KEYWORD + " ").append(MarkdownUtil.plainTextToMarkdown(when)).append(" ");
         }
       }
     }
@@ -373,35 +431,35 @@ public class Orchestra2md {
       MutableDetailProperties row = table.newRow();
       row.addProperty("name", datatype.getName());
       row.addProperty("documentation", getDocumentation(datatype.getAnnotation()));
-      for (MappedDatatype mapping : mappings) {
-        row = table.newRow();     
+      for (final MappedDatatype mapping : mappings) {
+        row = table.newRow();
         row.addProperty("name", datatype.getName());
-        String standard = mapping.getStandard();
+        final String standard = mapping.getStandard();
         row.addProperty("standard", standard);
-        String base = mapping.getBase();
+        final String base = mapping.getBase();
         if (base != null) {
           row.addProperty("base", base);
         }
-        String element = mapping.getElement();
+        final String element = mapping.getElement();
         if (element != null) {
           row.addProperty("element", element);
-        }        
-        String parameter = mapping.getParameter();
+        }
+        final String parameter = mapping.getParameter();
         if (parameter != null) {
           row.addProperty("parameter", parameter);
-        }   
-        String pattern = mapping.getPattern();
+        }
+        final String pattern = mapping.getPattern();
         if (pattern != null) {
           row.addProperty("pattern", pattern);
-        }   
-        String min = mapping.getMinInclusive();
+        }
+        final String min = mapping.getMinInclusive();
         if (min != null) {
           row.addProperty("minInclusive", min);
-        }  
-        String max = mapping.getMaxInclusive();
+        }
+        final String max = mapping.getMaxInclusive();
         if (max != null) {
           row.addProperty("maxInclusive", max);
-        } 
+        }
       }
     }
     documentWriter.write((DetailTable) table);
@@ -552,7 +610,7 @@ public class Orchestra2md {
 
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
-      MutableDetailProperties row = table.newRow();
+      final MutableDetailProperties row = table.newRow();
       final String name = element.getName().getLocalPart();
       final String value = String.join(" ", element.getValue().getContent());
       row.addProperty("term", name);
@@ -573,7 +631,8 @@ public class Orchestra2md {
             if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
               return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
             } else
-              return d.getContent().stream().map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
+              return d.getContent().stream()
+                  .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
                   .collect(Collectors.joining(" "));
           }).collect(Collectors.joining(" "));
     }
@@ -626,50 +685,5 @@ public class Orchestra2md {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     return (Repository) jaxbUnmarshaller.unmarshal(is);
-  }
-
-  void generate(File inputFile, File outputFile, File logFile) throws Exception {
-    Objects.requireNonNull(inputFile, "Input File is missing");
-    Objects.requireNonNull(outputFile, "Output File is missing");
-
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFile != null) {
-      logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
-    } else {
-      logger = LogUtil.initializeDefaultLogger(level, getClass());
-    }
-
-    final File outputDir = outputFile.getParentFile();
-    if (outputDir != null) {
-      outputDir.mkdirs();
-    }
-
-    try (InputStream inputStream = new FileInputStream(inputFile);
-        OutputStreamWriter outputWriter =
-            new OutputStreamWriter(new FileOutputStream(outputFile), StandardCharsets.UTF_8)) {
-      generate(inputStream, outputWriter);
-    }
-  }
-
-  void generate(InputStream inputStream, OutputStreamWriter outputWriter) throws Exception {
-    Objects.requireNonNull(inputStream, "Input stream is missing");
-    Objects.requireNonNull(outputWriter, "Output writer is missing");
-
-    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
-      Repository repository = unmarshal(inputStream);
-      generateRepositoryMetadata(repository, documentWriter);
-      generateDatatypes(repository, documentWriter);
-      generateCodesets(repository, documentWriter);
-      generateFields(repository, documentWriter);
-      generateComponents(repository, documentWriter);
-      generateGroups(repository, documentWriter);
-      generateMessages(repository, documentWriter);
-    } catch (JAXBException e) {
-      logger.fatal("Orchestra2md failed to parse XML", e);
-      throw new IOException(e);
-    } catch (Exception e1) {
-      logger.fatal("Orchestra2md error", e1);
-      throw e1;
-    }
   }
 }

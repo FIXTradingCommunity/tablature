@@ -1,6 +1,6 @@
 module interfaces2md {
   exports io.fixprotocol.interfaces2md;
-  
+
   requires md.grammar;
   requires java.xml.bind;
   requires orchestra.interfaces;

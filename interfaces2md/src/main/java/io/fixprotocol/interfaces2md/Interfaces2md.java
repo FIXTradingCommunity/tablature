@@ -1,3 +1,17 @@
+/*
+ * Copyright 2020 FIX Protocol Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package io.fixprotocol.interfaces2md;
 
 import java.io.File;
@@ -39,6 +53,7 @@ import io.fixprotocol._2020.orchestra.interfaces.SessionProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.SessionType;
 import io.fixprotocol._2020.orchestra.interfaces.TransportProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.UserIntefaceType;
+import io.fixprotocol.interfaces2md.util.LogUtil;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentWriter;
@@ -122,9 +137,9 @@ public class Interfaces2md {
 
     final Level level = verbose ? Level.DEBUG : Level.ERROR;
     if (logFile != null) {
-      // logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
+      logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
     } else {
-      // logger = LogUtil.initializeDefaultLogger(level, getClass());
+      logger = LogUtil.initializeDefaultLogger(level, getClass());
     }
 
     final File outputDir = outputFile.getParentFile();
@@ -144,17 +159,17 @@ public class Interfaces2md {
     Objects.requireNonNull(outputWriter, "Output writer is missing");
 
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
-      Interfaces interfaces = unmarshal(inputStream);
+      final Interfaces interfaces = unmarshal(inputStream);
       generateMetadata(interfaces, documentWriter);
-      List<InterfaceType> interfaceList = interfaces.getInterface();
-      for (InterfaceType interfaceInstance : interfaceList) {
+      final List<InterfaceType> interfaceList = interfaces.getInterface();
+      for (final InterfaceType interfaceInstance : interfaceList) {
         generateInterface(interfaceInstance, documentWriter);
       }
 
-    } catch (JAXBException e) {
+    } catch (final JAXBException e) {
       logger.fatal("Orchestra2md failed to parse XML", e);
       throw new IOException(e);
-    } catch (Exception e1) {
+    } catch (final Exception e1) {
       logger.fatal("Orchestra2md error", e1);
       throw e1;
     }
@@ -162,17 +177,17 @@ public class Interfaces2md {
 
   private void generateInterface(InterfaceType interfaceInstance, DocumentWriter documentWriter)
       throws IOException {
-    MutableDocumentation context = contextFactory.createDocumentation(2);
+    final MutableDocumentation context = contextFactory.createDocumentation(2);
     context.addPair("Interface", interfaceInstance.getName());
     context.documentation(getDocumentation(interfaceInstance.getAnnotation()));
     documentWriter.write(context);
 
     generateProtocolStack(interfaceInstance, documentWriter);
 
-    Sessions sessions = interfaceInstance.getSessions();
+    final Sessions sessions = interfaceInstance.getSessions();
     if (sessions != null) {
-      List<SessionType> sessionList = sessions.getSession();
-      for (SessionType session : sessionList) {
+      final List<SessionType> sessionList = sessions.getSession();
+      for (final SessionType session : sessionList) {
         generateSession(session, documentWriter);
       }
     }
@@ -185,7 +200,7 @@ public class Interfaces2md {
 
     final List<JAXBElement<SimpleLiteral>> elements = interfaces.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
-      MutableDetailProperties row = table.newRow();
+      final MutableDetailProperties row = table.newRow();
       final String name = element.getName().getLocalPart();
       final String value = String.join(" ", element.getValue().getContent());
       row.addProperty("term", name);
@@ -195,65 +210,69 @@ public class Interfaces2md {
     documentWriter.write((DetailTable) table);
   }
 
-  private void generateProtocolStack(BaseInterfaceType interfaceInstance, DocumentWriter documentWriter)
-      throws IOException {
-    final MutableDetailTable table = contextFactory.createDetailTable(4);
-    table.addKey("Protocols");
+  private void generateProtocolStack(BaseInterfaceType interfaceInstance,
+      DocumentWriter documentWriter) throws IOException {
+    final List<ServiceType> services = interfaceInstance.getService();
+    final List<UserIntefaceType> uis = interfaceInstance.getUserInterface();
+    final List<EncodingType> encodings = interfaceInstance.getEncoding();
+    final List<SessionProtocolType> sessionProtocols = interfaceInstance.getSessionProtocol();
+    final List<TransportProtocolType> transports = interfaceInstance.getTransport();
+    final List<ProtocolType> protocols = interfaceInstance.getProtocol();
+    if (!(services.isEmpty() && uis.isEmpty() && encodings.isEmpty() && sessionProtocols.isEmpty()
+        && transports.isEmpty()) && protocols.isEmpty()) {
 
-    List<ServiceType> services = interfaceInstance.getService();
-    for (ServiceType service : services) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", "Service");
-      populateProtocol(row, service);
-    }
+      final MutableDetailTable table = contextFactory.createDetailTable(4);
+      table.addKey("Protocols");
 
-    List<UserIntefaceType> uis = interfaceInstance.getUserInterface();
-    for (UserIntefaceType ui : uis) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", "UI");
-      populateProtocol(row, ui);
-    }
-
-    List<EncodingType> encodings = interfaceInstance.getEncoding();
-    for (EncodingType encoding : encodings) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", "Encoding");
-      populateProtocol(row, encoding);
-    }
-
-    List<SessionProtocolType> sessionProtocols = interfaceInstance.getSessionProtocol();
-    for (SessionProtocolType sessionProtocol : sessionProtocols) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", "Session");
-      populateProtocol(row, sessionProtocol);
-    }
-
-    List<TransportProtocolType> transports = interfaceInstance.getTransport();
-    for (TransportProtocolType transport : transports) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", "Transport");
-      String use = transport.getUse();
-      if (use != null) {
-        row.addProperty("use", use);
+      for (final ServiceType service : services) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", "Service");
+        populateProtocol(row, service);
       }
-      String address = transport.getAddress();
-      if (address != null) {
-        row.addProperty("address", address);
-      }
-      MessageCastT messageCast = transport.getMessageCast();
-      if (messageCast != null) {
-        row.addProperty("messageCast", messageCast.name());
-      }
-      populateProtocol(row, transport);
-    }
 
-    List<ProtocolType> protocols = interfaceInstance.getProtocol();
-    for (ProtocolType protocol : protocols) {
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("layer", protocol.getLayer().name());
-      populateProtocol(row, protocol);
+      for (final UserIntefaceType ui : uis) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", "UI");
+        populateProtocol(row, ui);
+      }
+
+      for (final EncodingType encoding : encodings) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", "Encoding");
+        populateProtocol(row, encoding);
+      }
+
+      for (final SessionProtocolType sessionProtocol : sessionProtocols) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", "Session");
+        populateProtocol(row, sessionProtocol);
+      }
+
+      for (final TransportProtocolType transport : transports) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", "Transport");
+        final String use = transport.getUse();
+        if (use != null) {
+          row.addProperty("use", use);
+        }
+        final String address = transport.getAddress();
+        if (address != null) {
+          row.addProperty("address", address);
+        }
+        final MessageCastT messageCast = transport.getMessageCast();
+        if (messageCast != null) {
+          row.addProperty("messageCast", messageCast.name());
+        }
+        populateProtocol(row, transport);
+      }
+
+      for (final ProtocolType protocol : protocols) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("layer", protocol.getLayer().name());
+        populateProtocol(row, protocol);
+      }
+      documentWriter.write((DetailTable) table);
     }
-    documentWriter.write((DetailTable) table);
   }
 
   private void generateSession(SessionType session, DocumentWriter documentWriter)
@@ -269,15 +288,15 @@ public class Interfaces2md {
 
   private void generateSessionIdentifiers(SessionType session, DocumentWriter documentWriter)
       throws IOException {
-    List<IdentifierType> ids = session.getIdentifier();
+    final List<IdentifierType> ids = session.getIdentifier();
     if (!ids.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable(4);
       table.addKey("Identifiers");
 
-      for (IdentifierType id : ids) {
-        MutableDetailProperties row = table.newRow();
+      for (final IdentifierType id : ids) {
+        final MutableDetailProperties row = table.newRow();
         row.addProperty("name", id.getName());
-        row.addProperty("value", id.getValue());
+        row.addProperty("value", id.getContent());
       }
       documentWriter.write((DetailTable) table);
     }
@@ -362,7 +381,7 @@ public class Interfaces2md {
       row.addProperty("reliability", reliability.name());
     }
 
-    String orchestration = protocol.getOrchestration();
+    final String orchestration = protocol.getOrchestration();
     if (orchestration != null) {
       row.addProperty("orchestration", orchestration);
     }

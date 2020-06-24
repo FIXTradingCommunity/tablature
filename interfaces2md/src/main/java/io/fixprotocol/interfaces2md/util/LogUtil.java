@@ -12,7 +12,7 @@
  * the License.
  *
  */
-package io.fixprotocol.orchestra2md.util;
+package io.fixprotocol.interfaces2md.util;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;

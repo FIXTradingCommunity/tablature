@@ -1,3 +1,17 @@
+/*
+ * Copyright 2020 FIX Protocol Ltd
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
+ * in compliance with the License. You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed under the License
+ * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
+ * or implied. See the License for the specific language governing permissions and limitations under
+ * the License.
+ *
+ */
 package io.fixprotocol.md.event.mutable;
 
 import java.util.ArrayList;
@@ -27,7 +41,11 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
     @Override
     public void addProperty(String key, String value) {
-      properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(), value);
+      final String trimmed =
+          StringUtil.stripCell(Objects.requireNonNull(value, "Missing property value"));
+      if (!trimmed.isEmpty()) {
+        properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(), trimmed);
+      }
     }
 
     @Override
@@ -55,7 +73,7 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
     @Override
     public String getProperty(String key) {
-      return StringUtil.stripCell(properties.get(Objects.requireNonNull(key, "Missing property key").toLowerCase()));
+      return properties.get(Objects.requireNonNull(key, "Missing property key").toLowerCase());
     }
 
     @Override

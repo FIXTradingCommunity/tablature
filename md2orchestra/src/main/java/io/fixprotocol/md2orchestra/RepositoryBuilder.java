@@ -142,6 +142,97 @@ class RepositoryBuilder implements Consumer<Context> {
     this.reference = reference;
   }
 
+  CodeSetType findCodesetByName(String name, String scenario) {
+    final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet();
+    for (final CodeSetType codeset : codesets) {
+      if (codeset.getName().equals(name) && codeset.getScenario().equals(scenario)) {
+        return codeset;
+      }
+    }
+    return null;
+  }
+
+  ComponentType findComponentByName(String name, String scenario) {
+    final List<ComponentType> components = repository.getComponents().getComponent();
+    for (final ComponentType component : components) {
+      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
+  ComponentType findComponentByTag(int tag, String scenario) {
+    final List<ComponentType> components = repository.getComponents().getComponent();
+    for (final ComponentType component : components) {
+      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
+  io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(String name) {
+    final List<io.fixprotocol._2020.orchestra.repository.Datatype> datatypes =
+        repository.getDatatypes().getDatatype();
+    for (final io.fixprotocol._2020.orchestra.repository.Datatype datatype : datatypes) {
+      if (datatype.getName().equals(name)) {
+        return datatype;
+      }
+    }
+    return null;
+  }
+
+  FieldType findFieldByName(String name, String scenario) {
+    final List<FieldType> fields = repository.getFields().getField();
+    for (final FieldType field : fields) {
+      if (field.getName().equals(name) && field.getScenario().equals(scenario)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  FieldType findFieldByTag(int tag, String scenario) {
+    final List<FieldType> fields = repository.getFields().getField();
+    for (final FieldType field : fields) {
+      if (field.getId().intValue() == tag && field.getScenario().equals(scenario)) {
+        return field;
+      }
+    }
+    return null;
+  }
+
+  GroupType findGroupByName(String name, String scenario) {
+    final List<GroupType> components = repository.getGroups().getGroup();
+    for (final GroupType component : components) {
+      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
+  GroupType findGroupByTag(int tag, String scenario) {
+    final List<GroupType> components = repository.getGroups().getGroup();
+    for (final GroupType component : components) {
+      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
+        return component;
+      }
+    }
+    return null;
+  }
+
+  MessageType findMessageByName(String name, String scenario) {
+    final List<MessageType> messages = repository.getMessages().getMessage();
+    for (final MessageType message : messages) {
+      if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
+        return message;
+      }
+    }
+    return null;
+  }
+
   private void addCodeset(Context context) {
     if (context instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) context;
@@ -282,8 +373,8 @@ class RepositoryBuilder implements Consumer<Context> {
       }
       final String standard = detail.getProperty("standard");
       if (standard != null && !standard.isEmpty()) {
-        List<MappedDatatype> mappings = datatype.getMappedDatatype();
-        MappedDatatype mapping = new MappedDatatype();
+        final List<MappedDatatype> mappings = datatype.getMappedDatatype();
+        final MappedDatatype mapping = new MappedDatatype();
         mappings.add(mapping);
         mapping.setStandard(standard);
         final String base = detail.getProperty("base");
@@ -464,10 +555,10 @@ class RepositoryBuilder implements Consumer<Context> {
     if (context instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) context;
       final String name = detailTable.getKey(NAME_POSITION);
-      int tag = tagToInt(detailTable.getKeyValue("tag"));
+      final int tag = tagToInt(detailTable.getKeyValue("tag"));
       final String scenario = scenarioOrDefault(detailTable.getKeyValue("scenario"));
-      String msgType = detailTable.getKeyValue("type");
-      MessageType message = getOrAddMessage(name, scenario, tag, msgType);
+      final String msgType = detailTable.getKeyValue("type");
+      final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
 
       final MessageType.Structure structure = new MessageType.Structure();
       message.setStructure(structure);
@@ -490,62 +581,28 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
-  private MessageType getOrAddMessage(String name, String scenario, int tag, String msgType) {
-    final String scenarioOrDefault = scenarioOrDefault(scenario);
-    MessageType message = this.findMessageByName(name, scenarioOrDefault);
-    if (message == null) {
-      message = new MessageType();
-      MessageType refMessage = null;
-      if (reference != null) {
-        refMessage = reference.findMessageByName(name, scenarioOrDefault);
-      }
-
-      if (tag == -1 && refMessage != null) {
-        tag = refMessage.getId().intValue();
-      }
-      if (tag == -1) {
-        tag = assignId();
-      }
-      message.setId(BigInteger.valueOf(tag));
-      message.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
-        message.setScenario(scenarioOrDefault);
-      }
-      if (msgType == null && refMessage != null) {
-        msgType = refMessage.getMsgType();
-      }
-      if (msgType != null) {
-        message.setMsgType(msgType);
-      }
-      if (!repository.getMessages().getMessage().contains(message)) {
-        repository.getMessages().getMessage().add(message);
-      }
-    }
-    return message;
-  }
-
   private void addMessageResponses(Context context) {
     if (context instanceof DetailTable) {
-      Context messageContext = context.getParent();
+      final Context messageContext = context.getParent();
       if (messageContext != null) {
-        String messageName = messageContext.getKeyValue("message");
-        int tag = tagToInt(messageContext.getKeyValue("tag"));
-        String scenario = scenarioOrDefault(messageContext.getKeyValue("scenario"));
-        String msgType = messageContext.getKeyValue("type");
+        final String messageName = messageContext.getKeyValue("message");
+        final int tag = tagToInt(messageContext.getKeyValue("tag"));
+        final String scenario = scenarioOrDefault(messageContext.getKeyValue("scenario"));
+        final String msgType = messageContext.getKeyValue("type");
 
-        MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
-        MessageType.Responses responses = new MessageType.Responses();
+        final MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
+        final MessageType.Responses responses = new MessageType.Responses();
         message.setResponses(responses);
-        List<ResponseType> responseList = responses.getResponse();
+        final List<ResponseType> responseList = responses.getResponse();
         final DetailTable detailTable = (DetailTable) context;
         detailTable.rows().get().forEach(detail -> {
-          ResponseType response = new ResponseType();
+          final ResponseType response = new ResponseType();
           final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
-          MessageRefType messageRef = new MessageRefType();
+          final MessageRefType messageRef = new MessageRefType();
           messageRef.setName(detail.getProperty("name"));
 
           final String refScenario = detail.getProperty("scenario");
-          if (!DEFAULT_SCENARIO.equals(refScenario) && !refScenario.isBlank()) {
+          if (refScenario != null && !DEFAULT_SCENARIO.equals(refScenario)) {
             messageRef.setScenario(refScenario);
           }
 
@@ -578,7 +635,7 @@ class RepositoryBuilder implements Consumer<Context> {
       repository.setVersion(version);
     }
     if (context instanceof DetailTable) {
-      DetailTable detailTable = (DetailTable) context;
+      final DetailTable detailTable = (DetailTable) context;
       final ElementOrRefinementContainer container = repository.getMetadata();
       final List<JAXBElement<SimpleLiteral>> literals = container.getAny();
 
@@ -591,9 +648,9 @@ class RepositoryBuilder implements Consumer<Context> {
           final SimpleLiteral literal = new SimpleLiteral();
           literal.getContent().add(value);
 
-          QName qname = new QName("http://purl.org/dc/elements/1.1/", term);
-          JAXBElement<SimpleLiteral> element =
-                  new JAXBElement<>(qname, SimpleLiteral.class, null, literal);
+          final QName qname = new QName("http://purl.org/dc/elements/1.1/", term);
+          final JAXBElement<SimpleLiteral> element =
+              new JAXBElement<>(qname, SimpleLiteral.class, null, literal);
           literals.add(element);
         }
       });
@@ -732,6 +789,40 @@ class RepositoryBuilder implements Consumer<Context> {
     return repository;
   }
 
+  private MessageType getOrAddMessage(String name, String scenario, int tag, String msgType) {
+    final String scenarioOrDefault = scenarioOrDefault(scenario);
+    MessageType message = this.findMessageByName(name, scenarioOrDefault);
+    if (message == null) {
+      message = new MessageType();
+      MessageType refMessage = null;
+      if (reference != null) {
+        refMessage = reference.findMessageByName(name, scenarioOrDefault);
+      }
+
+      if (tag == -1 && refMessage != null) {
+        tag = refMessage.getId().intValue();
+      }
+      if (tag == -1) {
+        tag = assignId();
+      }
+      message.setId(BigInteger.valueOf(tag));
+      message.setName(name);
+      if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+        message.setScenario(scenarioOrDefault);
+      }
+      if (msgType == null && refMessage != null) {
+        msgType = refMessage.getMsgType();
+      }
+      if (msgType != null) {
+        message.setMsgType(msgType);
+      }
+      if (!repository.getMessages().getMessage().contains(message)) {
+        repository.getMessages().getMessage().add(message);
+      }
+    }
+    return message;
+  }
+
   private boolean isPresence(String word) {
     if (word == null || word.isEmpty()) {
       return false;
@@ -765,36 +856,41 @@ class RepositoryBuilder implements Consumer<Context> {
 
     final List<ComponentRuleType> rules = componentRefType.getRule();
 
+    PresenceT presence = PresenceT.OPTIONAL;
     final String presenceString = detail.getProperty("presence");
-    final String[] presenceWords = presenceString.split("[ \t]");
-    PresenceT presence = null;
-    boolean inWhen = false;
-    final List<String> whenWords = new ArrayList<>();
-    for (final String word : presenceWords) {
-      if (isPresence(word)) {
-        if (!whenWords.isEmpty()) {
-          final ComponentRuleType rule = new ComponentRuleType();
-          rule.setPresence(presence);
-          rule.setWhen(String.join(" ", whenWords));
-          rules.add(rule);
-        }
-        presence = stringToPresence(word);
-        inWhen = false;
-        whenWords.clear();
-      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-        inWhen = true;
-      } else if (inWhen) {
-        whenWords.add(word);
-      }
-    }
+    if (presenceString != null) {
+      final String[] presenceWords = presenceString.split("[ \t]");
 
-    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
+      boolean inWhen = false;
+      final List<String> whenWords = new ArrayList<>();
+      for (final String word : presenceWords) {
+        if (isPresence(word)) {
+          if (!whenWords.isEmpty()) {
+            final ComponentRuleType rule = new ComponentRuleType();
+            rule.setPresence(presence);
+            rule.setWhen(String.join(" ", whenWords));
+            rules.add(rule);
+          }
+          presence = stringToPresence(word);
+          inWhen = false;
+          whenWords.clear();
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          inWhen = true;
+        } else if (inWhen) {
+          whenWords.add(word);
+        }
+      }
+
+      if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
+        componentRefType.setPresence(presence);
+      } else if (!whenWords.isEmpty()) {
+        final ComponentRuleType rule = new ComponentRuleType();
+        rule.setPresence(presence);
+        rule.setWhen(String.join(" ", whenWords));
+        rules.add(rule);
+      }
+    } else {
       componentRefType.setPresence(presence);
-    } else if (!whenWords.isEmpty()) {
-      final ComponentRuleType rule = new ComponentRuleType();
-      rule.setPresence(presence);
-      rule.setWhen(String.join(" ", whenWords));
-      rules.add(rule);
     }
 
     if (!DEFAULT_SCENARIO.equals(scenario)) {
@@ -948,36 +1044,41 @@ class RepositoryBuilder implements Consumer<Context> {
 
     final List<ComponentRuleType> rules = groupRefType.getRule();
 
+    PresenceT presence = PresenceT.OPTIONAL;
     final String presenceString = detail.getProperty("presence");
-    final String[] presenceWords = presenceString.split("[ \t]");
-    PresenceT presence = null;
-    boolean inWhen = false;
-    final List<String> whenWords = new ArrayList<>();
-    for (final String word : presenceWords) {
-      if (isPresence(word)) {
-        if (!whenWords.isEmpty()) {
-          final ComponentRuleType rule = new ComponentRuleType();
-          rule.setPresence(presence);
-          rule.setWhen(String.join(" ", whenWords));
-          rules.add(rule);
-        }
-        presence = stringToPresence(word);
-        inWhen = false;
-        whenWords.clear();
-      } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-        inWhen = true;
-      } else if (inWhen) {
-        whenWords.add(word);
-      }
-    }
+    if (presenceString != null) {
+      final String[] presenceWords = presenceString.split("[ \t]");
 
-    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
+      boolean inWhen = false;
+      final List<String> whenWords = new ArrayList<>();
+      for (final String word : presenceWords) {
+        if (isPresence(word)) {
+          if (!whenWords.isEmpty()) {
+            final ComponentRuleType rule = new ComponentRuleType();
+            rule.setPresence(presence);
+            rule.setWhen(String.join(" ", whenWords));
+            rules.add(rule);
+          }
+          presence = stringToPresence(word);
+          inWhen = false;
+          whenWords.clear();
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          inWhen = true;
+        } else if (inWhen) {
+          whenWords.add(word);
+        }
+      }
+
+      if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
+        groupRefType.setPresence(presence);
+      } else if (!whenWords.isEmpty()) {
+        final ComponentRuleType rule = new ComponentRuleType();
+        rule.setPresence(presence);
+        rule.setWhen(String.join(" ", whenWords));
+        rules.add(rule);
+      }
+    } else {
       groupRefType.setPresence(presence);
-    } else if (!whenWords.isEmpty()) {
-      final ComponentRuleType rule = new ComponentRuleType();
-      rule.setPresence(presence);
-      rule.setWhen(String.join(" ", whenWords));
-      rules.add(rule);
     }
 
     if (!DEFAULT_SCENARIO.equals(scenario)) {
@@ -1054,96 +1155,5 @@ class RepositoryBuilder implements Consumer<Context> {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     elements.clear();
     addDocumentation(doc, annotation);
-  }
-
-  CodeSetType findCodesetByName(String name, String scenario) {
-    final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet();
-    for (final CodeSetType codeset : codesets) {
-      if (codeset.getName().equals(name) && codeset.getScenario().equals(scenario)) {
-        return codeset;
-      }
-    }
-    return null;
-  }
-
-  ComponentType findComponentByName(String name, String scenario) {
-    final List<ComponentType> components = repository.getComponents().getComponent();
-    for (final ComponentType component : components) {
-      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
-        return component;
-      }
-    }
-    return null;
-  }
-
-  ComponentType findComponentByTag(int tag, String scenario) {
-    final List<ComponentType> components = repository.getComponents().getComponent();
-    for (final ComponentType component : components) {
-      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
-        return component;
-      }
-    }
-    return null;
-  }
-
-  io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(String name) {
-    final List<io.fixprotocol._2020.orchestra.repository.Datatype> datatypes =
-        repository.getDatatypes().getDatatype();
-    for (final io.fixprotocol._2020.orchestra.repository.Datatype datatype : datatypes) {
-      if (datatype.getName().equals(name)) {
-        return datatype;
-      }
-    }
-    return null;
-  }
-
-  FieldType findFieldByName(String name, String scenario) {
-    final List<FieldType> fields = repository.getFields().getField();
-    for (final FieldType field : fields) {
-      if (field.getName().equals(name) && field.getScenario().equals(scenario)) {
-        return field;
-      }
-    }
-    return null;
-  }
-
-  FieldType findFieldByTag(int tag, String scenario) {
-    final List<FieldType> fields = repository.getFields().getField();
-    for (final FieldType field : fields) {
-      if (field.getId().intValue() == tag && field.getScenario().equals(scenario)) {
-        return field;
-      }
-    }
-    return null;
-  }
-
-  GroupType findGroupByName(String name, String scenario) {
-    final List<GroupType> components = repository.getGroups().getGroup();
-    for (final GroupType component : components) {
-      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
-        return component;
-      }
-    }
-    return null;
-  }
-
-  GroupType findGroupByTag(int tag, String scenario) {
-    final List<GroupType> components = repository.getGroups().getGroup();
-    for (final GroupType component : components) {
-      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
-        return component;
-      }
-    }
-    return null;
-  }
-
-  MessageType findMessageByName(String name, String scenario) {
-    final List<MessageType> messages = repository.getMessages().getMessage();
-    for (final MessageType message : messages) {
-      if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
-        return message;
-      }
-    }
-    return null;
   }
 }

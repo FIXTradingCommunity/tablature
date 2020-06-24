@@ -10,8 +10,9 @@
  * is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express
  * or implied. See the License for the specific language governing permissions and limitations under
  * the License.
+ *
  */
-package io.fixprotocol.md2orchestra;
+package io.fixprotocol.md2interfaces;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,26 +31,19 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol.md.event.DocumentParser;
-import io.fixprotocol.md2orchestra.util.LogUtil;
+import io.fixprotocol.md2interfaces.util.LogUtil;
 
-
-/**
- * Translates markdown to an Orchestra file
- *
- * @author Don Mendelson
- *
- */
-public class Md2Orchestra {
+public class Md2Interfaces {
 
   public static class Builder {
-    private boolean verbose;
     private String inputFile;
     private String logFile;
     private String outputFile;
-    private String referenceFile;
+    private boolean verbose;
 
-    public Md2Orchestra build() {
-      return new Md2Orchestra(this);
+
+    public Md2Interfaces build() {
+      return new Md2Interfaces(this);
     }
 
     public Builder eventLog(String logFile) {
@@ -67,11 +61,6 @@ public class Md2Orchestra {
       return this;
     }
 
-    public Builder referenceFile(String referenceFile) {
-      this.referenceFile = referenceFile;
-      return this;
-    }
-
     public Builder verbose(boolean verbose) {
       this.verbose = verbose;
       return this;
@@ -82,69 +71,42 @@ public class Md2Orchestra {
     return new Builder();
   }
 
-  /**
-   * Construct and run Md2Orchestra with command line arguments
-   *
-   * <pre>
-  usage: Md2Orchestra
-  -?,--help              display usage
-  -e,--eventlog <arg>    path of log file
-  -i,--input <arg>       path of markdown input file
-  -o,--output <arg>      path of output Orchestra file
-  -r,--reference <arg>   path of reference Orchestra file
-  -v,--verbose           verbose event log
-   * </pre>
-   *
-   * @param args command line arguments
-   */
   public static void main(String[] args) {
-    Md2Orchestra mdl2Orchestra = new Md2Orchestra();
-    try {
-      mdl2Orchestra = mdl2Orchestra.parseArgs(args).build();
-      mdl2Orchestra.generate();
-    } catch (final Exception e) {
-      if (mdl2Orchestra.logger != null) {
-        mdl2Orchestra.logger.fatal("Md2Orchestra: exception occurred", e);
-      } else {
-        e.printStackTrace(System.err);
-      }
-    }
+    // TODO Auto-generated method stub
+
   }
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Md2Orchestra", options);
+    formatter.printHelp("Md2Interfaces", options);
   }
 
   private File inputFile;
   private File logFile;
   private Logger logger = null;
   private File outputFile;
-  private File referenceFile;
+
   private boolean verbose = false;
 
   /**
-   * Only for use with {@link #generate(InputStream, OutputStream, InputStream)} or
-   * {@link #main(String[])}
+   * For testing only
    */
-  Md2Orchestra() {
+  Md2Interfaces() {
 
   }
 
-  private Md2Orchestra(Builder builder) {
+  private Md2Interfaces(Builder builder) {
     this.inputFile = new File(builder.inputFile);
     this.outputFile = new File(builder.outputFile);
-    this.referenceFile = builder.referenceFile != null ? new File(builder.referenceFile) : null;
     this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
     this.verbose = builder.verbose;
   }
 
   public void generate() throws IOException {
-    generate(inputFile, outputFile, referenceFile, logFile);
+    generate(inputFile, outputFile, logFile);
   }
 
-  void generate(File inputFile, File outputFile, File referenceFile, File logFile)
-      throws IOException {
+  void generate(File inputFile, File outputFile, File logFile) throws IOException {
     Objects.requireNonNull(inputFile, "Input File is missing");
     Objects.requireNonNull(outputFile, "Output File is missing");
 
@@ -163,19 +125,14 @@ public class Md2Orchestra {
     try (InputStream inputStream = new FileInputStream(inputFile);
         OutputStream outputStream = new FileOutputStream(outputFile)) {
 
-      InputStream referenceStream = null;
-      if (referenceFile != null) {
-        referenceStream = new FileInputStream(referenceFile);
-      }
-
-      generate(inputStream, outputStream, referenceStream);
+      generate(inputStream, outputStream);
     } catch (final JAXBException e) {
-      logger.fatal("Md2Orchestra failed to process XML", e);
+      logger.fatal("Md2Interfaces failed to process XML", e);
       throw new IOException(e);
     }
   }
 
-  void generate(InputStream inputStream, OutputStream outputStream, InputStream referenceStream)
+  void generate(InputStream inputStream, OutputStream outputStream)
       throws JAXBException, IOException {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputStream, "Output stream is missing");
@@ -184,28 +141,21 @@ public class Md2Orchestra {
       logger = LogUtil.initializeDefaultLogger(Level.ERROR, getClass());
     }
 
-    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
-
-    if (referenceStream != null) {
-      final RepositoryBuilder referenceRepositoryBuilder = new RepositoryBuilder(referenceStream);
-      outputRepositoryBuilder.setReference(referenceRepositoryBuilder);
-    }
+    final InterfacesBuilder interfacesBuilder = new InterfacesBuilder();
 
     final DocumentParser parser = new DocumentParser();
-    parser.parse(inputStream, outputRepositoryBuilder);
+    parser.parse(inputStream, interfacesBuilder);
 
-    outputRepositoryBuilder.marshal(outputStream);
-    logger.info("Md2Orchestra completed");
+    interfacesBuilder.marshal(outputStream);
+    logger.info("Md2Interfaces completed");
   }
 
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
     options.addOption(Option.builder("i").desc("path of markdown input file").longOpt("input")
         .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of output Orchestra file").longOpt("output")
+    options.addOption(Option.builder("o").desc("path of output interfaces file").longOpt("output")
         .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("r").desc("path of reference Orchestra file")
-        .longOpt("reference").numberOfArgs(1).build());
     options.addOption(
         Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());
     options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
@@ -228,10 +178,6 @@ public class Md2Orchestra {
       builder.inputFile = cmd.getOptionValue("i");
       builder.outputFile = cmd.getOptionValue("o");
 
-      if (cmd.hasOption("r")) {
-        builder.referenceFile = cmd.getOptionValue("r");
-      }
-
       if (cmd.hasOption("e")) {
         builder.logFile = cmd.getOptionValue("e");
       }
@@ -246,5 +192,6 @@ public class Md2Orchestra {
       throw e;
     }
   }
+
 
 }

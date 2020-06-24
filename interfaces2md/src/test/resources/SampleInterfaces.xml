@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<fixi:interfaces xmlns:dcterms="http://purl.org/dc/terms/" xmlns:fixi="http://fixprotocol.io/2020/orchestra/interfaces" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
-xsi:schemaLocation="http://fixprotocol.io/2020/orchestra/interfaces ../../../main/resources/xsd/interfaces.xsd">
+<fixi:interfaces xmlns:dcterms="http://purl.org/dc/terms/" xmlns:fixi="http://fixprotocol.io/2020/orchestra/interfaces" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://fixprotocol.io/2020/orchestra/interfaces ../../../../../fix-orchestra/interfaces/src/main/resources/xsd/interfaces.xsd">
 	<fixi:metadata>
 		<dcterms:subject>Service offerings and sessions example file</dcterms:subject>
 		<dcterms:date>2019-08-07T09:30:00Z</dcterms:date>
@@ -24,8 +23,8 @@ xsi:schemaLocation="http://fixprotocol.io/2020/orchestra/interfaces ../../../mai
 				<fixi:transport address="10.96.1.2:567" use="primary"/>
 				<fixi:transport address="10.96.2.2:567" use="secondary"/>
 				<!-- there can be any number of identifiers -->
-				<fixi:identifier name="SenderCompID" value="XYZ"/>
-				<fixi:identifier name="TargetCompID" value="ABC"/>
+				<fixi:identifier name="SenderCompID">XYZ</fixi:identifier>
+				<fixi:identifier name="TargetCompID">ABC</fixi:identifier>
 				<!-- tells when session becomes effective so it can be configured in advance -->
 				<fixi:activationTime>2019-08-07T09:30:00Z</fixi:activationTime>
 			</fixi:session>
@@ -36,10 +35,6 @@ xsi:schemaLocation="http://fixprotocol.io/2020/orchestra/interfaces ../../../mai
 		<!-- the protcol stack -->
 		<fixi:encoding name="SBE" messageSchema="https://mydomain.com/orchestra/marketDataSchema.xml"/>
 		<fixi:transport name="UDPMulticast" address="224.0.0.1" reliability="bestEffort" messageCast="multicast"/>
-		<fixi:sessions>
-			<fixi:session name="MD1">
-		</fixi:session>
-		</fixi:sessions>
 	</fixi:interface>
 	<fixi:interface name="OrderRouting">
 		<fixi:service name="orderRouting" orchestration="https://mydomain.com/orchestra/orderRouting.xml"/>
@@ -55,7 +50,7 @@ xsi:schemaLocation="http://fixprotocol.io/2020/orchestra/interfaces ../../../mai
 		</fixi:protocol>
 		<fixi:sessions>
 			<fixi:session name="OR1">
-			<fixi:securityKeys><![CDATA[
+				<fixi:securityKeys><![CDATA[
 -----BEGIN CERTIFICATE-----
 MIIFOzCCAyOgAwIBAgIRAJ7vjU69WHIyjOvNNQ+M6lEwDQYJKoZIhvcNAQELBQAw
 czELMAkGA1UEBhMCVVMxETAPBgNVBAgTCE5FVyBZT1JLMREwDwYDVQQHEwhORVcg

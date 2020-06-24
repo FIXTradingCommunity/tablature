@@ -37,7 +37,6 @@ import io.fixprotocol.md.antlr.MarkdownParser.TabledelimiterrowContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
 import io.fixprotocol.md.event.Context;
-import io.fixprotocol.md.event.Documentation;
 import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.mutable.ContextImpl;
@@ -295,8 +294,26 @@ public class MarkdownEventSource implements MarkdownListener {
 
   }
 
+  String normalizeParagraphs() {
+    return String.join("\n", lastBlocks);
+  }
+
+  void updateParentContext(final MutableContext context) {
+    // Remove previous contexts at same or lower level
+    contexts.removeIf(c -> context.getLevel() <= c.getLevel());
+    final MutableContext lastContext = contexts.peekLast();
+
+    // Add top level context or lower level than parent
+    if (lastContext == null) {
+      contexts.add(context);
+    } else if (context.getLevel() > lastContext.getLevel()) {
+      context.setParent(lastContext);
+      contexts.add(context);
+    }
+  }
+
   private void setSiblingContext(MutableContext context) {
-    MutableContext lastContext = contexts.peekLast();
+    final MutableContext lastContext = contexts.peekLast();
     if (lastContext != null && lastContext.getLevel() == context.getLevel()) {
       context.setParent(lastContext.getParent());
     }
@@ -309,24 +326,6 @@ public class MarkdownEventSource implements MarkdownListener {
           new DocumentationImpl(lastHeadingWords, lastHeadingLevel, paragraphs);
       setSiblingContext(documentation);
       contextConsumer.accept(documentation);
-    }
-  }
-
-  String normalizeParagraphs() {
-    return String.join("\n", lastBlocks);
-  }
-
-  void updateParentContext(final MutableContext context) {
-    // Remove previous contexts at same or lower level
-    contexts.removeIf(c -> context.getLevel() <= c.getLevel());
-    MutableContext lastContext = contexts.peekLast();
-
-    // Add top level context or lower level than parent
-    if (lastContext == null) {
-      contexts.add(context);
-    } else if (context.getLevel() > lastContext.getLevel()) {
-      context.setParent(lastContext);
-      contexts.add(context);
     }
   }
 
