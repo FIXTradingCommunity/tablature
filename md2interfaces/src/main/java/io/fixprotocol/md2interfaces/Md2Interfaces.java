@@ -71,9 +71,29 @@ public class Md2Interfaces {
     return new Builder();
   }
 
+  /**
+   * 
+   * @param args command line arguments
+   * 
+   *        usage: Md2Interfaces 
+   *        -?,--help display usage 
+   *        -e,--eventlog <arg> path of log file
+   *        -i,--input <arg> path of markdown input file 
+   *        -o,--output <arg> path of output interfaces file 
+   *        -v,--verbose verbose event log
+   */
   public static void main(String[] args) {
-    // TODO Auto-generated method stub
-
+    Md2Interfaces md2interfaces = new Md2Interfaces();
+    try {
+      md2interfaces = md2interfaces.parseArgs(args).build();
+      md2interfaces.generate();
+    } catch (final Exception e) {
+      if (md2interfaces.logger != null) {
+        md2interfaces.logger.fatal("Md2Interfaces: exception occurred", e);
+      } else {
+        e.printStackTrace(System.err);
+      }
+    }
   }
 
   private static void showHelp(Options options) {
