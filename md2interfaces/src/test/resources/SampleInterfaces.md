@@ -1,4 +1,6 @@
-# Interfaces
+# Service Offerings and Sessions
+
+Services and their session configurations
 
 | Term    | Value                                       |
 |---------|---------------------------------------------|
@@ -7,7 +9,7 @@
 
 ## Interface Private
 
-
+Order entry service with algorithm control
 
 #### Protocols
 
@@ -37,7 +39,7 @@
 
 ## Interface Public
 
-
+Market data multicast
 
 #### Protocols
 
@@ -46,10 +48,4 @@
 | Service   | marketData   | https://mydomain.com/orchestra/marketData.xml |           |             |             |
 | Encoding  | SBE          |                                               |           |             |             |
 | Transport | UDPMulticast |                                               | 224.0.0.1 | MULTICAST   | BEST_EFFORT |
-
-## Interface OrderRouting
-
-
-
-### Session OR1
 
