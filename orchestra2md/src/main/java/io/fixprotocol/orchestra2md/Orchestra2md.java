@@ -39,6 +39,7 @@ import org.apache.commons.cli.ParseException;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
+import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
@@ -57,10 +58,14 @@ import io.fixprotocol._2020.orchestra.repository.MessageType.Responses;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
+import io.fixprotocol._2020.orchestra.repository.StateMachineType;
+import io.fixprotocol._2020.orchestra.repository.StateType;
+import io.fixprotocol._2020.orchestra.repository.TransitionType;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentWriter;
 import io.fixprotocol.md.event.MarkdownUtil;
+import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
@@ -190,9 +195,14 @@ public class Orchestra2md {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputWriter, "Output writer is missing");
 
+    if (logger == null) {
+      logger = LogUtil.initializeDefaultLogger(Level.DEBUG, getClass());
+    }
+
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Repository repository = unmarshal(inputStream);
       generateRepositoryMetadata(repository, documentWriter);
+      generateActors(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
       generateCodesets(repository, documentWriter);
       generateFields(repository, documentWriter);
@@ -253,7 +263,8 @@ public class Orchestra2md {
         }
         final String when = rule.getWhen();
         if (when != null) {
-          presenceString.append(" " + WHEN_KEYWORD + " ").append(MarkdownUtil.plainTextToMarkdown(when)).append(" ");
+          presenceString.append(" " + WHEN_KEYWORD + " ")
+              .append(MarkdownUtil.plainTextToMarkdown(when)).append(" ");
         }
       }
     }
@@ -346,6 +357,37 @@ public class Orchestra2md {
       }
     }
     return null;
+  }
+
+  private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter) throws IOException {
+    final MutableContext context = contextFactory.createContext(2);
+    context.addPair("Actor", actor.getName());
+    documentWriter.write(context);
+
+    List<Object> elements = actor.getFieldOrFieldRefOrComponent();
+    List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType)).collect(Collectors.toList());
+    if (!members.isEmpty()) {
+      final MutableDetailTable table = contextFactory.createDetailTable(3);
+      table.addKey("Variables");
+      addMembers(table, repository, members);
+      documentWriter.write((DetailTable)table);
+    }
+    
+    for (Object state : elements) {
+      if (state instanceof StateMachineType) {
+        generateStateMachine((StateMachineType) state, documentWriter);
+      }
+    }
+  }
+
+  private void generateActors(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    List<Object> actorsOrFlows = repository.getActors().getActorOrFlow();
+    for (Object actorOrFlow : actorsOrFlows) {
+      if (actorOrFlow instanceof ActorType) {
+        generateActor((ActorType) actorOrFlow, repository, documentWriter);
+      }
+    }
   }
 
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
@@ -618,6 +660,33 @@ public class Orchestra2md {
     }
 
     documentWriter.write((DetailTable) table);
+  }
+
+  private void generateStateMachine(StateMachineType stateMachine, DocumentWriter documentWriter)
+      throws IOException {
+    final MutableDetailTable table = contextFactory.createDetailTable(3);
+    table.addPair("StateMachine", stateMachine.getName());
+    table.documentation(getDocumentation(stateMachine.getAnnotation()));
+
+    StateType initial = stateMachine.getInitial();
+    List<StateType> states = stateMachine.getState();
+    generationTransitions(table, initial);
+    for (StateType state : states) {
+      generationTransitions(table, state);
+    }
+    documentWriter.write((DetailTable) table);
+  }
+
+  private void generationTransitions(final MutableDetailTable table, StateType state) {
+    List<TransitionType> transitions = state.getTransition();
+    for (TransitionType transition : transitions) {
+      MutableDetailProperties row = table.newRow();
+      row.addProperty("state", state.getName());
+      row.addProperty("transition", transition.getName());
+      row.addProperty("target", transition.getTarget());
+      row.addProperty("documentation", getDocumentation(transition.getAnnotation()));
+      row.addProperty("when", transition.getWhen());
+    }
   }
 
   private String getDocumentation(Annotation annotation) {

@@ -41,10 +41,12 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
 
     @Override
     public void addProperty(String key, String value) {
-      final String trimmed =
-          StringUtil.stripCell(Objects.requireNonNull(value, "Missing property value"));
-      if (!trimmed.isEmpty()) {
-        properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(), trimmed);
+      if (value != null) {
+        final String trimmed = StringUtil.stripCell(value);
+        if (!trimmed.isEmpty()) {
+          properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(),
+              trimmed);
+        }
       }
     }
 
