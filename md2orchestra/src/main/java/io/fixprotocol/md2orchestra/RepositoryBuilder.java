@@ -18,8 +18,10 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,6 +51,7 @@ import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.Fields;
+import io.fixprotocol._2020.orchestra.repository.FlowType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.Groups;
@@ -123,6 +126,9 @@ class RepositoryBuilder implements Consumer<Context> {
         case "fields":
           addField(context);
           break;
+        case "flow":
+          addFlow(context);
+          break;
         case "group":
           addGroup(context);
           break;
@@ -134,10 +140,10 @@ class RepositoryBuilder implements Consumer<Context> {
           break;
         case "statemachine":
           addActorStates(context);
-          break;  
+          break;
         case "variables":
           addActorVariables(context);
-          break;     
+          break;
         default:
           if (context.getLevel() == 1) {
             addMetadata(context);
@@ -146,7 +152,7 @@ class RepositoryBuilder implements Consumer<Context> {
           }
       }
   }
-  
+
   public void marshal(OutputStream os) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
@@ -157,7 +163,7 @@ class RepositoryBuilder implements Consumer<Context> {
   public void setReference(RepositoryBuilder reference) {
     this.reference = reference;
   }
-  
+
   CodeSetType findCodesetByName(String name, String scenario) {
     final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet();
     for (final CodeSetType codeset : codesets) {
@@ -250,7 +256,7 @@ class RepositoryBuilder implements Consumer<Context> {
   }
 
   private void addActor(Context context) {
-   if (context instanceof Documentation) {
+    if (context instanceof Documentation) {
       final Documentation detail = (Documentation) context;
       final String name = detail.getKey(NAME_POSITION);
 
@@ -274,7 +280,7 @@ class RepositoryBuilder implements Consumer<Context> {
         repository.setActors(actors);
       }
       actors.getActorOrFlow().add(actor);
-    } 
+    }
   }
 
   private void addActorStates(Context context) {
@@ -282,12 +288,12 @@ class RepositoryBuilder implements Consumer<Context> {
       final Context actorContext = context.getParent();
       if (actorContext != null) {
         final String actorName = actorContext.getKeyValue("actor");
-        ActorType actor = findActorByName(actorName);
+        final ActorType actor = findActorByName(actorName);
         if (actor != null) {
           final String name = actorContext.getKeyValue("statemachine");
           final StateMachineType statemachine = new StateMachineType();
           statemachine.setName(name);
-          List<Object> actorMembers = actor.getFieldOrFieldRefOrComponent();
+          final List<Object> actorMembers = actor.getFieldOrFieldRefOrComponent();
           actorMembers.add(statemachine);
 
           final DetailTable detailTable = (DetailTable) context;
@@ -296,19 +302,20 @@ class RepositoryBuilder implements Consumer<Context> {
               .distinct().collect(Collectors.toList());
           final List<String> targets = detailTable.rows().get().map(r -> r.getProperty("target"))
               .distinct().collect(Collectors.toList());
+          // preserves insertion order
+          final Set<String> allStates = new LinkedHashSet<>(sources);
+          allStates.addAll(targets);
+          // candidates for initial state are not the target of any transition
           final List<String> possibleInitial =
               sources.stream().filter(s -> !targets.contains(s)).collect(Collectors.toList());
-
           // assume initial state is listed first in case more than one not a target of transitions
           final String initialStateName =
               (!possibleInitial.isEmpty()) ? possibleInitial.get(0) : null;
 
-          final List<String> allStateNames = new ArrayList<>(sources);
-
           final List<StateType> states = statemachine.getState();
 
-          for (String stateName : allStateNames) {
-            StateType stateType = new StateType();
+          for (final String stateName : allStates) {
+            final StateType stateType = new StateType();
             stateType.setName(stateName);
             if (stateName.equals(initialStateName)) {
               statemachine.setInitial(stateType);
@@ -319,20 +326,20 @@ class RepositoryBuilder implements Consumer<Context> {
 
           try {
             detailTable.rows().get().forEach(r -> {
-              String source = r.getProperty("state");
-              String transitionName = r.getProperty("transition");
-              String text = r.getProperty("documentation");
-              String when = r.getProperty("when");
-              String target = r.getProperty("target");
+              final String source = r.getProperty("state");
+              final String transitionName = r.getProperty("transition");
+              final String text = r.getProperty("documentation");
+              final String when = r.getProperty("when");
+              final String target = r.getProperty("target");
 
-              TransitionType transition = new TransitionType();
+              final TransitionType transition = new TransitionType();
               transition.setName(transitionName);
               transition.setTarget(target);
               if (when != null) {
                 transition.setWhen(when);
               }
               if (text != null) {
-                Annotation annotation = new Annotation();
+                final Annotation annotation = new Annotation();
                 transition.setAnnotation(annotation);
                 updateDocumentation(text, annotation);
               }
@@ -347,7 +354,7 @@ class RepositoryBuilder implements Consumer<Context> {
               sourceStateType.getTransition().add(transition);
 
             });
-          } catch (NoSuchElementException e) {
+          } catch (final NoSuchElementException e) {
             logger.warn("RepositoryBuilder no states defined for state machine; name={}", name);
           }
         } else {
@@ -362,7 +369,7 @@ class RepositoryBuilder implements Consumer<Context> {
       final Context actorContext = context.getParent();
       if (actorContext != null) {
         final String actorName = actorContext.getKeyValue("actor");
-        ActorType actor = findActorByName(actorName);
+        final ActorType actor = findActorByName(actorName);
         if (actor != null) {
           final DetailTable detailTable = (DetailTable) context;
           final List<Object> members = actor.getFieldOrFieldRefOrComponent();
@@ -622,6 +629,39 @@ class RepositoryBuilder implements Consumer<Context> {
     addType(type, scenario);
   }
 
+  private void addFlow(Context context) {
+    if (context instanceof DetailTable) {
+      DetailTable table = (DetailTable) context;
+      final String name = table.getKey(NAME_POSITION);
+      final FlowType flow = new FlowType();
+      flow.setName(name);
+      table.rows().get().findFirst().ifPresent(r -> {
+        flow.setSource(r.getProperty("source"));
+        flow.setDestination(r.getProperty("destination"));
+      });
+
+      Actors actors = repository.getActors();
+      if (actors == null) {
+        actors = new Actors();
+        repository.setActors(actors);
+      }
+      actors.getActorOrFlow().add(flow);
+    } else if (context instanceof Documentation) {
+      final Documentation detail = (Documentation) context;
+      final String name = detail.getKey(NAME_POSITION);
+
+      final ActorType actor = this.findActorByName(name);
+      if (actor != null) {
+        Annotation annotation = actor.getAnnotation();
+        if (annotation == null) {
+          annotation = new Annotation();
+          actor.setAnnotation(annotation);
+        }
+        updateDocumentation(detail.getDocumentation(), annotation);
+      }
+    } 
+  }
+
   private void addGroup(Context context) {
     if (context instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) context;
@@ -700,6 +740,10 @@ class RepositoryBuilder implements Consumer<Context> {
       final String scenario = scenarioOrDefault(detailTable.getKeyValue("scenario"));
       final String msgType = detailTable.getKeyValue("type");
       final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
+      final String flow = detailTable.getKeyValue("flow");
+      if (flow != null) {
+        message.setFlow(flow);
+      }
 
       final MessageType.Structure structure = new MessageType.Structure();
       message.setStructure(structure);
@@ -936,7 +980,7 @@ class RepositoryBuilder implements Consumer<Context> {
       final List<Object> objects = actors.getActorOrFlow();
       for (final Object object : objects) {
         if (object instanceof ActorType) {
-          ActorType actor = (ActorType) object;
+          final ActorType actor = (ActorType) object;
           if (actor.getName().equals(name)) {
             return actor;
           }

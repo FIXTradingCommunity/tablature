@@ -49,6 +49,7 @@ import io.fixprotocol._2020.orchestra.repository.Datatype;
 import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
+import io.fixprotocol._2020.orchestra.repository.FlowType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
@@ -202,7 +203,7 @@ public class Orchestra2md {
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Repository repository = unmarshal(inputStream);
       generateRepositoryMetadata(repository, documentWriter);
-      generateActors(repository, documentWriter);
+      generateActorsAndFlows(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
       generateCodesets(repository, documentWriter);
       generateFields(repository, documentWriter);
@@ -359,35 +360,50 @@ public class Orchestra2md {
     return null;
   }
 
-  private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter) throws IOException {
+  private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter)
+      throws IOException {
     final MutableContext context = contextFactory.createContext(2);
     context.addPair("Actor", actor.getName());
     documentWriter.write(context);
 
-    List<Object> elements = actor.getFieldOrFieldRefOrComponent();
-    List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType)).collect(Collectors.toList());
+    final List<Object> elements = actor.getFieldOrFieldRefOrComponent();
+    final List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType))
+        .collect(Collectors.toList());
     if (!members.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable(3);
       table.addKey("Variables");
       addMembers(table, repository, members);
-      documentWriter.write((DetailTable)table);
+      documentWriter.write((DetailTable) table);
     }
-    
-    for (Object state : elements) {
+
+    for (final Object state : elements) {
       if (state instanceof StateMachineType) {
         generateStateMachine((StateMachineType) state, documentWriter);
       }
     }
   }
+  
 
-  private void generateActors(Repository repository, DocumentWriter documentWriter)
+  private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    List<Object> actorsOrFlows = repository.getActors().getActorOrFlow();
-    for (Object actorOrFlow : actorsOrFlows) {
+    final MutableDetailTable table = contextFactory.createDetailTable(2);
+    table.addPair("Flow", flow.getName());
+    final MutableDetailProperties row = table.newRow();
+    row.addProperty("source", flow.getSource());
+    row.addProperty("destination", flow.getDestination());
+    documentWriter.write((DetailTable)table);
+  }
+
+  private void generateActorsAndFlows(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    final List<Object> actorsOrFlows = repository.getActors().getActorOrFlow();
+    for (final Object actorOrFlow : actorsOrFlows) {
       if (actorOrFlow instanceof ActorType) {
         generateActor((ActorType) actorOrFlow, repository, documentWriter);
+      } else if (actorOrFlow instanceof FlowType) {
+        generateFlow((FlowType) actorOrFlow, repository, documentWriter);
       }
-    }
+    } 
   }
 
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
@@ -635,6 +651,10 @@ public class Orchestra2md {
     if (msgType != null) {
       table.addPair("type", msgType);
     }
+    String flow = message.getFlow();
+    if (flow != null) {
+      table.addPair("flow", flow);
+    }
     table.addKey(String.format("(%d)", message.getId().intValue()));
     table.documentation(getDocumentation(message.getAnnotation()));
     final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
@@ -668,19 +688,19 @@ public class Orchestra2md {
     table.addPair("StateMachine", stateMachine.getName());
     table.documentation(getDocumentation(stateMachine.getAnnotation()));
 
-    StateType initial = stateMachine.getInitial();
-    List<StateType> states = stateMachine.getState();
+    final StateType initial = stateMachine.getInitial();
+    final List<StateType> states = stateMachine.getState();
     generationTransitions(table, initial);
-    for (StateType state : states) {
+    for (final StateType state : states) {
       generationTransitions(table, state);
     }
     documentWriter.write((DetailTable) table);
   }
 
   private void generationTransitions(final MutableDetailTable table, StateType state) {
-    List<TransitionType> transitions = state.getTransition();
-    for (TransitionType transition : transitions) {
-      MutableDetailProperties row = table.newRow();
+    final List<TransitionType> transitions = state.getTransition();
+    for (final TransitionType transition : transitions) {
+      final MutableDetailProperties row = table.newRow();
       row.addProperty("state", state.getName());
       row.addProperty("transition", transition.getName());
       row.addProperty("target", transition.getTarget());
