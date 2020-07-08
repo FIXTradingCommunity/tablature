@@ -29,12 +29,14 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
+import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
 import org.purl.dc.terms.ElementOrRefinementContainer;
+import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Actors;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
@@ -72,6 +74,31 @@ import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.Documentation;
 
 class RepositoryBuilder implements Consumer<Context> {
+
+  /**
+   * NamespacePrefixMapper class is declared in the XML processor implementation -- not portable!!!
+   * 
+   * The implementation makes no guarantee that it will actually use the preferred prefix.
+   */
+  private class RepositoryNamespacePrefixMapper extends NamespacePrefixMapper {
+
+    @Override
+    public String getPreferredPrefix(String namespaceUri, String suggestion,
+        boolean requirePrefix) {
+      switch (namespaceUri) {
+        case "http://fixprotocol.io/2020/orchestra/repository":
+          return "fixr";
+        case "http://purl.org/dc/elements/1.1/":
+          return "dc";
+        case "http://purl.org/dc/terms/":
+          return "dcterms";
+        default:
+          return null;
+      }
+
+    }
+
+  }
 
   public static final String ASSIGN_KEYWORD = "assign";
   // todo: integrate into markdown grammar
@@ -156,7 +183,14 @@ class RepositoryBuilder implements Consumer<Context> {
   public void marshal(OutputStream os) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
-    jaxbMarshaller.setProperty("jaxb.formatted.output", true);
+    jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+    // warning: this is implementation specific !!!
+    try {
+      jaxbMarshaller.setProperty("com.sun.xml.bind.namespacePrefixMapper",
+          new RepositoryNamespacePrefixMapper());
+    } catch (PropertyException e) {
+      logger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
+    }
     jaxbMarshaller.marshal(repository, os);
   }
 
@@ -659,7 +693,7 @@ class RepositoryBuilder implements Consumer<Context> {
         }
         updateDocumentation(detail.getDocumentation(), annotation);
       }
-    } 
+    }
   }
 
   private void addGroup(Context context) {

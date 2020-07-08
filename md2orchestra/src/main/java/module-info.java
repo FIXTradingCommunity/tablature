@@ -10,4 +10,5 @@ module md2orchestra {
   requires commons.cli;
   requires org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
+  requires jaxb.impl;
 }
