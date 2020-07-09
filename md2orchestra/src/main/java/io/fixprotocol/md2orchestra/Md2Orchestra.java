@@ -187,8 +187,9 @@ public class Md2Orchestra {
     final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
 
     if (referenceStream != null) {
-      final RepositoryBuilder referenceRepositoryBuilder = new RepositoryBuilder(referenceStream);
-      outputRepositoryBuilder.setReference(referenceRepositoryBuilder);
+      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
+      referenceRepository.unmarshal(referenceStream);
+      outputRepositoryBuilder.setReference(referenceRepository);
     }
 
     final DocumentParser parser = new DocumentParser();
