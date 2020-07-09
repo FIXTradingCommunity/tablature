@@ -24,7 +24,7 @@ The new order message type is used by institutions wishing to electronically sub
 
 | Name           | Tag | Type         |  Values                  |
 |----------------|----:|--------------|--------------------------|
-| Side           | 54  | Sides        |	                         |
+| Side           | 54  | SideCodeSet  |	                         |
 | OrdType        | 40  | char         | 1=Market 2=Limit         |
 | MyUserDefined1 | 6234| UTCTimestamp |	                         |
 
@@ -48,7 +48,7 @@ The Parties component block is used to identify and convey information on the en
 | PartyIDSource  |     |           |        |
 | PartyRole      |     | required  | 1=ExecutingFirm 2=BrokerOfCredit |
 
-### Codeset Sides 
+### Codeset SideCodeSet 
 
 Side of an order
 

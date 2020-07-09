@@ -83,7 +83,7 @@ class Md2OrchestraTest {
     MessageType message = outfile.findMessageByName("NewOrderSingle", "base");
     assertNotNull(message);
 
-    CodeSetType codeset = outfile.findCodesetByName("Sides", "base");
+    CodeSetType codeset = outfile.findCodesetByName("SideCodeSet", "base");
     assertNotNull(codeset);
     List<CodeType> codes = codeset.getCode();
     assertEquals(4, codes.size());

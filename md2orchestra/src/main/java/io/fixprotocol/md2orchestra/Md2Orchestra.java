@@ -195,7 +195,7 @@ public class Md2Orchestra {
     final DocumentParser parser = new DocumentParser();
     parser.parse(inputStream, outputRepositoryBuilder);
 
-    outputRepositoryBuilder.marshal(outputStream);
+    outputRepositoryBuilder.write(outputStream);
     logger.info("Md2Orchestra completed");
   }
 

@@ -18,8 +18,10 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -56,18 +58,56 @@ import io.fixprotocol.md.event.Documentation;
 
 class RepositoryBuilder implements Consumer<Context> {
 
-  public static final String ASSIGN_KEYWORD = "assign";
-  // todo: integrate into markdown grammar
-  public static final String WHEN_KEYWORD = "when";
+  private interface ElementBuilder {
+    void build();
+  }
 
+  private class TypeBuilder implements ElementBuilder {
+    final String scenario;
+    final String type;
+
+    public TypeBuilder(String type, String scenario) {
+      this.type = type;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public void build() {
+      boolean found = false;
+      io.fixprotocol._2020.orchestra.repository.Datatype datatype =
+          repositoryAdapter.findDatatypeByName(type);
+      if (datatype != null) {
+        found = true;
+      } else if (reference != null) {
+        datatype = reference.findDatatypeByName(type);
+        if (datatype != null) {
+          repositoryAdapter.copyDatatype(datatype);
+          found = true;
+        }
+      }
+      if (!found) {
+        CodeSetType codeset = repositoryAdapter.findCodesetByName(type, scenario);
+        if (codeset == null && reference != null) {
+          codeset = reference.findCodesetByName(type, scenario);
+          if (codeset != null) {
+            repositoryAdapter.copyCodeset(codeset);
+          }
+        }
+      }
+    }
+  }
+
+  public static final String ASSIGN_KEYWORD = "assign";
+  public static final String WHEN_KEYWORD = "when";
+  
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final String DEFAULT_SCENARIO = "base";
-
   private static final int NAME_POSITION = 1;
+
+  private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
   private int lastId = 10000;
   private final Logger logger = LogManager.getLogger(getClass());
   private RepositoryAdapter reference = null;
-
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
 
   public RepositoryBuilder() {
@@ -129,12 +169,13 @@ class RepositoryBuilder implements Consumer<Context> {
 
 
 
-  public void marshal(OutputStream outputStream) throws JAXBException {
-    repositoryAdapter.marshal(outputStream);
-  }
-
   public void setReference(RepositoryAdapter reference) {
     this.reference = reference;
+  }
+
+  public void write(OutputStream outputStream) throws JAXBException {
+    executeDefferedBuildSteps();
+    repositoryAdapter.marshal(outputStream);
   }
 
   void copyMembers(List<Object> members) {
@@ -291,7 +332,6 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
-
   private void addActorVariables(Context context) {
     if (context instanceof DetailTable) {
       final Context actorContext = context.getParent();
@@ -430,6 +470,7 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
+
   private void addDatatype(Context context) {
     if (context instanceof Detail) {
       final Detail detail = (Detail) context;
@@ -547,7 +588,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
     final String type = field.getType();
     final String scenario = field.getScenario();
-    addType(type, scenario);
+
+    buildSteps.add(new TypeBuilder(type, scenario));
   }
 
   private void addFlow(Context context) {
@@ -682,7 +724,6 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
-
   private void addMessageResponses(Context context) {
     if (context instanceof DetailTable) {
       final Context messageContext = context.getParent();
@@ -729,6 +770,7 @@ class RepositoryBuilder implements Consumer<Context> {
     }
   }
 
+
   private void addMetadata(Context context) {
     final String name = String.join(" ", context.getKeys());
     repositoryAdapter.setName(name);
@@ -745,30 +787,6 @@ class RepositoryBuilder implements Consumer<Context> {
         repositoryAdapter.setMetadata(term, value);
       });
 
-    }
-  }
-
-  private void addType(final String type, String scenario) {
-    boolean found = false;
-    io.fixprotocol._2020.orchestra.repository.Datatype datatype =
-        repositoryAdapter.findDatatypeByName(type);
-    if (datatype != null) {
-      found = true;
-    } else if (reference != null) {
-      datatype = reference.findDatatypeByName(type);
-      if (datatype != null) {
-        repositoryAdapter.copyDatatype(datatype);
-        found = true;
-      }
-    }
-    if (!found) {
-      CodeSetType codeset = repositoryAdapter.findCodesetByName(type, scenario);
-      if (codeset == null && reference != null) {
-        codeset = reference.findCodesetByName(type, scenario);
-        if (codeset != null) {
-          repositoryAdapter.copyCodeset(codeset);
-        }
-      }
     }
   }
 
@@ -796,6 +814,13 @@ class RepositoryBuilder implements Consumer<Context> {
       codes.add(code);
     }
     repositoryAdapter.addCodeset(codeset);
+  }
+
+  private void executeDefferedBuildSteps() {
+    ElementBuilder builder;
+    while ((builder = buildSteps.poll()) != null) {
+      builder.build();
+    }
   }
 
   private MessageType getOrAddMessage(String name, String scenario, int tag, String msgType) {
