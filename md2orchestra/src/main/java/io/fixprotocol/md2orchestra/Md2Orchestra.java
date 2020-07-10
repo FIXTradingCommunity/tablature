@@ -19,7 +19,9 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 import javax.xml.bind.JAXBException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -43,7 +45,7 @@ public class Md2Orchestra {
 
   public static class Builder {
     private boolean verbose;
-    private String inputFile;
+    private List<String> inputFiles;
     private String logFile;
     private String outputFile;
     private String referenceFile;
@@ -58,7 +60,12 @@ public class Md2Orchestra {
     }
 
     public Builder inputFile(String inputFile) {
-      this.inputFile = inputFile;
+      this.inputFiles = List.of(inputFile);
+      return this;
+    }
+
+    public Builder inputFile(List<String> inputFiles) {
+      this.inputFiles = inputFiles;
       return this;
     }
 
@@ -113,10 +120,10 @@ public class Md2Orchestra {
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Md2Orchestra", options);
+    formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
   }
 
-  private File inputFile;
+  private List<File> inputFiles;
   private File logFile;
   private Logger logger = null;
   private File outputFile;
@@ -132,7 +139,8 @@ public class Md2Orchestra {
   }
 
   private Md2Orchestra(Builder builder) {
-    this.inputFile = new File(builder.inputFile);
+    this.inputFiles =
+        builder.inputFiles.stream().map(s -> new File(s)).collect(Collectors.toList());
     this.outputFile = new File(builder.outputFile);
     this.referenceFile = builder.referenceFile != null ? new File(builder.referenceFile) : null;
     this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
@@ -140,13 +148,13 @@ public class Md2Orchestra {
   }
 
   public void generate() throws IOException {
-    generate(inputFile, outputFile, referenceFile, logFile);
+    generate(inputFiles, outputFile, referenceFile, logFile);
   }
 
-  void generate(File inputFile, File outputFile, File referenceFile, File logFile)
+  void generate(List<File> inputFiles, File outputFile, File referenceFile, File logFile)
       throws IOException {
-    Objects.requireNonNull(inputFile, "Input File is missing");
-    Objects.requireNonNull(outputFile, "Output File is missing");
+    Objects.requireNonNull(inputFiles, "Input file list is missing");
+    Objects.requireNonNull(outputFile, "Output file is missing");
 
     final Level level = verbose ? Level.DEBUG : Level.ERROR;
     if (logFile != null) {
@@ -160,30 +168,27 @@ public class Md2Orchestra {
       outputDir.mkdirs();
     }
 
-    try (InputStream inputStream = new FileInputStream(inputFile);
-        OutputStream outputStream = new FileOutputStream(outputFile)) {
+    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
 
       InputStream referenceStream = null;
       if (referenceFile != null) {
         referenceStream = new FileInputStream(referenceFile);
       }
 
-      generate(inputStream, outputStream, referenceStream);
+      RepositoryBuilder outputRepositoryBuilder = builder(referenceStream);
+      for (File inputFile : inputFiles) {
+        InputStream inputStream = new FileInputStream(inputFile);
+        append(inputStream, outputRepositoryBuilder);
+      }
+
+      write(outputStream, outputRepositoryBuilder);
     } catch (final JAXBException e) {
       logger.fatal("Md2Orchestra failed to process XML", e);
       throw new IOException(e);
     }
   }
 
-  void generate(InputStream inputStream, OutputStream outputStream, InputStream referenceStream)
-      throws JAXBException, IOException {
-    Objects.requireNonNull(inputStream, "Input stream is missing");
-    Objects.requireNonNull(outputStream, "Output stream is missing");
-
-    if (logger == null) {
-      logger = LogUtil.initializeDefaultLogger(Level.ERROR, getClass());
-    }
-
+  private RepositoryBuilder builder(InputStream referenceStream) throws JAXBException, IOException {
     final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
 
     if (referenceStream != null) {
@@ -191,18 +196,23 @@ public class Md2Orchestra {
       referenceRepository.unmarshal(referenceStream);
       outputRepositoryBuilder.setReference(referenceRepository);
     }
+    return outputRepositoryBuilder;
+  }
 
-    final DocumentParser parser = new DocumentParser();
-    parser.parse(inputStream, outputRepositoryBuilder);
-
+  private void write(OutputStream outputStream, final RepositoryBuilder outputRepositoryBuilder)
+      throws JAXBException {
     outputRepositoryBuilder.write(outputStream);
     logger.info("Md2Orchestra completed");
   }
 
+  private void append(InputStream inputStream, final RepositoryBuilder outputRepositoryBuilder)
+      throws IOException {
+    final DocumentParser parser = new DocumentParser();
+    parser.parse(inputStream, outputRepositoryBuilder);
+  }
+
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of markdown input file").longOpt("input")
-        .numberOfArgs(1).required().build());
     options.addOption(Option.builder("o").desc("path of output Orchestra file").longOpt("output")
         .numberOfArgs(1).required().build());
     options.addOption(Option.builder("r").desc("path of reference Orchestra file")
@@ -226,7 +236,7 @@ public class Md2Orchestra {
         System.exit(0);
       }
 
-      builder.inputFile = cmd.getOptionValue("i");
+      builder.inputFiles = cmd.getArgList();
       builder.outputFile = cmd.getOptionValue("o");
 
       if (cmd.hasOption("r")) {

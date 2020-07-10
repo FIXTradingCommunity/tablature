@@ -133,7 +133,7 @@ class RepositoryBuilder implements Consumer<Context> {
         fieldType = repositoryAdapter.findFieldByName(name, scenario);
       }
 
-      if (fieldType == null && reference != null) {
+      if ((fieldType == null || fieldType.getType() == null) && reference != null) {
         if (tag != -1) {
           fieldType = reference.findFieldByTag(tag, scenario);
         } else if (name != null) {
