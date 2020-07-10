@@ -147,8 +147,10 @@ class RepositoryAdapter {
     repository.getMessages().getMessage().add(message);
   }
 
-  void copyCodeset(CodeSetType codeset) {
-    repository.getCodeSets().getCodeSet().add((CodeSetType) codeset.clone());
+  CodeSetType copyCodeset(CodeSetType source) {
+    final CodeSetType codeset = (CodeSetType) source.clone();
+    repository.getCodeSets().getCodeSet().add(codeset);
+    return codeset;
   }
 
   ComponentType copyComponent(ComponentType source) {
@@ -157,8 +159,16 @@ class RepositoryAdapter {
     return component;
   }
 
-  void copyDatatype(Datatype datatype) {
-    repository.getDatatypes().getDatatype().add((Datatype) datatype.clone());
+  Datatype copyDatatype(Datatype source) {
+    final Datatype datatype = (Datatype) source.clone();
+    repository.getDatatypes().getDatatype().add(datatype);
+    return datatype;
+  }
+
+  FieldType copyField(FieldType source) {
+    final FieldType field = (FieldType) source.clone();
+    repository.getFields().getField().add(field);
+    return field;
   }
 
   GroupType copyGroup(GroupType source) {
@@ -310,7 +320,7 @@ class RepositoryAdapter {
     // warning: this is implementation specific !!!
     try {
       jaxbMarshaller.setProperty("com.sun.xml.bind.namespacePrefixMapper",
-              new RepositoryNamespacePrefixMapper());
+          new RepositoryNamespacePrefixMapper());
     } catch (PropertyException e) {
       logger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
     }

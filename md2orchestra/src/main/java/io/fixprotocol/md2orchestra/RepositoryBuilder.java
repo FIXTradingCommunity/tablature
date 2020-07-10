@@ -58,8 +58,183 @@ import io.fixprotocol.md.event.Documentation;
 
 class RepositoryBuilder implements Consumer<Context> {
 
+  private class ComponentBuilder implements ElementBuilder {
+
+    private String name;
+    private String scenario;
+
+    public ComponentBuilder(String name, String scenario) {
+      this.name = name;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public void build() {
+      ComponentType componentType = repositoryAdapter.findComponentByName(name, scenario);
+      if (componentType == null && reference != null) {
+        componentType = reference.findComponentByName(name, scenario);
+        if (componentType != null) {
+          repositoryAdapter.copyComponent(componentType);
+        } else {
+          logger.error("RepositoryBuilder unknown component; name={} scenario={}", name, scenario);
+        }
+      }
+    }
+  }
+
+  /**
+   * 
+   * Populates the ID of a ComponentRef when the component name is known
+   */
+  private class ComponentRefBuilder implements ElementBuilder {
+
+    private final ComponentRefType componentRef;
+    private final String name;
+
+    public ComponentRefBuilder(String name, ComponentRefType componentRef) {
+      this.name = name;
+      this.componentRef = componentRef;
+    }
+
+    @Override
+    public void build() {
+      ComponentType componentType =
+          repositoryAdapter.findComponentByName(name, componentRef.getScenario());
+      if (componentType != null) {
+        componentRef.setId(componentType.getId());
+      } else {
+        logger.error("RepositoryBuilder unknown componentRef ID; name={} scenario={}", name,
+            componentRef.getScenario());
+      }
+    }
+  }
+
   private interface ElementBuilder {
     void build();
+  }
+
+  private class FieldBuilder implements ElementBuilder {
+    private final String name;
+    private final String scenario;
+    private final int tag;
+
+    public FieldBuilder(int tag, String name, String scenario) {
+      this.tag = tag;
+      this.name = name;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public void build() {
+      FieldType fieldType = null;
+      if (tag != -1) {
+        fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
+      } else if (name != null) {
+        fieldType = repositoryAdapter.findFieldByName(name, scenario);
+      }
+
+      if (fieldType == null && reference != null) {
+        if (tag != -1) {
+          fieldType = reference.findFieldByTag(tag, scenario);
+        } else if (name != null) {
+          fieldType = reference.findFieldByName(name, scenario);
+        }
+        if (fieldType != null) {
+          repositoryAdapter.copyField(fieldType);
+        }
+      }
+      if (fieldType == null) {
+        fieldType = new FieldType();
+        if (name != null) {
+          fieldType.setName(name);
+        } else {
+          fieldType.setName("Field" + tag);
+        }
+        if (tag > 0) {
+          fieldType.setId(BigInteger.valueOf(tag));
+        } else {
+          fieldType.setId(BigInteger.ZERO);
+          logger.error("RepositoryBuilder unknown field ID; name={} scenario={}", name, scenario);
+        }
+        addFieldAndType(fieldType);
+      }
+    }
+  }
+
+  /**
+   * 
+   * Populates the ID of a GroupRef when the group name is known
+   */
+  private class FieldRefBuilder implements ElementBuilder {
+
+    private final FieldRefType fieldRef;
+    private final String name;
+
+    public FieldRefBuilder(String name, FieldRefType fieldRef) {
+      this.name = name;
+      this.fieldRef = fieldRef;
+    }
+
+    @Override
+    public void build() {
+      FieldType componentType = repositoryAdapter.findFieldByName(name, fieldRef.getScenario());
+      if (componentType != null) {
+        fieldRef.setId(componentType.getId());
+      } else {
+        logger.error("RepositoryBuilder unknown fieldRef ID; name={} scenario={}", name,
+            fieldRef.getScenario());
+      }
+    }
+  }
+
+  private class GroupBuilder implements ElementBuilder {
+
+    private String name;
+    private String scenario;
+
+    public GroupBuilder(String name, String scenario) {
+      this.name = name;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public void build() {
+      GroupType groupType = repositoryAdapter.findGroupByName(name, scenario);
+      if (groupType == null && reference != null) {
+        groupType = reference.findGroupByName(name, scenario);
+        if (groupType != null) {
+          repositoryAdapter.copyGroup(groupType);
+        } else {
+          logger.error("RepositoryBuilder unknown group; name={} scenario={}", name, scenario);
+        }
+      }
+    }
+  }
+
+  /**
+   * 
+   * Populates the ID of a GroupRef when the group name is known
+   */
+  private class GroupRefBuilder implements ElementBuilder {
+
+    private final GroupRefType groupRef;
+    private final String name;
+
+    public GroupRefBuilder(String name, GroupRefType groupRef) {
+      this.name = name;
+      this.groupRef = groupRef;
+    }
+
+    @Override
+    public void build() {
+      GroupType componentType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
+      if (componentType != null) {
+        groupRef.setId(componentType.getId());
+      } else {
+        logger.error("RepositoryBuilder unknown groupRef ID; name={} scenario={}", name,
+            groupRef.getScenario());
+      }
+    }
   }
 
   private class TypeBuilder implements ElementBuilder {
@@ -87,19 +262,30 @@ class RepositoryBuilder implements Consumer<Context> {
       }
       if (!found) {
         CodeSetType codeset = repositoryAdapter.findCodesetByName(type, scenario);
-        if (codeset == null && reference != null) {
+        if (codeset != null ) {
+          found = true;
+        } else if (reference != null) {
           codeset = reference.findCodesetByName(type, scenario);
           if (codeset != null) {
             repositoryAdapter.copyCodeset(codeset);
+            found = true;
           }
         }
+      } 
+      if (!found) {
+        // if not found as a datatype or codeset in either current or reference repository, then
+        // assume its a datatype name
+        datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
+        datatype.setName(type);
+        repositoryAdapter.addDatatype(datatype);
+        logger.info("RepositoryBuilder datatype added; name={}", datatype.getName());
       }
     }
   }
 
   public static final String ASSIGN_KEYWORD = "assign";
   public static final String WHEN_KEYWORD = "when";
-  
+
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final String DEFAULT_SCENARIO = "base";
   private static final int NAME_POSITION = 1;
@@ -381,7 +567,7 @@ class RepositoryBuilder implements Consumer<Context> {
       if (type != null) {
         codeset.setType(type);
       } else {
-        logger.error("RepositoryBuilder unknown CodeSet type; name={}", name);
+        logger.error("RepositoryBuilder unknown CodeSet underlying type; name={}", name);
       }
       repositoryAdapter.addCodeset(codeset);
 
@@ -589,7 +775,11 @@ class RepositoryBuilder implements Consumer<Context> {
     final String type = field.getType();
     final String scenario = field.getScenario();
 
-    buildSteps.add(new TypeBuilder(type, scenario));
+    if (type != null) {
+      buildSteps.add(new TypeBuilder(type, scenario));
+    } else {
+      logger.error("RepositoryBuilder unknown type for field; id= {} name={}", field.getId(), field.getName());
+    }
   }
 
   private void addFlow(Context context) {
@@ -879,11 +1069,12 @@ class RepositoryBuilder implements Consumer<Context> {
       componentType = reference.findComponentByName(name, scenario);
       if (componentType != null) {
         componentRefType.setId(componentType.getId());
-        repositoryAdapter.copyComponent(componentType);
+        buildSteps.add(new ComponentBuilder(name, scenario));
       } else {
         // Component not found, but write reference to be corrected later
         componentRefType.setId(BigInteger.ZERO);
-        logger.error("RepositoryBuilder unknown componentRef lastId; name={}", name);
+        buildSteps.add(new ComponentBuilder(name, scenario));
+        buildSteps.add(new ComponentRefBuilder(name, componentRefType));
       }
     }
 
@@ -939,38 +1130,21 @@ class RepositoryBuilder implements Consumer<Context> {
     int tag = tagToInt(detail.getProperty("tag"));
 
     final FieldRefType fieldRefType = new FieldRefType();
-
-    FieldType fieldType = null;
-    if (tag != -1) {
-      fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
-    } else if (name != null) {
-      fieldType = repositoryAdapter.findFieldByName(name, scenario);
-    }
-
-    if (fieldType == null && reference != null) {
-      fieldType = reference.findFieldByName(name, scenario);
-      if (fieldType != null) {
-        tag = fieldType.getId().intValue();
-        addFieldAndType(fieldType);
-      }
-    }
-    if (fieldType == null) {
-      fieldType = new FieldType();
-      fieldType.setName("Field" + tag);
-      fieldType.setId(BigInteger.valueOf(tag));
-      addFieldAndType(fieldType);
-    }
-
-    if (tag == -1) {
-      tag = fieldType.getId().intValue();
-    }
-
     if (tag != -1) {
       fieldRefType.setId(BigInteger.valueOf(tag));
+      FieldType fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
+      if (fieldType == null) {
+        buildSteps.add(new FieldBuilder(tag, name, scenario));
+      }
     } else {
-      // Field not found, but write reference to be corrected later
-      fieldRefType.setId(BigInteger.ZERO);
-      logger.error("RepositoryBuilder unknown fieldRef ID; name={}", name);
+      FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
+      if (fieldType != null) {
+        fieldRefType.setId(fieldType.getId());
+      } else {
+        fieldRefType.setId(BigInteger.ZERO);
+        buildSteps.add(new FieldBuilder(tag, name, scenario));
+        buildSteps.add(new FieldRefBuilder(name, fieldRefType));
+      }
     }
 
     final List<FieldRuleType> rules = fieldRefType.getRule();
@@ -1074,11 +1248,12 @@ class RepositoryBuilder implements Consumer<Context> {
       groupType = reference.findGroupByName(name, scenario);
       if (groupType != null) {
         groupRefType.setId(groupType.getId());
-        repositoryAdapter.copyGroup(groupType);
+        buildSteps.add(new GroupBuilder(name, scenario));
       } else {
         // Group not found, but write reference to be corrected later
         groupRefType.setId(BigInteger.ZERO);
-        logger.error("RepositoryBuilder unknown groupRef lastId; name={}", name);
+        buildSteps.add(new GroupBuilder(name, scenario));
+        buildSteps.add(new GroupRefBuilder(name, groupRefType));
       }
     }
 
