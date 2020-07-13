@@ -12,7 +12,7 @@
  * the License.
  *
  */
-package io.fixprotocol.md.antlr;
+package io.fixprotocol.md.event;
 
 import java.util.ArrayList;
 import java.util.Arrays;

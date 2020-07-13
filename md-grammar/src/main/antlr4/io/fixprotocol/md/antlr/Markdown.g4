@@ -11,6 +11,7 @@ block
 	heading
 	| paragraph
 	| list
+	| blockquote
 	| table
 	| NEWLINE
 ;
@@ -48,6 +49,20 @@ listline
 	)
 ;
 
+blockquote
+:
+	NEWLINE* quoteline+
+;
+
+quoteline
+:
+	QUOTELINE
+	(
+		NEWLINE
+		| EOF
+	)
+;
+
 table
 :
 	NEWLINE* tableheading tabledelimiterrow tablerow+
@@ -79,7 +94,12 @@ tabledelimiterrow
 
 HEADINGLINE
 :
-	'#'+ IGNORE_WS LINECHAR+
+	HASH+ ' '? LINECHAR+
+;
+
+QUOTELINE
+:
+	GT ' '? LINECHAR+
 ;
 
 LISTLINE
@@ -115,6 +135,22 @@ NEWLINE
 CELLTEXT
 :
 	PIPE IGNORE_WS CELLCHAR*
+;
+
+/* Unescaped greater-than character; not preceded by backslash */
+GT
+:
+	{_input.LA(-1) != 92}?
+
+	'>'
+;
+
+/* Unescaped hash character; not preceded by backslash */
+HASH
+:
+	{_input.LA(-1) != 92}?
+
+	'#'
 ;
 
 /* Unescaped pipe character; not preceded by backslash */

@@ -67,7 +67,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>io.fixprotocol.md.antlr.InteractiveTest</mainClass>
+							<mainClass>io.fixprotocol.md.event.InteractiveTest</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

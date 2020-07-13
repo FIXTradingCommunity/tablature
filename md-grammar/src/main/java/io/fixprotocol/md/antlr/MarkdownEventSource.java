@@ -25,6 +25,7 @@ import org.antlr.v4.runtime.tree.TerminalNode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol.md.antlr.MarkdownParser.BlockContext;
+import io.fixprotocol.md.antlr.MarkdownParser.BlockquoteContext;
 import io.fixprotocol.md.antlr.MarkdownParser.CellContext;
 import io.fixprotocol.md.antlr.MarkdownParser.DocumentContext;
 import io.fixprotocol.md.antlr.MarkdownParser.HeadingContext;
@@ -32,6 +33,7 @@ import io.fixprotocol.md.antlr.MarkdownParser.ListContext;
 import io.fixprotocol.md.antlr.MarkdownParser.ListlineContext;
 import io.fixprotocol.md.antlr.MarkdownParser.ParagraphContext;
 import io.fixprotocol.md.antlr.MarkdownParser.ParagraphlineContext;
+import io.fixprotocol.md.antlr.MarkdownParser.QuotelineContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TabledelimiterrowContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
@@ -58,10 +60,14 @@ public class MarkdownEventSource implements MarkdownListener {
   static String normalizeList(List<ListlineContext> textlines) {
     return textlines.stream().map(p -> p.LISTLINE().getText()).collect(Collectors.joining("\n"));
   }
-
+  
   static String normalizeParagraph(List<ParagraphlineContext> textlines) {
     return textlines.stream().map(p -> p.PARAGRAPHLINE().getText())
         .collect(Collectors.joining(" "));
+  }
+
+  static String normalizeQuote(List<QuotelineContext> textlines) {
+    return textlines.stream().map(p -> p.QUOTELINE().getText()).collect(Collectors.joining("\n"));
   }
 
   static String trimCell(String text) {
@@ -93,6 +99,12 @@ public class MarkdownEventSource implements MarkdownListener {
   public void enterBlock(BlockContext ctx) {
     // no action
 
+  }
+
+  @Override
+  public void enterBlockquote(BlockquoteContext ctx) {
+    // no action
+    
   }
 
   @Override
@@ -143,6 +155,12 @@ public class MarkdownEventSource implements MarkdownListener {
   }
 
   @Override
+  public void enterQuoteline(QuotelineContext ctx) {
+    // no action
+    
+  }
+
+  @Override
   public void enterTable(TableContext ctx) {
     // no action
 
@@ -171,6 +189,11 @@ public class MarkdownEventSource implements MarkdownListener {
     // no action
 
   }
+
+  @Override
+  public void exitBlockquote(BlockquoteContext ctx) {
+    final List<QuotelineContext> textlines = ctx.quoteline();
+    lastBlocks.add(normalizeQuote(textlines));  }
 
   @Override
   public void exitCell(CellContext ctx) {
@@ -231,6 +254,13 @@ public class MarkdownEventSource implements MarkdownListener {
 
   }
 
+
+  @Override
+  public void exitQuoteline(QuotelineContext ctx) {
+    // no action
+    
+  }
+
   @Override
   public void exitTable(TableContext ctx) {
     if (!inTableHeading) {
@@ -267,7 +297,6 @@ public class MarkdownEventSource implements MarkdownListener {
     inTableHeading = false;
   }
 
-
   @Override
   public void exitTablerow(TablerowContext ctx) {
     if (!inTableHeading) {
@@ -284,7 +313,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void visitErrorNode(ErrorNode node) {
-    // TODO should error node be logged?
+    // should error node be logged?
 
   }
 
