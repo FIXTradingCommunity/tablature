@@ -222,7 +222,7 @@ BULLET
 fragment
 INITIALPARACHAR
 :
-	~[#|\n\r]
+	~[#>|\n\r]
 ;
 
 fragment
