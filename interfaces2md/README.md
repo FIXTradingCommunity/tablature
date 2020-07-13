@@ -1,13 +1,13 @@
-# orchestra2md
+# interfaces2md
 
-The orchestra2md utilty documents an Orchestra repository as a markdown document.
+The interfaces2md utilty documents an Orchestra interfaces file as a markdown document.
 
-## Running orchestra2md
+## Running interfaces2md
 
 ### Command line arguments
 
 ```
-usage: Orchestra2md [options] 
+usage: Interfaces2md [options] 
  -?,--help              display usage
  -e,--eventlog <arg>    path of log file
  -i,--input <arg>       path of markdown input file (required)
@@ -23,8 +23,8 @@ The utility may be invoked from Java code as a library. It is constructed and co
 Example
 
 ```java
-Orchestra2md orchestra2md = Orchestra2md.builder()
+Interfaces2md interfaces2md = Interfaces2md.builder()
     .inputFile("myorchestra.xml")
     .outputFile("mymarkdown.md").build();
-orchestra2md.generate();
+interfaces2md.generate();
 ```

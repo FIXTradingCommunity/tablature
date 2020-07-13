@@ -98,7 +98,7 @@ public class Md2Interfaces {
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Md2Interfaces", options);
+    formatter.printHelp("Md2Interfaces [options]", options);
   }
 
   private File inputFile;
@@ -172,9 +172,9 @@ public class Md2Interfaces {
 
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of markdown input file").longOpt("input")
+    options.addOption(Option.builder("i").desc("path of markdown input file (required)").longOpt("input")
         .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of output interfaces file").longOpt("output")
+    options.addOption(Option.builder("o").desc("path of output interfaces file (required)").longOpt("output")
         .numberOfArgs(1).required().build());
     options.addOption(
         Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());

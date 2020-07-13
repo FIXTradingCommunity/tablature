@@ -92,12 +92,13 @@ public class Md2Orchestra {
   /**
    * Construct and run Md2Orchestra with command line arguments
    *
+   * Md2Orchestra reads one or more input files to produce output.
+   * 
    * <pre>
-  usage: Md2Orchestra
+  usage: Md2Orchestra [options] <input-file>..."
   -?,--help              display usage
   -e,--eventlog <arg>    path of log file
-  -i,--input <arg>       path of markdown input file
-  -o,--output <arg>      path of output Orchestra file
+  -o,--output <arg>      path of output Orchestra file (required)
   -r,--reference <arg>   path of reference Orchestra file
   -v,--verbose           verbose event log
    * </pre>
@@ -213,7 +214,7 @@ public class Md2Orchestra {
 
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
-    options.addOption(Option.builder("o").desc("path of output Orchestra file").longOpt("output")
+    options.addOption(Option.builder("o").desc("path of output Orchestra file (required)").longOpt("output")
         .numberOfArgs(1).required().build());
     options.addOption(Option.builder("r").desc("path of reference Orchestra file")
         .longOpt("reference").numberOfArgs(1).build());

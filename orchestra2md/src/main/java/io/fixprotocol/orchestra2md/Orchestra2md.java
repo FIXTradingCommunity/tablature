@@ -141,7 +141,7 @@ public class Orchestra2md {
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Orchestra2md", options);
+    formatter.printHelp("Orchestra2md [options]", options);
   }
 
   private final ContextFactory contextFactory = new ContextFactory();
@@ -729,9 +729,9 @@ public class Orchestra2md {
 
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of Orchestra input file").longOpt("input")
+    options.addOption(Option.builder("i").desc("path of Orchestra input file (required)").longOpt("input")
         .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of markdown output file").longOpt("output")
+    options.addOption(Option.builder("o").desc("path of markdown output file (required)").longOpt("output")
         .numberOfArgs(1).required().build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());

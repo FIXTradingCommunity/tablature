@@ -12,14 +12,16 @@ Messages and their elements descriptions are parsed from markdown to populate th
 * Fields
 * Datatypes
 * Codeset
+* Actor with state variables and state machines
+* Flow
 
-The utility parses a text file and uses these markdown features:
+The utility parses one or more texts file and uses these markdown features:
 
 * A markdown heading immediately above a description of a message or message element is parsed for identifiers including the element type, name, scenario, and numeric tag (if any).
 * Any number of markdown paragraphs below the heading will used as documentation of the message or element.
 * A markdown table is parsed is message or component members, codes in a codeset, or lists of fields or datatypes
 
-Not all markdown features are recognized or given special treatment. Lists are recognized as a block, but list entries are not treated in any special way.
+Not all markdown features are recognized or given special treatment. (Lists are recognized as a block, but list entries are not treated in any special way.)
 
 There are several variations of markdown in use. This utility follows the [GitHub Flavored Markdown](https://github.github.com/gfm/) specification.
 
@@ -31,12 +33,13 @@ See wiki page [md2orchestra User Guide](https://github.com/FIXTradingCommunity/t
 
 ### Command line arguments
 
+Md2Orchestra reads one or more input files to produce output.
+
 ```
-usage: Md2Orchestra
+usage: Md2Orchestra [options] <input-file>..."
  -?,--help              display usage
  -e,--eventlog <arg>    path of log file
- -i,--input <arg>       path of markdown input file
- -o,--output <arg>      path of output Orchestra file
+ -o,--output <arg>      path of output Orchestra file (required)
  -r,--reference <arg>   path of reference Orchestra file
  -v,--verbose           verbose event log
 ```
@@ -44,18 +47,20 @@ usage: Md2Orchestra
 Example
 
 ```
-java io.fixprotocol.md2orchestra.Md2Orchestra -i mymarkdown.md -o myorchestra.xml -r FixRepository50SP2EP247.xml
+java io.fixprotocol.md2orchestra.Md2Orchestra -o myorchestra.xml -r FixRepository50SP2EP247.xml mymarkdown.md
 ```
 
 ### Invoked from an application
 
-The utility may be invoked from Java code as a library. It is constructed and configured by its `Builder` class.
+The utility may be invoked from Java code as a library. It is constructed and configured by its `Builder` class in fluent code style.
 
 Example
 
 ```java
 Md2Orchestra md2Orchestra1 = Md2Orchestra.builder()
     .inputFile("mymarkdown.md")
-    .outputFile("myorchestra.xml").build();
+    .referenceFile("FixRepository50SP2EP247.xml")
+    .outputFile("myorchestra.xml")
+    .build();
 md2Orchestra1.generate();
 ```

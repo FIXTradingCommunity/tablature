@@ -1,8 +1,6 @@
 # tablature
 
-*(formerly md2spec)*
-
-Converts a markdown document to a specification and documents a specification as markdown. Roundtrip is thus supported, allowing a user to update a specification iteratively with an ordinary text editor.
+Converts a markdown document to a specification and documents a specification as markdown. Markdown can automatically be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Roundtrip is supported, allowing a user to update a specification iteratively with an ordinary text editor.
 
 ## FIX Orchestra
 
@@ -17,17 +15,29 @@ See these projects for the Orchestra standard and related resources:
 
 ### md2orchestra
 
-Translates a markdown document to an Orchestra repository file. Currently, only message structures are supported. Future enhancments may also include workflow.
+Translates a markdown document to an Orchestra repository file. 
 
-See the [User Guide](https://github.com/FIXTradingCommunity/tablature/wiki/md2orchestra-User-Guide)
+See the [Tablature User Guide for Messages](https://github.com/FIXTradingCommunity/tablature/wiki/Tablature-User-Guide-for-Messages)
 
 ### orchestra2md
 
-Translates an Orchestra repository file to a markdown document. Markdown can automatcially be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Currently, only message structures are supported.
+Translates an Orchestra repository file to a markdown document. 
+
+### md2interfaces
+
+Translates a markdown document to an Orchestra interfaces file. 
+
+See the [Tablature User Guide for Interfaces](https://github.com/FIXTradingCommunity/tablature/wiki/Tablature-User-Guide-for-Interfaces)
+
+### interfaces2md
+
+Translates an Orchestra interfaces file to a markdown document. 
 
 ### md-grammar
 
-A library to parse and write markdown files. Generic data structures act as an intermediary between the markdown parser and writer logic and applications that use them. In other words, the part of an application that reads or writes a specification like Orchestra needs no special knowledge of markdown.
+A library to parse and write markdown files. Generic data structures act as an intermediary between the markdown parser and writer logic and applications that use them. In other words, the part of an application that reads or writes a specification like Orchestra needs no special knowledge of markdown. 
+
+For a brief introduction to markdown, see [Markdown Notation](https://github.com/FIXTradingCommunity/tablature/wiki/Markdown-Notation).
 
 ## Prerequisites
 This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including OpenJDK.

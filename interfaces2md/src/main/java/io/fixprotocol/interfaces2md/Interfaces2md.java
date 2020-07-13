@@ -106,7 +106,7 @@ public class Interfaces2md {
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Interfaces2md", options);
+    formatter.printHelp("Interfaces2md [options]", options);
   }
 
   public File logFile;
@@ -167,10 +167,10 @@ public class Interfaces2md {
       }
 
     } catch (final JAXBException e) {
-      logger.fatal("Orchestra2md failed to parse XML", e);
+      logger.fatal("Interfaces2md failed to parse XML", e);
       throw new IOException(e);
     } catch (final Exception e1) {
-      logger.fatal("Orchestra2md error", e1);
+      logger.fatal("Interfaces2md error", e1);   
       throw e1;
     }
   }
@@ -322,9 +322,9 @@ public class Interfaces2md {
 
   private Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of interfaces input file").longOpt("input")
+    options.addOption(Option.builder("i").desc("path of interfaces input file (required)").longOpt("input")
         .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of markdown output file").longOpt("output")
+    options.addOption(Option.builder("o").desc("path of markdown output file (required)").longOpt("output")
         .numberOfArgs(1).required().build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
