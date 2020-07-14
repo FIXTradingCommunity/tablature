@@ -17,7 +17,7 @@ The new order message type is used by institutions wishing to electronically sub
 | Instrument     | c   |                         |
 | Side           |     | required                |
 | Price          |     |                         |
-| StopPx         |     | required when OrdType=3 |
+| StopPx         |     | required when `OrdType=3` |
 | OrderQty       |     | required                |
 | OrdType        |     | required                |
 | MyUserDefined1 |     |                         |
@@ -108,7 +108,7 @@ Used to modify a cross order previously submitted using the New Order - Cross me
 | PriceType                  | 423       | optional                                                 |
 | Price                      | 44        | optional                                                 |
 | PriceProtectionScope       | 1092      | optional                                                 |
-| StopPx                     | 99        | required when OrdType == ^Stop \|\| OrdType == ^StopLimit |
+| StopPx                     | 99        | required when `OrdType == ^Stop || OrdType == ^StopLimit` |
 | TriggeringInstruction      | component | optional                                                 |
 | SpreadOrBenchmarkCurveData | component | optional                                                 |
 | YieldData                  | component | optional                                                 |

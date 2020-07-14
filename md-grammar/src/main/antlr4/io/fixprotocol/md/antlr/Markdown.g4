@@ -92,6 +92,11 @@ tabledelimiterrow
 	TABLEDELIMINATORCELL+ PIPE? NEWLINE
 ;
 
+LITERAL
+:
+	BACKTICK ' '? LITERALCHAR+ ' '? BACKTICK
+;
+
 HEADINGLINE
 :
 	HASH+ ' '? LINECHAR+
@@ -99,7 +104,7 @@ HEADINGLINE
 
 QUOTELINE
 :
-	GT ' '? LINECHAR+
+	GT ' '? ( LINECHAR+ | LITERAL)+
 ;
 
 LISTLINE
@@ -113,7 +118,7 @@ LISTLINE
 
 PARAGRAPHLINE
 :
-	INITIALPARACHAR LINECHAR*
+	INITIALPARACHAR (LINECHAR+ | LITERAL)*
 ;
 
 TABLEDELIMINATORCELL
@@ -134,7 +139,15 @@ NEWLINE
 /* low priority since it can match empty string */
 CELLTEXT
 :
-	PIPE IGNORE_WS CELLCHAR*
+	PIPE IGNORE_WS (CELLCHAR+ | LITERAL)*
+;
+
+/* Unescaped backtick character; not preceded by backslash */
+BACKTICK
+:
+	{_input.LA(-1) != 92}?
+
+	'`'
 ;
 
 /* Unescaped greater-than character; not preceded by backslash */
@@ -226,9 +239,15 @@ INITIALPARACHAR
 ;
 
 fragment
+LITERALCHAR
+:
+	~[`]
+;
+
+fragment
 LINECHAR
 :
-	~[\n\r]
+	~[\n\r`]
 ;
 
 
