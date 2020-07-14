@@ -60,7 +60,7 @@ public class MarkdownEventSource implements MarkdownListener {
   static String normalizeList(List<ListlineContext> textlines) {
     return textlines.stream().map(p -> p.LISTLINE().getText()).collect(Collectors.joining("\n"));
   }
-  
+
   static String normalizeParagraph(List<ParagraphlineContext> textlines) {
     return textlines.stream().map(p -> p.PARAGRAPHLINE().getText())
         .collect(Collectors.joining(" "));
@@ -69,7 +69,7 @@ public class MarkdownEventSource implements MarkdownListener {
   static String normalizeQuote(List<QuotelineContext> textlines) {
     return textlines.stream().map(p -> p.QUOTELINE().getText()).collect(Collectors.joining("\n"));
   }
-
+  
   static String trimCell(String text) {
     int beginIndex = 0;
     int endIndex = text.length();
@@ -104,7 +104,7 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void enterBlockquote(BlockquoteContext ctx) {
     // no action
-    
+
   }
 
   @Override
@@ -157,7 +157,7 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void enterQuoteline(QuotelineContext ctx) {
     // no action
-    
+
   }
 
   @Override
@@ -254,11 +254,10 @@ public class MarkdownEventSource implements MarkdownListener {
 
   }
 
-
   @Override
   public void exitQuoteline(QuotelineContext ctx) {
     // no action
-    
+
   }
 
   @Override
@@ -323,10 +322,6 @@ public class MarkdownEventSource implements MarkdownListener {
 
   }
 
-  String normalizeParagraphs() {
-    return String.join("\n", lastBlocks);
-  }
-
   void updateParentContext(final MutableContext context) {
     // Remove previous contexts at same or lower level
     contexts.removeIf(c -> context.getLevel() <= c.getLevel());
@@ -341,6 +336,10 @@ public class MarkdownEventSource implements MarkdownListener {
     }
   }
 
+  private String normalizeBlocks() {
+    return String.join("\n\n", lastBlocks);
+  }
+
   private void setSiblingContext(MutableContext context) {
     final MutableContext lastContext = contexts.peekLast();
     if (lastContext != null && lastContext.getLevel() == context.getLevel()) {
@@ -350,7 +349,7 @@ public class MarkdownEventSource implements MarkdownListener {
 
   private void supplyLastDocumentation() {
     if (!lastBlocks.isEmpty()) {
-      final String paragraphs = normalizeParagraphs();
+      final String paragraphs = normalizeBlocks();
       final DocumentationImpl documentation =
           new DocumentationImpl(lastHeadingWords, lastHeadingLevel, paragraphs);
       setSiblingContext(documentation);
@@ -358,4 +357,4 @@ public class MarkdownEventSource implements MarkdownListener {
     }
   }
 
-}
+  }
