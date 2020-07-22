@@ -32,6 +32,7 @@ import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Actors;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
+import io.fixprotocol._2020.orchestra.repository.Appinfo;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
@@ -104,28 +105,41 @@ class RepositoryAdapter {
     actors.getActorOrFlow().add(actor);
   }
 
+  void addAppinfo(String content, String purpose, Annotation annotation) {
+    final List<Object> elements = annotation.getDocumentationOrAppinfo();
+    final Appinfo documentation = new Appinfo();
+    documentation.setContent(content);
+    if (purpose != null) {
+      documentation.setPurpose(purpose);
+    }
+    elements.add(documentation);
+  }
+
   void addCodeset(final CodeSetType codeset) {
     repository.getCodeSets().getCodeSet().add(codeset);
   }
+
 
   void addComponent(final ComponentType component) {
     repository.getComponents().getComponent().add(component);
   }
 
-
   void addDatatype(io.fixprotocol._2020.orchestra.repository.Datatype datatype) {
     repository.getDatatypes().getDatatype().add(datatype);
   }
 
-  void addDocumentation(String markdown, Annotation annotation) {
+  void addDocumentation(String markdown, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final io.fixprotocol._2020.orchestra.repository.Documentation documentation =
         new io.fixprotocol._2020.orchestra.repository.Documentation();
     documentation.setContentType(MarkdownUtil.MARKDOWN_MEDIA_TYPE);
     documentation.getContent().add(markdown);
+    if (purpose != null) {
+      documentation.setPurpose(purpose);
+    }
     elements.add(documentation);
   }
-
+  
   void addField(FieldType field) {
     repository.getFields().getField().add(field);
   }
@@ -355,11 +369,5 @@ class RepositoryAdapter {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);
-  }
-
-  void updateDocumentation(String markdown, Annotation annotation) {
-    final List<Object> elements = annotation.getDocumentationOrAppinfo();
-    elements.clear();
-    addDocumentation(markdown, annotation);
   }
 }

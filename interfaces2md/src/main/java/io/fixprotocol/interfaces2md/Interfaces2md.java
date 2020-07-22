@@ -110,7 +110,7 @@ public class Interfaces2md {
   }
 
   public File logFile;
-  public boolean verbose;
+  public final boolean verbose;
   private final ContextFactory contextFactory = new ContextFactory();
   private File inputFile;
   private Logger logger = null;

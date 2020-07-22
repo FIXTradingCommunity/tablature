@@ -46,6 +46,7 @@ import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
+import io.fixprotocol._2020.orchestra.repository.Documentation;
 import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
@@ -409,7 +410,7 @@ public class Orchestra2md {
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
     final MutableDetailTable table = contextFactory.createDetailTable(3);
-    table.documentation(getDocumentation(codeset.getAnnotation()));
+    table.documentation(concatenateDocumentation(codeset.getAnnotation()));
     table.addPair("Codeset", codeset.getName());
     final String scenario = codeset.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -428,7 +429,7 @@ public class Orchestra2md {
       } else {
         logger.warn("Orchestra2md unknown code id; name={} scenario={}", name, scenario);
       }
-      row.addProperty("documentation", getDocumentation(code.getAnnotation()));
+      addDocumentationProperties(row, code.getAnnotation());
     }
     documentWriter.write((DetailTable) table);
   }
@@ -456,7 +457,7 @@ public class Orchestra2md {
       table.addPair("scenario", scenario);
     }
     table.addKey(String.format("(%d)", component.getId().intValue()));
-    table.documentation(getDocumentation(component.getAnnotation()));
+    table.documentation(concatenateDocumentation(component.getAnnotation()));
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
     addMembers(table, repository, members);
     documentWriter.write((DetailTable) table);
@@ -488,7 +489,7 @@ public class Orchestra2md {
       final List<MappedDatatype> mappings = datatype.getMappedDatatype();
       MutableDetailProperties row = table.newRow();
       row.addProperty("name", datatype.getName());
-      row.addProperty("documentation", getDocumentation(datatype.getAnnotation()));
+      row.addProperty("documentation", concatenateDocumentation(datatype.getAnnotation()));
       for (final MappedDatatype mapping : mappings) {
         row = table.newRow();
         row.addProperty("name", datatype.getName());
@@ -539,7 +540,7 @@ public class Orchestra2md {
         row.addProperty("scenario", scenario);
       }
       row.addProperty("type", field.getType());
-      row.addProperty("documentation", getDocumentation(field.getAnnotation()));
+      addDocumentationProperties(row, field.getAnnotation());
 
       final Short implMinLength = field.getImplMinLength();
       if (implMinLength != null) {
@@ -569,7 +570,7 @@ public class Orchestra2md {
       table.addPair("scenario", scenario);
     }
     table.addKey(String.format("(%d)", group.getId().intValue()));
-    table.documentation(getDocumentation(group.getAnnotation()));
+    table.documentation(concatenateDocumentation(group.getAnnotation()));
     final FieldRefType numInGroup = group.getNumInGroup();
     if (numInGroup != null) {
       final MutableDetailProperties row = table.newRow();
@@ -621,7 +622,7 @@ public class Orchestra2md {
               row.addProperty("msgType", msgType);
             }
             row.addProperty("when", response.getWhen());
-            row.addProperty("documentation", getDocumentation(response.getAnnotation()));
+            addDocumentationProperties(row, response.getAnnotation());
           }
         }
       }
@@ -656,7 +657,7 @@ public class Orchestra2md {
       table.addPair("flow", flow);
     }
     table.addKey(String.format("(%d)", message.getId().intValue()));
-    table.documentation(getDocumentation(message.getAnnotation()));
+    table.documentation(concatenateDocumentation(message.getAnnotation()));
     final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
     addMembers(table, repository, members);
     documentWriter.write((DetailTable) table);
@@ -686,7 +687,7 @@ public class Orchestra2md {
       throws IOException {
     final MutableDetailTable table = contextFactory.createDetailTable(3);
     table.addPair("StateMachine", stateMachine.getName());
-    table.documentation(getDocumentation(stateMachine.getAnnotation()));
+    table.documentation(concatenateDocumentation(stateMachine.getAnnotation()));
 
     final StateType initial = stateMachine.getInitial();
     final List<StateType> states = stateMachine.getState();
@@ -704,12 +705,12 @@ public class Orchestra2md {
       row.addProperty("state", state.getName());
       row.addProperty("transition", transition.getName());
       row.addProperty("target", transition.getTarget());
-      row.addProperty("documentation", getDocumentation(transition.getAnnotation()));
+      addDocumentationProperties(row, transition.getAnnotation());
       row.addProperty("when", transition.getWhen());
     }
   }
 
-  private String getDocumentation(Annotation annotation) {
+  private String concatenateDocumentation(Annotation annotation) {
     if (annotation == null) {
       return "";
     } else {
@@ -724,6 +725,33 @@ public class Orchestra2md {
                   .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
                   .collect(Collectors.joining(" "));
           }).collect(Collectors.joining(" "));
+    }
+  }
+  
+  private void addDocumentationProperties(MutableDetailProperties properties, Annotation annotation) {
+    if (annotation == null) {
+      return;
+    }
+    List<Object> objects = annotation.getDocumentationOrAppinfo();
+    for (Object obj : objects) {
+      if (obj instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
+        io.fixprotocol._2020.orchestra.repository.Documentation documentation = (Documentation) obj;
+        String purpose = documentation.getPurpose();
+        String markdown = null;
+        if (MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(documentation.getContentType())) {
+          markdown = documentation.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
+        } else {
+          markdown = documentation.getContent().stream()
+          .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
+          .collect(Collectors.joining(" "));
+        }
+
+        if (purpose != null) {
+          properties.addProperty(purpose, markdown);
+        } else {
+          properties.addProperty("documentation", markdown);
+        }
+      }
     }
   }
 

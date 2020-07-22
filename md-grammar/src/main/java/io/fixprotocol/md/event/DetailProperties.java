@@ -14,8 +14,8 @@
  */
 package io.fixprotocol.md.event;
 
+import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.stream.Stream;
 
 
 /**
@@ -41,11 +41,11 @@ public interface DetailProperties {
   Integer getIntProperty(String key);
 
   /**
-   * A Stream of key-value pairs
+   * An unmodifiable Collection of key-value pairs
    *
-   * @return a Stream of entries
+   * @return a Collection of entries
    */
-  Stream<Entry<String, String>> getProperties();
+  Collection<Entry<String, String>> getProperties();
 
   /**
    * Access a property by its key

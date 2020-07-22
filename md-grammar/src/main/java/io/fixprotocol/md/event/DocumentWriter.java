@@ -92,7 +92,7 @@ public class DocumentWriter implements AutoCloseable {
     }
   }
 
-  public void write(Iterable<Context> contextSupplier) throws IOException {
+  public void write(Iterable<? extends Context> contextSupplier) throws IOException {
     final Consumer<? super Context> action = (Consumer<Context>) t -> {
       try {
         if (t instanceof Documentation) {

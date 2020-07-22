@@ -57,16 +57,16 @@ public class MarkdownEventSource implements MarkdownListener {
   private static final String CELL_NONTEXT = " |\t";
   private static final String WHITESPACE_REGEX = "[ \t]";
 
-  static String normalizeList(List<ListlineContext> textlines) {
+  static String normalizeList(List<? extends ListlineContext> textlines) {
     return textlines.stream().map(p -> p.LISTLINE().getText()).collect(Collectors.joining("\n"));
   }
 
-  static String normalizeParagraph(List<ParagraphlineContext> textlines) {
+  static String normalizeParagraph(List<? extends ParagraphlineContext> textlines) {
     return textlines.stream().map(p -> p.PARAGRAPHLINE().getText())
         .collect(Collectors.joining(" "));
   }
 
-  static String normalizeQuote(List<QuotelineContext> textlines) {
+  static String normalizeQuote(List<? extends QuotelineContext> textlines) {
     return textlines.stream().map(p -> p.QUOTELINE().getText()).collect(Collectors.joining("\n"));
   }
   
@@ -80,7 +80,7 @@ public class MarkdownEventSource implements MarkdownListener {
     return text.substring(beginIndex, endIndex);
   }
 
-  private final Consumer<Context> contextConsumer;
+  private final Consumer<? super Context> contextConsumer;
   private final Deque<MutableContext> contexts = new ArrayDeque<>();
   private boolean inTableHeading = false;
   private final List<String> lastBlocks = new ArrayList<>();
@@ -91,7 +91,7 @@ public class MarkdownEventSource implements MarkdownListener {
   private final List<String> lastTableHeadings = new ArrayList<>();
   private final Logger logger = LogManager.getLogger(getClass());
 
-  public MarkdownEventSource(Consumer<Context> contextConsumer) {
+  public MarkdownEventSource(Consumer<? super Context> contextConsumer) {
     this.contextConsumer = contextConsumer;
   }
 
@@ -301,7 +301,10 @@ public class MarkdownEventSource implements MarkdownListener {
     if (!inTableHeading) {
       final DetailImpl detail = new DetailImpl(lastHeadingWords, lastHeadingLevel);
       for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
-        detail.addProperty(lastTableHeadings.get(i), lastRowValues.get(i));
+        final String value = lastRowValues.get(i);
+        if (!value.isBlank()) {
+          detail.addProperty(lastTableHeadings.get(i), value);
+        }
       }
       setSiblingContext(detail);
       if (contextConsumer != null) {

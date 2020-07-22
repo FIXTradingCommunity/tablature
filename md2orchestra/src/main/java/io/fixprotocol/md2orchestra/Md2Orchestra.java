@@ -19,6 +19,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -45,7 +46,7 @@ public class Md2Orchestra {
 
   public static class Builder {
     private boolean verbose;
-    private List<String> inputFiles;
+    private List<String> inputFiles = new ArrayList<>();
     private String logFile;
     private String outputFile;
     private String referenceFile;
@@ -65,7 +66,8 @@ public class Md2Orchestra {
     }
 
     public Builder inputFile(List<String> inputFiles) {
-      this.inputFiles = inputFiles;
+      this.inputFiles.clear();
+      this.inputFiles.addAll(inputFiles);
       return this;
     }
 
@@ -132,8 +134,7 @@ public class Md2Orchestra {
   private boolean verbose = false;
 
   /**
-   * Only for use with {@link #generate(InputStream, OutputStream, InputStream)} or
-   * {@link #main(String[])}
+   * For testing
    */
   Md2Orchestra() {
 
@@ -141,7 +142,7 @@ public class Md2Orchestra {
 
   private Md2Orchestra(Builder builder) {
     this.inputFiles =
-        builder.inputFiles.stream().map(s -> new File(s)).collect(Collectors.toList());
+        builder.inputFiles.stream().map(File::new).collect(Collectors.toList());
     this.outputFile = new File(builder.outputFile);
     this.referenceFile = builder.referenceFile != null ? new File(builder.referenceFile) : null;
     this.logFile = builder.logFile != null ? new File(builder.logFile) : null;

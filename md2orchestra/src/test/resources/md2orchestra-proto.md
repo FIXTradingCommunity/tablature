@@ -22,11 +22,12 @@ The new order message type is used by institutions wishing to electronically sub
 
 ## Fields
 
-| Name           | Tag | Type         |  Values                  |
-|----------------|----:|--------------|--------------------------|
-| Side           | 54  | SideCodeSet  |	                         |
-| OrdType        | 40  | char         | 1=Market 2=Limit         |
-| MyUserDefined1 | 6234| UTCTimestamp |	                         |
+| Name           | Tag | Type         |  Values          | Synopsis | Elaboration |
+|----------------|----:|--------------|------------------|----------|-------------|
+| Side           | 54  | SideCodeSet  |	                 |          |             |
+| OrdType        | 40  | char         | 1=Market 2=Limit |          |             |
+| MyUserDefined1 | 6234| UTCTimestamp |	                 |          |             |
+| ContractMultiplierUnitCodeSet | 1437 | | | Indicates the type of multiplier being applied to the contract. | Can be optionally used to further define unit |
 
 ## Component Instrument 
 

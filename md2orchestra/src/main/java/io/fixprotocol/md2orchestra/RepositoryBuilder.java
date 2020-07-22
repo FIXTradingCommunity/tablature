@@ -20,7 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -46,6 +48,7 @@ import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
+import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
@@ -60,8 +63,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
   private class ComponentBuilder implements ElementBuilder {
 
-    private String name;
-    private String scenario;
+    private final String name;
+    private final String scenario;
 
     public ComponentBuilder(String name, String scenario) {
       this.name = name;
@@ -71,8 +74,8 @@ class RepositoryBuilder implements Consumer<Context> {
     @Override
     public void build() {
       ComponentType componentType = repositoryAdapter.findComponentByName(name, scenario);
-      if (componentType == null && reference != null) {
-        componentType = reference.findComponentByName(name, scenario);
+      if (componentType == null && referenceRepositoryAdapter != null) {
+        componentType = referenceRepositoryAdapter.findComponentByName(name, scenario);
         if (componentType != null) {
           repositoryAdapter.copyComponent(componentType);
         } else {
@@ -133,11 +136,11 @@ class RepositoryBuilder implements Consumer<Context> {
         fieldType = repositoryAdapter.findFieldByName(name, scenario);
       }
 
-      if ((fieldType == null || fieldType.getType() == null) && reference != null) {
+      if ((fieldType == null || fieldType.getType() == null) && referenceRepositoryAdapter != null) {
         if (tag != -1) {
-          fieldType = reference.findFieldByTag(tag, scenario);
+          fieldType = referenceRepositoryAdapter.findFieldByTag(tag, scenario);
         } else if (name != null) {
-          fieldType = reference.findFieldByName(name, scenario);
+          fieldType = referenceRepositoryAdapter.findFieldByName(name, scenario);
         }
         if (fieldType != null) {
           repositoryAdapter.copyField(fieldType);
@@ -145,11 +148,7 @@ class RepositoryBuilder implements Consumer<Context> {
       }
       if (fieldType == null) {
         fieldType = new FieldType();
-        if (name != null) {
-          fieldType.setName(name);
-        } else {
-          fieldType.setName("Field" + tag);
-        }
+        fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
         if (tag > 0) {
           fieldType.setId(BigInteger.valueOf(tag));
         } else {
@@ -189,8 +188,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
   private class GroupBuilder implements ElementBuilder {
 
-    private String name;
-    private String scenario;
+    private final String name;
+    private final String scenario;
 
     public GroupBuilder(String name, String scenario) {
       this.name = name;
@@ -200,8 +199,8 @@ class RepositoryBuilder implements Consumer<Context> {
     @Override
     public void build() {
       GroupType groupType = repositoryAdapter.findGroupByName(name, scenario);
-      if (groupType == null && reference != null) {
-        groupType = reference.findGroupByName(name, scenario);
+      if (groupType == null && referenceRepositoryAdapter != null) {
+        groupType = referenceRepositoryAdapter.findGroupByName(name, scenario);
         if (groupType != null) {
           repositoryAdapter.copyGroup(groupType);
         } else {
@@ -227,9 +226,9 @@ class RepositoryBuilder implements Consumer<Context> {
 
     @Override
     public void build() {
-      GroupType componentType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
-      if (componentType != null) {
-        groupRef.setId(componentType.getId());
+      GroupType groupType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
+      if (groupType != null) {
+        groupRef.setId(groupType.getId());
       } else {
         logger.error("RepositoryBuilder unknown groupRef ID; name={} scenario={}", name,
             groupRef.getScenario());
@@ -253,8 +252,8 @@ class RepositoryBuilder implements Consumer<Context> {
           repositoryAdapter.findDatatypeByName(type);
       if (datatype != null) {
         found = true;
-      } else if (reference != null) {
-        datatype = reference.findDatatypeByName(type);
+      } else if (referenceRepositoryAdapter != null) {
+        datatype = referenceRepositoryAdapter.findDatatypeByName(type);
         if (datatype != null) {
           repositoryAdapter.copyDatatype(datatype);
           found = true;
@@ -264,8 +263,8 @@ class RepositoryBuilder implements Consumer<Context> {
         CodeSetType codeset = repositoryAdapter.findCodesetByName(type, scenario);
         if (codeset != null ) {
           found = true;
-        } else if (reference != null) {
-          codeset = reference.findCodesetByName(type, scenario);
+        } else if (referenceRepositoryAdapter != null) {
+          codeset = referenceRepositoryAdapter.findCodesetByName(type, scenario);
           if (codeset != null) {
             repositoryAdapter.copyCodeset(codeset);
             found = true;
@@ -273,7 +272,7 @@ class RepositoryBuilder implements Consumer<Context> {
         }
       } 
       if (!found) {
-        // if not found as a datatype or codeset in either current or reference repository, then
+        // if not found as a datatype or codeset in either current or referenceRepositoryAdapter repository, then
         // assume its a datatype name
         datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
         datatype.setName(type);
@@ -293,7 +292,7 @@ class RepositoryBuilder implements Consumer<Context> {
   private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
   private int lastId = 10000;
   private final Logger logger = LogManager.getLogger(getClass());
-  private RepositoryAdapter reference = null;
+  private RepositoryAdapter referenceRepositoryAdapter = null;
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
 
   public RepositoryBuilder() {
@@ -356,7 +355,7 @@ class RepositoryBuilder implements Consumer<Context> {
 
 
   public void setReference(RepositoryAdapter reference) {
-    this.reference = reference;
+    this.referenceRepositoryAdapter = reference;
   }
 
   public void write(OutputStream outputStream) throws JAXBException {
@@ -371,7 +370,7 @@ class RepositoryBuilder implements Consumer<Context> {
         FieldType field =
             repositoryAdapter.findFieldByTag(fieldRef.getId().intValue(), fieldRef.getScenario());
         if (field == null) {
-          field = reference.findFieldByTag(fieldRef.getId().intValue(), fieldRef.getScenario());
+          field = referenceRepositoryAdapter.findFieldByTag(fieldRef.getId().intValue(), fieldRef.getScenario());
           if (field != null) {
             addFieldAndType(field);
           } else {
@@ -384,7 +383,7 @@ class RepositoryBuilder implements Consumer<Context> {
         GroupType group =
             repositoryAdapter.findGroupByTag(groupRef.getId().intValue(), groupRef.getScenario());
         if (group == null) {
-          group = reference.findGroupByTag(groupRef.getId().intValue(), groupRef.getScenario());
+          group = referenceRepositoryAdapter.findGroupByTag(groupRef.getId().intValue(), groupRef.getScenario());
           if (group != null) {
             group = repositoryAdapter.copyGroup(group);
             final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
@@ -399,7 +398,7 @@ class RepositoryBuilder implements Consumer<Context> {
         ComponentType component = repositoryAdapter
             .findComponentByTag(componentRef.getId().intValue(), componentRef.getScenario());
         if (component == null) {
-          component = reference.findComponentByTag(componentRef.getId().intValue(),
+          component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId().intValue(),
               componentRef.getScenario());
           if (component != null) {
             component = repositoryAdapter.copyComponent(component);
@@ -426,7 +425,7 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           actor.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     } else {
       final String name = context.getKey(NAME_POSITION);
@@ -480,33 +479,45 @@ class RepositoryBuilder implements Consumer<Context> {
 
           try {
             detailTable.rows().get().forEach(r -> {
-              final String source = r.getProperty("state");
-              final String transitionName = r.getProperty("transition");
-              final String text = r.getProperty("documentation");
-              final String when = r.getProperty("when");
-              final String target = r.getProperty("target");
-
               final TransitionType transition = new TransitionType();
-              transition.setName(transitionName);
-              transition.setTarget(target);
-              if (when != null) {
-                transition.setWhen(when);
-              }
-              if (text != null) {
-                final Annotation annotation = new Annotation();
-                transition.setAnnotation(annotation);
-                repositoryAdapter.updateDocumentation(text, annotation);
+              final Annotation annotation = new Annotation();
+
+              String sourceStateName = null;
+              for (Entry<String, String> p : r.getProperties()) {
+
+                switch (p.getKey()) {
+                  case "state":
+                    sourceStateName = p.getValue();
+                    break;
+                  case "transition":
+                    transition.setName(p.getValue());
+                    break;
+                  case "when":
+                    transition.setWhen(p.getValue());
+                    break;
+                  case "target":
+                    transition.setTarget(p.getValue());
+                    break;
+                  default:
+                    if (isDocumentationKey(p.getKey())) {
+                      repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+                      transition.setAnnotation(annotation);
+                    }
+                }
               }
 
-              StateType sourceStateType = null;
-              if (source.equals(initialStateName)) {
-                sourceStateType = statemachine.getInitial();
+              StateType sourceState = null;
+              if (sourceStateName.equals(initialStateName)) {
+                sourceState = statemachine.getInitial();
               } else {
-                sourceStateType = statemachine.getState().stream()
-                    .filter(s -> s.getName().equals(source)).findFirst().get();
+                for (StateType state : statemachine.getState()) {
+                  if (state.getName().equals(sourceStateName)) {
+                    sourceState = state;
+                    break;
+                  }
+                }
               }
-              sourceStateType.getTransition().add(transition);
-
+              sourceState.getTransition().add(transition);
             });
           } catch (final NoSuchElementException e) {
             logger.warn("RepositoryBuilder no states defined for state machine; name={}", name);
@@ -545,8 +556,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
       final CodeSetType codeset = new CodeSetType();
       CodeSetType refCodeset = null;
-      if (reference != null) {
-        refCodeset = reference.findCodesetByName(name, scenario);
+      if (referenceRepositoryAdapter != null) {
+        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
       }
       if (tag == -1 && refCodeset != null) {
         tag = refCodeset.getId().intValue();
@@ -572,28 +583,7 @@ class RepositoryBuilder implements Consumer<Context> {
       repositoryAdapter.addCodeset(codeset);
 
       final List<CodeType> codes = codeset.getCode();
-      detailTable.rows().get().forEach(detail -> {
-        final String codeName = detail.getProperty("name");
-        final String codeValue = detail.getProperty("value");
-        int codeTag = tagToInt(detail.getProperty("tag"));
-        if (codeTag == -1) {
-          codeTag = assignId();
-        }
-        final CodeType codeType = new CodeType();
-        codeType.setName(codeName);
-        codeType.setValue(codeValue);
-        codeType.setId(BigInteger.valueOf(codeTag));
-        codes.add(codeType);
-        final String markdown = detail.getProperty("documentation");
-        if (markdown != null && !markdown.isEmpty()) {
-          Annotation annotation = codeType.getAnnotation();
-          if (annotation == null) {
-            annotation = new Annotation();
-            codeType.setAnnotation(annotation);
-          }
-          repositoryAdapter.addDocumentation(markdown, annotation);
-        }
-      });
+      detailTable.rows().get().forEach(detail ->addCode(detail, codes));
     } else if (context instanceof Documentation) {
       final Documentation detail = (Documentation) context;
       final String name = detail.getKey(NAME_POSITION);
@@ -606,11 +596,39 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           codeset.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     }
   }
 
+  private void addCode(final DetailProperties detail, List<CodeType> codes) {
+    final CodeType codeType = new CodeType();
+    final Annotation annotation = new Annotation();
+    
+    for (Entry<String, String> p : detail.getProperties()) {
+
+      switch (p.getKey()) {
+        case "name":
+          codeType.setName(p.getValue());
+          break;
+        case "value":
+          break;
+        case "tag":
+          codeType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+          break;
+        default:
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            codeType.setAnnotation(annotation);
+          }
+      }
+    }
+
+    if (codeType.getId() == null) {
+      codeType.setId(BigInteger.valueOf(assignId()));
+    }
+    codes.add(codeType);
+  }
 
   private void addComponent(Context context) {
     if (context instanceof DetailTable) {
@@ -621,8 +639,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
       final ComponentType component = new ComponentType();
       ComponentType refComponent = null;
-      if (reference != null) {
-        refComponent = reference.findComponentByName(name, scenario);
+      if (referenceRepositoryAdapter != null) {
+        refComponent = referenceRepositoryAdapter.findComponentByName(name, scenario);
       }
       if (refComponent != null) {
         tag = refComponent.getId().intValue();
@@ -651,7 +669,7 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           component.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     }
   }
@@ -674,96 +692,106 @@ class RepositoryBuilder implements Consumer<Context> {
             annotation = new Annotation();
             datatype.setAnnotation(annotation);
           }
-          repositoryAdapter.addDocumentation(markdown, annotation);
+          repositoryAdapter.addDocumentation(markdown, null, annotation);
         }
       }
+      final List<MappedDatatype> mappings = datatype.getMappedDatatype();
       final String standard = detail.getProperty("standard");
       if (standard != null && !standard.isEmpty()) {
-        final List<MappedDatatype> mappings = datatype.getMappedDatatype();
-        final MappedDatatype mapping = new MappedDatatype();
-        mappings.add(mapping);
-        mapping.setStandard(standard);
-        final String base = detail.getProperty("base");
-        if (base != null && !base.isEmpty()) {
-          mapping.setBase(base);
-        }
-        final String element = detail.getProperty("element");
-        if (element != null && !element.isEmpty()) {
-          mapping.setElement(element);
-        }
-        final String parameter = detail.getProperty("parameter");
-        if (parameter != null && !parameter.isEmpty()) {
-          mapping.setParameter(parameter);
-        }
-        final String pattern = detail.getProperty("pattern");
-        if (pattern != null && !pattern.isEmpty()) {
-          mapping.setPattern(pattern);
-        }
-        final String min = detail.getProperty("minInclusive");
-        if (min != null && !min.isEmpty()) {
-          mapping.setMinInclusive(min);
-        }
-        final String max = detail.getProperty("maxInclusive");
-        if (max != null && !max.isEmpty()) {
-          mapping.setMaxInclusive(max);
-        }
+        addDatatypeMapping(detail, standard, mappings);
       }
     }
+  }
+
+  private void addDatatypeMapping(final Detail detail, final String standard,
+      final List<MappedDatatype> mappings) {
+    final MappedDatatype mapping = new MappedDatatype();
+    final Annotation annotation = new Annotation();
+    mapping.setStandard(standard);
+
+    for (Entry<String, String> p : detail.getProperties()) {
+      switch (p.getKey()) {
+        case "base":
+          mapping.setBase(p.getValue());
+          break;
+        case "builtin":
+          mapping.setBuiltin(Boolean.valueOf(p.getValue()));
+          break;
+        case "element":
+          mapping.setElement(p.getValue());
+          break;
+        case "parameter":
+          mapping.setParameter(p.getValue());
+          break;
+        case "pattern":
+          mapping.setPattern(p.getValue());
+          break;
+        case "minInclusive":
+          mapping.setMinInclusive(p.getValue());
+          break;
+        case "maxInclusive":
+          mapping.setMaxInclusive(p.getValue());
+          break;
+        case "name":
+          break;
+        default:
+          // MappedDatatype annotation inaccessible through Java API #71
+         /* if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            mapping.setAnnotation(annotation);
+          }*/
+      }
+    }
+    mappings.add(mapping);
   }
 
   private void addField(Context context) {
     if (context instanceof Detail) {
       final Detail detail = (Detail) context;
-      final int tag = tagToInt(detail.getProperty("tag"));
-      final String name = detail.getProperty("name");
-      final String scenario = scenarioOrDefault(detail.getProperty("scenario"));
-      final String type = detail.getProperty("type");
       final FieldType field = new FieldType();
-      field.setId(BigInteger.valueOf(tag));
-      field.setName(name);
+      final Annotation annotation = new Annotation();
+      for (Entry<String, String> p : detail.getProperties()) {
 
-      if (!DEFAULT_SCENARIO.equals(scenario)) {
-        field.setScenario(scenario);
-      }
-
-      final String values = detail.getProperty("values");
-      if (values != null && !values.isEmpty()) {
-        final String[] valueTokens = values.split("[ =\t]");
-        final String codesetName = name + "Codeset";
-        createCodeset(codesetName, scenario, type, valueTokens);
-        field.setType(codesetName);
-      } else {
-        field.setType(type);
-      }
-
-      final String encoding = detail.getProperty("encoding");
-      if (encoding != null) {
-        field.setEncoding(encoding);
-      }
-
-      final Integer minLength = detail.getIntProperty("implMinLength");
-      if (minLength != null) {
-        field.setImplMinLength(minLength.shortValue());
-      }
-
-      final Integer maxLength = detail.getIntProperty("implMaxLength");
-      if (maxLength != null) {
-        field.setImplMaxLength(maxLength.shortValue());
-      }
-
-      final Integer length = detail.getIntProperty("implLength");
-      if (maxLength != null) {
-        field.setImplLength(length.shortValue());
-      }
-
-      final String markdown = detail.getProperty("documentation");
-      if (markdown != null) {
-        Annotation annotation = field.getAnnotation();
-        if (annotation == null) {
-          annotation = new Annotation();
-          field.setAnnotation(annotation);
+        switch (p.getKey()) {
+          case "tag":
+            field.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+            break;
+          case "name":
+            field.setName(p.getValue());
+            break;
+          case "scenario":
+            field.setScenario(scenarioOrDefault(p.getValue()));
+            break;
+          case "type":
+            field.setType(p.getValue());
+            break;
+          case "values":
+            String values = p.getValue();
+            if (values != null && !values.isEmpty()) {
+              final String[] valueTokens = values.split("[ =\t]");
+              final String codesetName = detail.getProperty("name") + "Codeset";
+              createCodeset(codesetName, detail.getProperty("scenario"), detail.getProperty("type"), valueTokens);
+              field.setType(codesetName);
+            }
+            break;
+          case "encoding":
+            field.setEncoding(p.getValue());
+            break;
+          case "implMinLength":
+            field.setImplMinLength(Short.parseShort(p.getValue()));
+            break;
+          case "implMaxLength":
+            field.setImplMaxLength(Short.parseShort(p.getValue()));
+            break;
+          case "implLength":
+            field.setImplLength(Short.parseShort(p.getValue()));
+            break;
+          default:
+            if (isDocumentationKey(p.getKey())) {
+              repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+              field.setAnnotation(annotation);
+            }
         }
-        repositoryAdapter.addDocumentation(markdown, annotation);
       }
       addFieldAndType(field);
     }
@@ -805,7 +833,7 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           flow.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     }
   }
@@ -819,8 +847,8 @@ class RepositoryBuilder implements Consumer<Context> {
 
       final GroupType group = new GroupType();
       GroupType refComponent = null;
-      if (reference != null) {
-        refComponent = reference.findGroupByName(name, scenario);
+      if (referenceRepositoryAdapter != null) {
+        refComponent = referenceRepositoryAdapter.findGroupByName(name, scenario);
       }
       if (refComponent != null) {
         tag = refComponent.getId().intValue();
@@ -853,7 +881,7 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           group.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     }
   }
@@ -909,7 +937,7 @@ class RepositoryBuilder implements Consumer<Context> {
           annotation = new Annotation();
           message.setAnnotation(annotation);
         }
-        repositoryAdapter.updateDocumentation(detail.getDocumentation(), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), null, annotation);
       }
     }
   }
@@ -948,7 +976,7 @@ class RepositoryBuilder implements Consumer<Context> {
               annotation = new Annotation();
               response.setAnnotation(annotation);
             }
-            repositoryAdapter.addDocumentation(markdown, annotation);
+            repositoryAdapter.addDocumentation(markdown, null, annotation);
           }
           responseRefs.add(messageRef);
           responseList.add(response);
@@ -967,6 +995,8 @@ class RepositoryBuilder implements Consumer<Context> {
     final String version = context.getKeyValue("version");
     if (version != null) {
       repositoryAdapter.setVersion(version);
+    } else {
+      repositoryAdapter.setVersion("1.0");
     }
     if (context instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) context;
@@ -1019,8 +1049,8 @@ class RepositoryBuilder implements Consumer<Context> {
     if (message == null) {
       message = new MessageType();
       MessageType refMessage = null;
-      if (reference != null) {
-        refMessage = reference.findMessageByName(name, scenarioOrDefault);
+      if (referenceRepositoryAdapter != null) {
+        refMessage = referenceRepositoryAdapter.findMessageByName(name, scenarioOrDefault);
       }
 
       if (tag == -1 && refMessage != null) {
@@ -1065,17 +1095,18 @@ class RepositoryBuilder implements Consumer<Context> {
     ComponentType componentType = repositoryAdapter.findComponentByName(name, scenario);
     if (componentType != null) {
       componentRefType.setId(componentType.getId());
-    } else if (reference != null) {
-      componentType = reference.findComponentByName(name, scenario);
+    } else if (referenceRepositoryAdapter != null) {
+      componentType = referenceRepositoryAdapter.findComponentByName(name, scenario);
       if (componentType != null) {
         componentRefType.setId(componentType.getId());
         buildSteps.add(new ComponentBuilder(name, scenario));
-      } else {
-        // Component not found, but write reference to be corrected later
-        componentRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new ComponentBuilder(name, scenario));
-        buildSteps.add(new ComponentRefBuilder(name, componentRefType));
       }
+    }
+    if (componentType == null) {
+      // Component not found, but write referenceRepositoryAdapter to be corrected later
+      componentRefType.setId(BigInteger.ZERO);
+      buildSteps.add(new ComponentBuilder(name, scenario));
+      buildSteps.add(new ComponentRefBuilder(name, componentRefType));
     }
 
     final List<ComponentRuleType> rules = componentRefType.getRule();
@@ -1125,16 +1156,54 @@ class RepositoryBuilder implements Consumer<Context> {
   }
 
   private FieldRefType populateFieldRef(DetailProperties detail) {
-    final String name = detail.getProperty("name");
-    String scenario = scenarioOrDefault(detail.getProperty("scenario"));
-    int tag = tagToInt(detail.getProperty("tag"));
-
     final FieldRefType fieldRefType = new FieldRefType();
-    if (tag != -1) {
-      fieldRefType.setId(BigInteger.valueOf(tag));
-      FieldType fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
+    final Annotation annotation = new Annotation();
+    String name = null;
+    String presenceString = null;
+    String valueString = null;
+
+    for (Entry<String, String> p : detail.getProperties()) {
+       switch (p.getKey()) {
+        case "name":
+          name = p.getValue();
+          break;
+        case "presence":
+          presenceString = p.getValue();
+          break;
+        case "values":
+          valueString = p.getValue();
+        case "tag":
+          fieldRefType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+          break;
+        case "scenario":
+          fieldRefType.setScenario(scenarioOrDefault(p.getValue()));
+          break;
+        case "encoding":
+          fieldRefType.setEncoding(p.getValue());
+          break;
+        case "implMinLength":
+          fieldRefType.setImplMinLength(Short.parseShort(p.getValue()));
+          break;
+        case "implMaxLength":
+          fieldRefType.setImplMaxLength(Short.parseShort(p.getValue()));
+          break;
+        case "implLength":
+          fieldRefType.setImplLength(Short.parseShort(p.getValue()));
+          break;
+        default:
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            fieldRefType.setAnnotation(annotation);
+          }
+      }
+    }
+
+    final String scenario = scenarioOrDefault(detail.getProperty("scenario"));
+    if (fieldRefType.getId() != null) {
+      FieldType fieldType =
+          repositoryAdapter.findFieldByTag(fieldRefType.getId().intValue(), scenario);
       if (fieldType == null) {
-        buildSteps.add(new FieldBuilder(tag, name, scenario));
+        buildSteps.add(new FieldBuilder(fieldRefType.getId().intValue(), name, scenario));
       }
     } else {
       FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
@@ -1142,15 +1211,14 @@ class RepositoryBuilder implements Consumer<Context> {
         fieldRefType.setId(fieldType.getId());
       } else {
         fieldRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new FieldBuilder(tag, name, scenario));
+        buildSteps.add(new FieldBuilder(0, name, scenario));
         buildSteps.add(new FieldRefBuilder(name, fieldRefType));
       }
     }
 
     final List<FieldRuleType> rules = fieldRefType.getRule();
-
     PresenceT presence = PresenceT.OPTIONAL;
-    final String presenceString = detail.getProperty("presence");
+    
     final List<String> whenWords = new ArrayList<>();
 
     if (presenceString != null) {
@@ -1184,55 +1252,27 @@ class RepositoryBuilder implements Consumer<Context> {
       rules.add(rule);
     }
 
-    final String values = detail.getProperty("values");
-    if (values != null && !values.isEmpty()) {
-      final int keywordPos = values.indexOf(ASSIGN_KEYWORD);
+    
+    if (valueString != null && !valueString.isEmpty()) {
+      final int keywordPos = valueString.indexOf(ASSIGN_KEYWORD);
       if (keywordPos != -1) {
-        fieldRefType.setAssign(values.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
+        fieldRefType.setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
       } else {
         if (presence == PresenceT.CONSTANT) {
-          fieldRefType.setValue(values);
+          fieldRefType.setValue(valueString);
           if (!DEFAULT_SCENARIO.equals(scenario)) {
             fieldRefType.setScenario(scenario);
           }
         } else {
-          // use the scenario of the parent element
-          if (DEFAULT_SCENARIO.equals(scenario)) {
-            scenario = detail.getContext().getKeyValue("scenario");
-          }
-          final String[] valueTokens = values.split("[ =\t]");
+           final String[] valueTokens = valueString.split("[ =\t]");
           final String codesetName = name + "Codeset";
+          // use the scenario of the parent element
           createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
           logger.warn("RepositoryBuilder unknown codeset datatype; name={} scenario={}",
               codesetName, scenario);
         }
       }
     }
-
-    if (!DEFAULT_SCENARIO.equals(scenario)) {
-      fieldRefType.setScenario(scenario);
-    }
-
-    final String encoding = detail.getProperty("encoding");
-    if (encoding != null) {
-      fieldRefType.setEncoding(encoding);
-    }
-
-    final Integer minLength = detail.getIntProperty("implMinLength");
-    if (minLength != null) {
-      fieldRefType.setImplMinLength(minLength.shortValue());
-    }
-
-    final Integer maxLength = detail.getIntProperty("implMaxLength");
-    if (maxLength != null) {
-      fieldRefType.setImplMaxLength(maxLength.shortValue());
-    }
-
-    final Integer length = detail.getIntProperty("implLength");
-    if (length != null) {
-      fieldRefType.setImplLength(length.shortValue());
-    }
-
     return fieldRefType;
   }
 
@@ -1244,17 +1284,18 @@ class RepositoryBuilder implements Consumer<Context> {
     GroupType groupType = repositoryAdapter.findGroupByName(name, scenario);
     if (groupType != null) {
       groupRefType.setId(groupType.getId());
-    } else if (reference != null) {
-      groupType = reference.findGroupByName(name, scenario);
+    } else if (referenceRepositoryAdapter != null) {
+      groupType = referenceRepositoryAdapter.findGroupByName(name, scenario);
       if (groupType != null) {
         groupRefType.setId(groupType.getId());
         buildSteps.add(new GroupBuilder(name, scenario));
-      } else {
-        // Group not found, but write reference to be corrected later
-        groupRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new GroupBuilder(name, scenario));
-        buildSteps.add(new GroupRefBuilder(name, groupRefType));
       }
+    }
+    if (groupType == null) {
+      // Group not found, but write referenceRepositoryAdapter to be corrected later
+      groupRefType.setId(BigInteger.ZERO); 
+      buildSteps.add(new GroupBuilder(name, scenario));
+      buildSteps.add(new GroupRefBuilder(name, groupRefType));
     }
 
     final List<ComponentRuleType> rules = groupRefType.getRule();
@@ -1329,6 +1370,28 @@ class RepositoryBuilder implements Consumer<Context> {
         return PresenceT.OPTIONAL;
       }
     }
+  }
+  
+  private boolean isDocumentationKey(String word) {
+    for (PurposeEnum purpose : PurposeEnum.values()) {
+      if (purpose.value().compareToIgnoreCase(word) == 0) {
+        return true;
+      }
+    }
+    if ("documentation".compareToIgnoreCase(word) == 0) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  private String getPurpose(String word) {
+    for (PurposeEnum purpose : PurposeEnum.values()) {
+      if (purpose.value().compareToIgnoreCase(word) == 0) {
+        return word.toUpperCase();
+      }
+    }
+    return null;
   }
 
   private int tagToInt(String str) {

@@ -16,6 +16,7 @@ package io.fixprotocol.md.event.mutable;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -69,8 +70,8 @@ public class DetailTableImpl extends DocumentationImpl implements MutableDetailT
     }
 
     @Override
-    public Stream<Entry<String, String>> getProperties() {
-      return properties.entrySet().stream();
+    public Collection<Entry<String, String>> getProperties() {
+      return Collections.unmodifiableSet(properties.entrySet());
     }
 
     @Override
