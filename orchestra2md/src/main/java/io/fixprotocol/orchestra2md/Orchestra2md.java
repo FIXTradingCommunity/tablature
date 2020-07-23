@@ -41,6 +41,7 @@ import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
+import io.fixprotocol._2020.orchestra.repository.Appinfo;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
@@ -519,6 +520,7 @@ public class Orchestra2md {
         if (max != null) {
           row.addProperty("maxInclusive", max);
         }
+        addDocumentationProperties(row, mapping.getAnnotation());
       }
     }
     documentWriter.write((DetailTable) table);
@@ -751,6 +753,10 @@ public class Orchestra2md {
         } else {
           properties.addProperty("documentation", markdown);
         }
+      } else if (obj instanceof Appinfo) {
+        Appinfo appinfo = (Appinfo) obj;       
+        String contents = appinfo.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
+        properties.addProperty(appinfo.getPurpose(), contents);
       }
     }
   }

@@ -485,7 +485,7 @@ class RepositoryBuilder implements Consumer<Context> {
               String sourceStateName = null;
               for (Entry<String, String> p : r.getProperties()) {
 
-                switch (p.getKey()) {
+                switch (p.getKey().toLowerCase()) {
                   case "state":
                     sourceStateName = p.getValue();
                     break;
@@ -501,6 +501,9 @@ class RepositoryBuilder implements Consumer<Context> {
                   default:
                     if (isDocumentationKey(p.getKey())) {
                       repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+                      transition.setAnnotation(annotation);
+                    } else {
+                      repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
                       transition.setAnnotation(annotation);
                     }
                 }
@@ -607,18 +610,22 @@ class RepositoryBuilder implements Consumer<Context> {
     
     for (Entry<String, String> p : detail.getProperties()) {
 
-      switch (p.getKey()) {
+      switch (p.getKey().toLowerCase()) {
         case "name":
           codeType.setName(p.getValue());
           break;
         case "value":
           break;
         case "tag":
+        case "id":
           codeType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            codeType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
             codeType.setAnnotation(annotation);
           }
       }
@@ -710,7 +717,10 @@ class RepositoryBuilder implements Consumer<Context> {
     mapping.setStandard(standard);
 
     for (Entry<String, String> p : detail.getProperties()) {
-      switch (p.getKey()) {
+      switch (p.getKey().toLowerCase()) {
+        case "standard":
+          mapping.setStandard(p.getValue());
+          break;
         case "base":
           mapping.setBase(p.getValue());
           break;
@@ -726,20 +736,23 @@ class RepositoryBuilder implements Consumer<Context> {
         case "pattern":
           mapping.setPattern(p.getValue());
           break;
-        case "minInclusive":
+        case "mininclusive":
           mapping.setMinInclusive(p.getValue());
           break;
-        case "maxInclusive":
+        case "maxinclusive":
           mapping.setMaxInclusive(p.getValue());
           break;
         case "name":
+          // an attribute of parent datatype
           break;
         default:
-          // MappedDatatype annotation inaccessible through Java API #71
-         /* if (isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
             mapping.setAnnotation(annotation);
-          }*/
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            mapping.setAnnotation(annotation);
+          }
       }
     }
     mappings.add(mapping);
@@ -752,8 +765,9 @@ class RepositoryBuilder implements Consumer<Context> {
       final Annotation annotation = new Annotation();
       for (Entry<String, String> p : detail.getProperties()) {
 
-        switch (p.getKey()) {
+        switch (p.getKey().toLowerCase()) {
           case "tag":
+          case "id":
             field.setId(BigInteger.valueOf(tagToInt(p.getValue())));
             break;
           case "name":
@@ -777,18 +791,21 @@ class RepositoryBuilder implements Consumer<Context> {
           case "encoding":
             field.setEncoding(p.getValue());
             break;
-          case "implMinLength":
+          case "implminlength":
             field.setImplMinLength(Short.parseShort(p.getValue()));
             break;
-          case "implMaxLength":
+          case "implmaxlength":
             field.setImplMaxLength(Short.parseShort(p.getValue()));
             break;
-          case "implLength":
+          case "impllength":
             field.setImplLength(Short.parseShort(p.getValue()));
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
               repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+              field.setAnnotation(annotation);
+            } else {
+              repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
               field.setAnnotation(annotation);
             }
         }
@@ -1163,7 +1180,7 @@ class RepositoryBuilder implements Consumer<Context> {
     String valueString = null;
 
     for (Entry<String, String> p : detail.getProperties()) {
-       switch (p.getKey()) {
+       switch (p.getKey().toLowerCase()) {
         case "name":
           name = p.getValue();
           break;
@@ -1173,6 +1190,7 @@ class RepositoryBuilder implements Consumer<Context> {
         case "values":
           valueString = p.getValue();
         case "tag":
+        case "id":
           fieldRefType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
           break;
         case "scenario":
@@ -1181,18 +1199,21 @@ class RepositoryBuilder implements Consumer<Context> {
         case "encoding":
           fieldRefType.setEncoding(p.getValue());
           break;
-        case "implMinLength":
+        case "implminlength":
           fieldRefType.setImplMinLength(Short.parseShort(p.getValue()));
           break;
-        case "implMaxLength":
+        case "implmaxlength":
           fieldRefType.setImplMaxLength(Short.parseShort(p.getValue()));
           break;
-        case "implLength":
+        case "impllength":
           fieldRefType.setImplLength(Short.parseShort(p.getValue()));
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            fieldRefType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
             fieldRefType.setAnnotation(annotation);
           }
       }

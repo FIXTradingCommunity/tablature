@@ -62,7 +62,7 @@
 		<java.version>11</java.version>
 		<junit.version>5.6.1</junit.version>
 		<log4j.version>2.13.3</log4j.version>
-		<orchestra.version>1.6.3</orchestra.version>
+		<orchestra.version>1.6.4-SNAPSHOT</orchestra.version>
 		<stringtemplate.version>4.1</stringtemplate.version>
 	</properties>
 

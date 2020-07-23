@@ -107,12 +107,13 @@ class RepositoryAdapter {
 
   void addAppinfo(String content, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
-    final Appinfo documentation = new Appinfo();
-    documentation.setContent(content);
+    final Appinfo appinfo = new Appinfo();
+    List<Object> contents = appinfo.getContent();
+    contents.add(content);
     if (purpose != null) {
-      documentation.setPurpose(purpose);
+      appinfo.setPurpose(purpose);
     }
-    elements.add(documentation);
+    elements.add(appinfo);
   }
 
   void addCodeset(final CodeSetType codeset) {
