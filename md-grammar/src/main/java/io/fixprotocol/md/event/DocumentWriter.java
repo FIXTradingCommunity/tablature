@@ -17,7 +17,6 @@ package io.fixprotocol.md.event;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -61,11 +60,10 @@ public class DocumentWriter implements AutoCloseable {
   // todo: alignment based on column class - align right if numeric, etc.
   public void write(DetailTable detailTable) throws IOException {
     try {
-      write((Documentation) detailTable);
-      final Collection<? extends TableColumn> tableColumns = detailTable.getTableColumns();
+      final Iterable<? extends TableColumn> tableColumns = detailTable.getTableColumns();
       writeTableHeadings(tableColumns);
       writeTableDelimiters(tableColumns);
-      detailTable.rows().get().forEach(row -> {
+      detailTable.rows().forEach(row -> {
         try {
           writeTableRow(tableColumns, row);
         } catch (final IOException e) {
@@ -83,11 +81,10 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("\n");
   }
 
-  public void write(Documentation context) throws IOException {
-    write((Context) context);
-    final String documentation = context.getDocumentation();
-    if (documentation != null) {
-      writer.write(documentation);
+  public void write(Documentation documentation) throws IOException {
+    final String text = documentation.getDocumentation();
+    if (text != null) {
+      writer.write(text);
       writer.write("\n\n");
     }
   }
@@ -120,7 +117,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write(SPACES, 0, spaces);
   }
 
-  private void writeTableDelimiters(Collection<? extends TableColumn> tableColumns)
+  private void writeTableDelimiters(Iterable<? extends TableColumn> tableColumns)
       throws IOException {
     for (final TableColumn column : tableColumns) {
       writer.write("|");
@@ -130,7 +127,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("|\n");
   }
 
-  private void writeTableHeadings(Collection<? extends TableColumn> tableColumns)
+  private void writeTableHeadings(Iterable<? extends TableColumn> tableColumns)
       throws IOException {
     for (final TableColumn column : tableColumns) {
       writer.write(CELL_PREFIX);
@@ -142,7 +139,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("|\n");
   }
 
-  private void writeTableRow(Collection<? extends TableColumn> tableColumns, DetailProperties row)
+  private void writeTableRow(Iterable<? extends TableColumn> tableColumns, DetailProperties row)
       throws IOException {
     for (final TableColumn column : tableColumns) {
       final String key = column.getKey();
@@ -150,7 +147,8 @@ public class DocumentWriter implements AutoCloseable {
       if (value == null) {
         value = "";
       }
-      writeCell(value, column.getWidth());
+        writeCell(value, column.getWidth());
+
     }
     writer.write("|\n");
   }

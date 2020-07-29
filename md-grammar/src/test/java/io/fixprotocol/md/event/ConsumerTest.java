@@ -25,37 +25,32 @@ public class ConsumerTest {
   @ParameterizedTest
   @ValueSource(strings = {"md2orchestra-proto.md"})
   void consume(String fileName) throws IOException {
-    Consumer<Context> contextConsumer = new Consumer<Context>() {
+    Consumer<Contextual> contextConsumer = new Consumer<>() {
 
       @Override
-      public void accept(Context context) {
-        if (context instanceof Detail) {
-          Detail detail = (Detail) context;
-          final String[] keys = detail.getKeys();
-          System.out.format("Detail context=%s level=%d%n", keys.length > 0 ? keys[0] : "None",
-              detail.getLevel());
+      public void accept(Contextual contextual) {
+        Context parent = contextual.getParent();
+        if (parent != null) {
+          final String[] parentKeys = parent.getKeys();
+          System.out.format("Parent context=%s level=%d%n",
+              parentKeys.length > 0 ? parentKeys[0] : "None", parent.getLevel());
+        }
+        if (contextual instanceof Detail) {
+          Detail detail = (Detail) contextual;
           detail.getProperties().forEach(property -> System.out.format("Property key=%s value=%s%n",
-              property.getKey(), property.getValue()));        
-        } else if (context instanceof Documentation) {
-          Documentation documentation = (Documentation) context;
-          final String[] keys = documentation.getKeys();
-          System.out.format("Documentation context=%s level=%d %s%n",
-              keys.length > 0 ? keys[0] : "None", documentation.getLevel(),
-              documentation.getDocumentation());
-        } else {
+              property.getKey(), property.getValue()));
+        } else if (contextual instanceof Documentation) {
+          Documentation documentation = (Documentation) contextual;
+          System.out.format("Documentation %s%n", documentation.getDocumentation());
+        } else if (contextual instanceof Context) {
+          Context context = (Context) contextual;
           final String[] keys = context.getKeys();
           System.out.format("Context=%s level=%d%n", keys.length > 0 ? keys[0] : "None",
               context.getLevel());
         }
-        Context parent = context.getParent();
-        if (parent != null) {
-          final String[] parentKeys = parent.getKeys();
-          System.out.format("Parent=%s level=%d%n", parentKeys.length > 0 ? parentKeys[0] : "None",
-              parent.getLevel());
-        }
+
       }
     };
-
 
     InputStream inputStream = getClass().getClassLoader().getResourceAsStream(fileName);
     DocumentParser parser = new DocumentParser();

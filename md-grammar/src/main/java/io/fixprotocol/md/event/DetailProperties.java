@@ -27,12 +27,6 @@ import java.util.Map.Entry;
 public interface DetailProperties {
 
   /**
-   *
-   * @return the Context of this collection of properties
-   */
-  Context getContext();
-
-  /**
    * Access a integer property by its key
    *
    * @param key key to the property

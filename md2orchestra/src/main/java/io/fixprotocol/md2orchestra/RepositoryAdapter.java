@@ -47,6 +47,7 @@ import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.Repository;
+import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol.md.event.MarkdownUtil;
 
 
@@ -140,7 +141,7 @@ class RepositoryAdapter {
     }
     elements.add(documentation);
   }
-  
+
   void addField(FieldType field) {
     repository.getFields().getField().add(field);
   }
@@ -270,7 +271,6 @@ class RepositoryAdapter {
     return null;
   }
 
-
   FieldType findFieldByTag(int tag, String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
@@ -298,6 +298,7 @@ class RepositoryAdapter {
     return null;
   }
 
+
   GroupType findGroupByName(String name, String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
@@ -323,6 +324,19 @@ class RepositoryAdapter {
     for (final MessageType message : messages) {
       if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
         return message;
+      }
+    }
+    return null;
+  }
+
+  StateMachineType findStatemachineByName(ActorType actor, String name) {
+    List<Object> objects = actor.getFieldOrFieldRefOrComponent();
+    for (Object object : objects) {
+      if (object instanceof StateMachineType) {
+        StateMachineType statemachine = (StateMachineType) object;
+        if (statemachine.getName().equals(name)) {
+          return statemachine;
+        }
       }
     }
     return null;
@@ -369,6 +383,10 @@ class RepositoryAdapter {
   void unmarshal(InputStream is) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-    this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);
+    //this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);
+    Object obj = jaxbUnmarshaller.unmarshal(is);
+    if (obj instanceof Repository) {
+      this.repository = (Repository) obj;
+    }
   }
 }

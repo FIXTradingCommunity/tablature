@@ -14,7 +14,7 @@
  */
 package io.fixprotocol.md.event;
 
-public interface MutableDetailTable extends DetailTable, MutableDocumentation {
+public interface MutableDetailTable extends DetailTable, MutableContextual {
 
   /**
    * Adds a collection key-value pairs to an array
@@ -30,5 +30,4 @@ public interface MutableDetailTable extends DetailTable, MutableDocumentation {
    * @return a new row instance
    */
   MutableDetailProperties newRow();
-
 }

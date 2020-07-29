@@ -15,12 +15,12 @@
 package io.fixprotocol.md.event;
 
 /**
- * A Context with documentation
+ * Documentation about something
  *
  * @author Don Mendelson
  *
  */
-public interface Documentation extends Context {
+public interface Documentation extends Contextual {
 
   /**
    *

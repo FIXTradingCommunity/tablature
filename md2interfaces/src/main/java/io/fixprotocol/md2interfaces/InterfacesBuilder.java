@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
 import org.purl.dc.terms.ElementOrRefinementContainer;
 import io.fixprotocol._2020.orchestra.interfaces.Annotation;
+import io.fixprotocol._2020.orchestra.interfaces.BaseInterfaceType;
 import io.fixprotocol._2020.orchestra.interfaces.EncodingType;
 import io.fixprotocol._2020.orchestra.interfaces.IdentifierType;
 import io.fixprotocol._2020.orchestra.interfaces.InterfaceType;
@@ -43,45 +44,57 @@ import io.fixprotocol._2020.orchestra.interfaces.SessionType;
 import io.fixprotocol._2020.orchestra.interfaces.TransportProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.UserIntefaceType;
 import io.fixprotocol.md.event.Context;
+import io.fixprotocol.md.event.Contextual;
 import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.Documentation;
 import io.fixprotocol.md.event.MarkdownUtil;
 
-class InterfacesBuilder implements Consumer<Context> {
+class InterfacesBuilder implements Consumer<Contextual> {
+
+  public static final String IDENTIFIERS_KEYWORD = "identifiers";
+  public static final String SESSION_KEYWORD = "session";
+  public static final String PROTOCOLS_KEYWORD = "protocols";
+  public static final String INTERFACE_KEYWORD = "interface";
 
   // sorted array of valid Dublin Core Terms
   private static final String[] dcTerms =
       new String[] {"contributor", "coverage", "creator", "date", "description", "format",
           "identifier", "language", "publisher", "relation", "rights", "source", "subject", "type"};
 
+  private final String[] contextKeys =
+      new String[] {IDENTIFIERS_KEYWORD, INTERFACE_KEYWORD, PROTOCOLS_KEYWORD, SESSION_KEYWORD};
+  
+  private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
 
   private final Interfaces interfaces = new Interfaces();
   private final Logger logger = LogManager.getLogger(getClass());
 
   @Override
-  public void accept(Context context) {
-    final String type = context.getKey(0);
+  public void accept(Contextual contextual) {
+    Context keyContext = getKeyContext(contextual);
+    final String type = keyContext.getKey(KEY_POSITION);
     if (type == null) {
-      // log unknown type
+      logger.warn("InterfacesBuilder received element with unknown context of class {}",
+          contextual.getClass());
     } else
       switch (type.toLowerCase()) {
-        case "interface":
-          addInterface(context);
+        case INTERFACE_KEYWORD:
+          addInterface(contextual, keyContext);
           break;
-        case "protocols":
-          addProtocols(context);
+        case PROTOCOLS_KEYWORD:
+          addProtocols(contextual, keyContext);
           break;
-        case "session":
-          addSession(context);
+        case SESSION_KEYWORD:
+          addSession(contextual, keyContext);
           break;
-        case "identifiers":
-          addIdentifiers(context);
+        case IDENTIFIERS_KEYWORD:
+          addIdentifiers(contextual, keyContext);
           break;
         default:
-          if (context.getLevel() == 1) {
-            addMetadata(context);
+          if (keyContext.getLevel() == 1) {
+            addMetadata(contextual, keyContext);
           } else {
             logger.warn("InterfacesBuilder received unknown context type {}", type);
           }
@@ -104,38 +117,39 @@ class InterfacesBuilder implements Consumer<Context> {
     elements.add(documentation);
   }
 
-  private void addIdentifiers(Context context) {
-    final Context parent = context.getParent();
-    final String sessionName = parent.getKey(NAME_POSITION);
-    final Context grandParent = parent.getParent();
-    if (grandParent != null) {
-      final String interfaceName = grandParent.getKey(NAME_POSITION);
-      final SessionType session = findSession(sessionName, interfaceName);
-      if (session != null) {
-        if (context instanceof DetailTable) {
-          final DetailTable detailTable = (DetailTable) context;
+  private void addIdentifiers(Contextual contextual, Context context) {
+    if (contextual instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) contextual;
+      final Context parent = context.getParent();
+      final String sessionName = parent.getKey(NAME_POSITION);
+      final Context grandParent = parent.getParent();
+      if (grandParent != null) {
+        final String interfaceName = grandParent.getKey(NAME_POSITION);
+        final SessionType session = findSession(sessionName, interfaceName);
+        if (session != null) {
           final List<IdentifierType> identifierList = session.getIdentifier();
-          detailTable.rows().get().forEach(detail -> {
+          detailTable.rows().forEach(detail -> {
             IdentifierType identifier = new IdentifierType();
             identifier.setName(detail.getProperty("name"));
             identifier.setContent(detail.getProperty("value"));
             identifierList.add(identifier);
           });
+        } else {
+          logger.error("InterfaceBuilder unknown session; name={} interface={}", sessionName,
+              interfaceName);
         }
       } else {
-        logger.error("InterfaceBuilder unknown session; name={} interface={}", sessionName,
-            interfaceName);
+        logger.error("InterfaceBuilder unknown parent interface for session id; name={}",
+            sessionName);
       }
-    } else {
-      logger.error("InterfaceBuilder unknown parent interface for session id; name={}",
-          sessionName);
     }
   }
 
-  private void addInterface(Context context) {
-    if (context instanceof Documentation) {
-      final Documentation detail = (Documentation) context;
-      final String name = detail.getKey(NAME_POSITION);
+  private void addInterface(Contextual contextual, Context context) {
+    final String name = context.getKey(NAME_POSITION);
+    if (contextual instanceof Documentation) {
+      final Documentation detail = (Documentation) contextual;
+      
       final InterfaceType interfaceInstance = findInterface(name);
       if (interfaceInstance != null) {
         Annotation annotation = interfaceInstance.getAnnotation();
@@ -145,10 +159,10 @@ class InterfacesBuilder implements Consumer<Context> {
         }
         addDocumentation(detail.getDocumentation(), annotation);
       } else {
-        logger.error("InterfaceBuilder unknown interface id; name={}", name);
+        logger.error("InterfaceBuilder unknown interface; name={}", name);
       }
-    } else {
-      final String name = context.getKey(NAME_POSITION);
+    } if (contextual instanceof Context && 
+        INTERFACE_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       final InterfaceType interfaceInstance = new InterfaceType();
       interfaceInstance.setName(name);
 
@@ -156,30 +170,27 @@ class InterfacesBuilder implements Consumer<Context> {
     }
   }
 
-  private void addInterfaceProtocols(Context context, Context parent) {
+  private void addInterfaceProtocols(Contextual contextual, Context parent) {
     final String interfaceName = parent.getKey(NAME_POSITION);
     final InterfaceType interfaceInstance = findInterface(interfaceName);
     if (interfaceInstance != null) {
-      if (context instanceof DetailTable) {
-        final DetailTable detailTable = (DetailTable) context;
-        detailTable.rows().get().forEach(detail -> {
-          ProtocolType protocol = createProtocol(detail);
-          interfaceInstance.getProtocol().add(protocol);
-        });
+      if (contextual instanceof DetailTable) {
+        final DetailTable detailTable = (DetailTable) contextual;
+        detailTable.rows().forEach(detail -> addInterfaceProtocol(detail, interfaceInstance));
       }
     } else {
-      logger.error("InterfaceBuilder unknown interface id; name={}", interfaceName);
+      logger.error("InterfaceBuilder unknown interface; name={}", interfaceName);
     }
   }
 
-  private void addMetadata(Context context) {
-    if (context instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) context;
+  private void addMetadata(Contextual contextual, Context context) {
+    if (contextual instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) contextual;
       final ElementOrRefinementContainer container = new ElementOrRefinementContainer();
       interfaces.setMetadata(container);
       final List<JAXBElement<SimpleLiteral>> literals = container.getAny();
 
-      detailTable.rows().get().forEach(detail -> {
+      detailTable.rows().forEach(detail -> {
         final String term = detail.getProperty("term");
         if (Arrays.binarySearch(dcTerms, term) == -1) {
           logger.error("InterfaceBuilder invalid metadata term {}", term);
@@ -197,26 +208,26 @@ class InterfacesBuilder implements Consumer<Context> {
     }
   }
 
-  private void addProtocols(Context context) {
+  private void addProtocols(Contextual contextual, Context context) {
     final Context parent = context.getParent();
-    final String parentType = parent.getKey(0);
+    final String parentType = parent.getKey(KEY_POSITION);
     if (parentType == null) {
       // log unknown type
     } else
       switch (parentType.toLowerCase()) {
-        case "interface":
-          addInterfaceProtocols(context, parent);
+        case INTERFACE_KEYWORD:
+          addInterfaceProtocols(contextual, parent);
           break;
-        case "session":
-          addSessionProtocols(context, parent);
+        case SESSION_KEYWORD:
+          addSessionProtocols(contextual, parent);
           break;
       }
   }
 
-  private void addSession(Context context) {
-    if (context instanceof Documentation) {
-      final Documentation detail = (Documentation) context;
-      final String name = detail.getKey(NAME_POSITION);
+  private void addSession(Contextual contextual, Context context) {
+    final String name = context.getKey(NAME_POSITION);
+    if (contextual instanceof Documentation) {
+      final Documentation detail = (Documentation) contextual;
       final Context parent = context.getParent();
       if (parent != null) {
         final String interfaceName = parent.getKey(NAME_POSITION);
@@ -235,9 +246,8 @@ class InterfacesBuilder implements Consumer<Context> {
       } else {
         logger.error("InterfaceBuilder unknown parent interface for session id; name={}", name);
       }
-    } else {
-      final String name = context.getKey(NAME_POSITION);
-
+    } else if (contextual instanceof Context && 
+        SESSION_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       final Context parent = context.getParent();
       if (parent != null) {
         final String interfaceName = parent.getKey(NAME_POSITION);
@@ -259,19 +269,16 @@ class InterfacesBuilder implements Consumer<Context> {
     }
   }
 
-  private void addSessionProtocols(Context context, Context parent) {
+  private void addSessionProtocols(Contextual contextual, Context parent) {
     final String sesionName = parent.getKey(NAME_POSITION);
     final Context grandParent = parent.getParent();
     if (grandParent != null) {
       final String interfaceName = grandParent.getKey(NAME_POSITION);
       final SessionType session = findSession(sesionName, interfaceName);
       if (session != null) {
-        if (context instanceof DetailTable) {
-          final DetailTable detailTable = (DetailTable) context;
-          detailTable.rows().get().forEach(detail -> {
-            ProtocolType protocol = createProtocol(detail);
-            session.getProtocol().add(protocol);
-          });
+        if (contextual instanceof DetailTable) {
+          final DetailTable detailTable = (DetailTable) contextual;
+          detailTable.rows().forEach(detail -> addInterfaceProtocol(detail, session));
         }
       } else {
         logger.error("InterfaceBuilder unknown session; name={} interface={}", sesionName,
@@ -282,27 +289,32 @@ class InterfacesBuilder implements Consumer<Context> {
     }
   }
 
-  private ProtocolType createProtocol(DetailProperties detail) {
+  private void addInterfaceProtocol(DetailProperties detail, BaseInterfaceType interfaceInstance) {
     final String layer = detail.getProperty("layer");
     ProtocolType protocol;
     switch (layer.toLowerCase()) {
       case "service":
       case "application":
         protocol = new ServiceType();
+        interfaceInstance.getService().add((ServiceType) protocol);
         break;
       case "ui":
       case "userinterface":
         protocol = new UserIntefaceType();
+        interfaceInstance.getUserInterface().add((UserIntefaceType) protocol);
         break;
       case "encoding":
       case "presentation":
         protocol = new EncodingType();
+        interfaceInstance.getEncoding().add((EncodingType) protocol);
         break;
-      case "session":
+      case SESSION_KEYWORD:
         protocol = new SessionProtocolType();
+        interfaceInstance.getSessionProtocol().add((SessionProtocolType) protocol);
         break;
       case "transport":
         protocol = new TransportProtocolType();
+        interfaceInstance.getTransport().add((TransportProtocolType) protocol);
         final String address = detail.getProperty("address");
         if (address != null) {
           ((TransportProtocolType) protocol).setAddress(address);
@@ -321,6 +333,7 @@ class InterfacesBuilder implements Consumer<Context> {
         protocol = new ProtocolType();
         final LayerT layert = LayerT.fromValue(layer.toLowerCase());
         protocol.setLayer(layert);
+        interfaceInstance.getProtocol().add(protocol);
     }
     protocol.setName(detail.getProperty("name"));
 
@@ -340,7 +353,6 @@ class InterfacesBuilder implements Consumer<Context> {
       protocol.setOrchestration(orchestration);
     }
 
-    return protocol;
   }
 
   private String enumValue(String text) {
@@ -384,5 +396,23 @@ class InterfacesBuilder implements Consumer<Context> {
       }
     }
     return null;
+  }
+  
+  private Context getKeyContext(Contextual contextual) {
+    Context context = null;
+    if (contextual instanceof Context) {
+      context = (Context) contextual;
+    } else {
+      context = contextual.getParent();
+    }
+    while (context != null) {
+      String key = context.getKey(KEY_POSITION);
+      if ((Arrays.binarySearch(contextKeys, key.toLowerCase()) >= 0) || (context.getLevel() == 1)) {
+        break;
+      } else {
+        context = context.getParent();
+      }
+    }
+    return context;
   }
 }

@@ -51,7 +51,8 @@ public final class DocumentParser {
     }
   }
 
-  public void parse(InputStream inputStream, Consumer<? super Context> contextConsumer) throws IOException {
+  public void parse(InputStream inputStream, Consumer<? super Contextual> contextConsumer)
+      throws IOException {
     final MarkdownLexer lexer = new MarkdownLexer(CharStreams.fromStream(inputStream));
     final MarkdownParser parser = new MarkdownParser(new CommonTokenStream(lexer));
     final SyntaxErrorListener errorListener = new SyntaxErrorListener();

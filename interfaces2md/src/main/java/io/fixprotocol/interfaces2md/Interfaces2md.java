@@ -55,7 +55,6 @@ import io.fixprotocol._2020.orchestra.interfaces.TransportProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.UserIntefaceType;
 import io.fixprotocol.interfaces2md.util.LogUtil;
 import io.fixprotocol.md.event.ContextFactory;
-import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentWriter;
 import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.event.MutableContext;
@@ -177,10 +176,11 @@ public class Interfaces2md {
 
   private void generateInterface(InterfaceType interfaceInstance, DocumentWriter documentWriter)
       throws IOException {
-    final MutableDocumentation context = contextFactory.createDocumentation(2);
+    MutableContext context = contextFactory.createContext(2);
     context.addPair("Interface", interfaceInstance.getName());
-    context.documentation(getDocumentation(interfaceInstance.getAnnotation()));
     documentWriter.write(context);
+    final MutableDocumentation documentation = contextFactory.createDocumentation(getDocumentation(interfaceInstance.getAnnotation()));
+    documentWriter.write(documentation);
 
     generateProtocolStack(interfaceInstance, documentWriter);
 
@@ -195,8 +195,10 @@ public class Interfaces2md {
 
   private void generateMetadata(Interfaces interfaces, DocumentWriter documentWriter)
       throws IOException {
-    final MutableDetailTable table = contextFactory.createDetailTable(1);
-    table.addKey("Interfaces");
+    MutableContext context = contextFactory.createContext(1);
+    context.addKey("Interfaces");
+    documentWriter.write(context);
+    final MutableDetailTable table = contextFactory.createDetailTable();
 
     final List<JAXBElement<SimpleLiteral>> elements = interfaces.getMetadata().getAny();
     for (final JAXBElement<SimpleLiteral> element : elements) {
@@ -207,7 +209,7 @@ public class Interfaces2md {
       row.addProperty("value", value);
     }
 
-    documentWriter.write((DetailTable) table);
+    documentWriter.write(table);
   }
 
   private void generateProtocolStack(BaseInterfaceType interfaceInstance,
@@ -221,9 +223,11 @@ public class Interfaces2md {
     if (!(services.isEmpty() && uis.isEmpty() && encodings.isEmpty() && sessionProtocols.isEmpty()
         && transports.isEmpty()) && protocols.isEmpty()) {
 
-      final MutableDetailTable table = contextFactory.createDetailTable(4);
-      table.addKey("Protocols");
-
+      MutableContext context = contextFactory.createContext(4);
+      context.addKey("Protocols");
+      documentWriter.write(context);
+      
+      final MutableDetailTable table = contextFactory.createDetailTable();
       for (final ServiceType service : services) {
         final MutableDetailProperties row = table.newRow();
         row.addProperty("layer", "Service");
@@ -271,7 +275,7 @@ public class Interfaces2md {
         row.addProperty("layer", protocol.getLayer().name());
         populateProtocol(row, protocol);
       }
-      documentWriter.write((DetailTable) table);
+      documentWriter.write(table);
     }
   }
 
@@ -290,15 +294,17 @@ public class Interfaces2md {
       throws IOException {
     final List<IdentifierType> ids = session.getIdentifier();
     if (!ids.isEmpty()) {
-      final MutableDetailTable table = contextFactory.createDetailTable(4);
-      table.addKey("Identifiers");
-
+      MutableContext context = contextFactory.createContext(4);
+      context.addKey("Identifiers");
+      documentWriter.write(context);
+      
+      final MutableDetailTable table = contextFactory.createDetailTable();
       for (final IdentifierType id : ids) {
         final MutableDetailProperties row = table.newRow();
         row.addProperty("name", id.getName());
         row.addProperty("value", id.getContent());
       }
-      documentWriter.write((DetailTable) table);
+      documentWriter.write(table);
     }
   }
 

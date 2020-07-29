@@ -14,35 +14,19 @@
  */
 package io.fixprotocol.md.event.mutable;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Stream;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.MutableDetail;
 
-public class DetailImpl extends ContextImpl implements MutableDetail {
+public class DetailImpl implements MutableDetail {
 
   private final Map<String, String> properties = new LinkedHashMap<>();
+  private Context parent;
 
-  public DetailImpl() {
-    this(EMPTY_CONTEXT, 0);
-  }
-
-  public DetailImpl(int level) {
-    this(EMPTY_CONTEXT, level);
-  }
-
-  public DetailImpl(String[] keys) {
-    this(keys, 0);
-  }
-
-  public DetailImpl(String[] keys, int level) {
-    super(keys, level);
-  }
 
   @Override
   public void addIntProperty(String key, int value) {
@@ -54,10 +38,6 @@ public class DetailImpl extends ContextImpl implements MutableDetail {
     properties.put(key.toLowerCase(), value);
   }
 
-  @Override
-  public Context getContext() {
-    return this;
-  }
 
   @Override
   public Integer getIntProperty(String key) {
@@ -73,6 +53,11 @@ public class DetailImpl extends ContextImpl implements MutableDetail {
   }
 
   @Override
+  public Context getParent() {
+    return parent;
+  }
+
+  @Override
   public Collection<Entry<String, String>> getProperties() {
     return Collections.unmodifiableSet(properties.entrySet());
   }
@@ -83,9 +68,9 @@ public class DetailImpl extends ContextImpl implements MutableDetail {
   }
 
   @Override
-  public String toString() {
-    return "DetailImpl [properties=" + properties + ", getKeys()=" + Arrays.toString(getKeys())
-        + ", getLevel()=" + getLevel() + "]";
+  public void setParent(Context parent) {
+    this.parent = parent;
   }
+
 
 }

@@ -4,7 +4,13 @@ Order messages and their elements.
 
 ## Message NewOrderSingle type 'D'
 
+#### Synopsis
+
 The new order message type is used by institutions wishing to electronically submit securities and forex orders to a broker for execution.
+
+#### Elaboration
+
+The NewOrderSingle(35=D) message type may also be used by institutions or retail intermediaries wishing to electronically submit Collective Investment Vehicle (CIV) orders to a broker or fund manager for execution.
 
 | Name           | Tag | Presence                |
 |----------------|----:|-------------------------|

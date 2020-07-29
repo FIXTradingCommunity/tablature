@@ -38,8 +38,9 @@ import io.fixprotocol.md.antlr.MarkdownParser.TableContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TabledelimiterrowContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
-import io.fixprotocol.md.event.Context;
+import io.fixprotocol.md.event.Contextual;
 import io.fixprotocol.md.event.MutableContext;
+import io.fixprotocol.md.event.MutableContextual;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.mutable.ContextImpl;
 import io.fixprotocol.md.event.mutable.DetailImpl;
@@ -69,7 +70,7 @@ public class MarkdownEventSource implements MarkdownListener {
   static String normalizeQuote(List<? extends QuotelineContext> textlines) {
     return textlines.stream().map(p -> p.QUOTELINE().getText()).collect(Collectors.joining("\n"));
   }
-  
+
   static String trimCell(String text) {
     int beginIndex = 0;
     int endIndex = text.length();
@@ -80,18 +81,16 @@ public class MarkdownEventSource implements MarkdownListener {
     return text.substring(beginIndex, endIndex);
   }
 
-  private final Consumer<? super Context> contextConsumer;
+  private final Consumer<? super Contextual> contextConsumer;
   private final Deque<MutableContext> contexts = new ArrayDeque<>();
   private boolean inTableHeading = false;
   private final List<String> lastBlocks = new ArrayList<>();
   private int lastColumnNo;
-  private int lastHeadingLevel = 0;
-  private String[] lastHeadingWords = null;
   private final List<String> lastRowValues = new ArrayList<>();
   private final List<String> lastTableHeadings = new ArrayList<>();
   private final Logger logger = LogManager.getLogger(getClass());
 
-  public MarkdownEventSource(Consumer<? super Context> contextConsumer) {
+  public MarkdownEventSource(Consumer<? super Contextual> contextConsumer) {
     this.contextConsumer = contextConsumer;
   }
 
@@ -162,8 +161,8 @@ public class MarkdownEventSource implements MarkdownListener {
 
   @Override
   public void enterTable(TableContext ctx) {
-    // no action
-
+    supplyLastDocumentation();
+    lastBlocks.clear();
   }
 
   @Override
@@ -193,7 +192,8 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void exitBlockquote(BlockquoteContext ctx) {
     final List<QuotelineContext> textlines = ctx.quoteline();
-    lastBlocks.add(normalizeQuote(textlines));  }
+    lastBlocks.add(normalizeQuote(textlines));
+  }
 
   @Override
   public void exitCell(CellContext ctx) {
@@ -222,9 +222,9 @@ public class MarkdownEventSource implements MarkdownListener {
     final String headingLine = ctx.HEADINGLINE().getText();
     // Only a new heading changes the context
     // Heading level is length of first word formed with '#'
-    lastHeadingLevel = headingLine.indexOf(" ");
-    lastHeadingWords = headingLine.substring(lastHeadingLevel + 1).split(WHITESPACE_REGEX);
-    final ContextImpl context = new ContextImpl(lastHeadingWords, lastHeadingLevel);
+    final int headingLevel = headingLine.indexOf(" ");
+    final String[] headingWords = headingLine.substring(headingLevel + 1).split(WHITESPACE_REGEX);
+    final ContextImpl context = new ContextImpl(headingWords, headingLevel);
     updateParentContext(context);
 
     contextConsumer.accept(context);
@@ -263,7 +263,7 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void exitTable(TableContext ctx) {
     if (!inTableHeading) {
-      final DetailTableImpl detailTable = new DetailTableImpl(lastHeadingWords, lastHeadingLevel);
+      final DetailTableImpl detailTable = new DetailTableImpl();
       final List<TablerowContext> tablerows = ctx.tablerow();
 
       for (final TablerowContext tablerow : tablerows) {
@@ -278,7 +278,7 @@ public class MarkdownEventSource implements MarkdownListener {
           }
         }
       }
-      setSiblingContext(detailTable);
+      updateParentContext(detailTable);
       if (contextConsumer != null) {
         contextConsumer.accept(detailTable);
       }
@@ -299,14 +299,14 @@ public class MarkdownEventSource implements MarkdownListener {
   @Override
   public void exitTablerow(TablerowContext ctx) {
     if (!inTableHeading) {
-      final DetailImpl detail = new DetailImpl(lastHeadingWords, lastHeadingLevel);
+      final DetailImpl detail = new DetailImpl();
       for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
         final String value = lastRowValues.get(i);
         if (!value.isBlank()) {
           detail.addProperty(lastTableHeadings.get(i), value);
         }
       }
-      setSiblingContext(detail);
+      updateParentContext(detail);
       if (contextConsumer != null) {
         contextConsumer.accept(detail);
       }
@@ -339,25 +339,22 @@ public class MarkdownEventSource implements MarkdownListener {
     }
   }
 
-  private String normalizeBlocks() {
-    return String.join("\n\n", lastBlocks);
+  void updateParentContext(final MutableContextual contextual) {
+    final MutableContext lastContext = contexts.peekLast();
+    contextual.setParent(lastContext);
   }
 
-  private void setSiblingContext(MutableContext context) {
-    final MutableContext lastContext = contexts.peekLast();
-    if (lastContext != null && lastContext.getLevel() == context.getLevel()) {
-      context.setParent(lastContext.getParent());
-    }
+  private String normalizeBlocks() {
+    return String.join("\n\n", lastBlocks);
   }
 
   private void supplyLastDocumentation() {
     if (!lastBlocks.isEmpty()) {
       final String paragraphs = normalizeBlocks();
-      final DocumentationImpl documentation =
-          new DocumentationImpl(lastHeadingWords, lastHeadingLevel, paragraphs);
-      setSiblingContext(documentation);
+      final DocumentationImpl documentation = new DocumentationImpl(paragraphs);
+      updateParentContext(documentation);
       contextConsumer.accept(documentation);
     }
   }
 
-  }
+}

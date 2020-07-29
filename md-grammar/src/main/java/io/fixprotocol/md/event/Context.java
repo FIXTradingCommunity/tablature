@@ -17,7 +17,7 @@ package io.fixprotocol.md.event;
 /**
  * A semantic context for subsequent contents
  */
-public interface Context {
+public interface Context extends Contextual {
 
   int DEFAULT_LEVEL = 1;
   String[] EMPTY_CONTEXT = new String[0];
@@ -51,12 +51,5 @@ public interface Context {
    * @return outline level, 1-based
    */
   int getLevel();
-
-  /**
-   * A broader Context
-   *
-   * @return a parent Context or {@code null} if there is no parent
-   */
-  Context getParent();
 
 }

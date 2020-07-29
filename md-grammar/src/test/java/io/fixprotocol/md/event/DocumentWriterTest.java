@@ -26,7 +26,7 @@ class DocumentWriterTest {
   private ContextFactory factory;
   private DocumentWriter documentWriter;
   private Writer writer;
-  
+
   @BeforeEach
   void setUp() throws Exception {
     factory = new ContextFactory();
@@ -37,25 +37,23 @@ class DocumentWriterTest {
   @Test
   void heading() throws IOException {
     String[] keys = new String[] {"Message", "NewOrderSingle", "scenario", "base"};
-    MutableContext context = factory.createContext(keys , 1);
+    MutableContext context = factory.createContext(keys, 1);
     documentWriter.write(context);
     String output = writer.toString();
-    assertEquals("# Message NewOrderSingle scenario base\n\n",  output);
+    assertEquals("# Message NewOrderSingle scenario base\n\n", output);
   }
-  
+
   @Test
   void documentation() throws IOException {
-    String[] keys = new String[] {"Message", "NewOrderSingle", "scenario", "base"};
-    MutableDocumentation context = factory.createDocumentation(keys , 1).documentation("This is a paragraph.");
-    documentWriter.write(context);
+    MutableDocumentation documentation = factory.createDocumentation("This is a paragraph.");
+    documentWriter.write(documentation);
     String output = writer.toString();
-    assertEquals("# Message NewOrderSingle scenario base\n\nThis is a paragraph.\n\n",  output);
+    assertEquals("This is a paragraph.\n\n", output);
   }
 
   @Test
   void table() throws IOException {
-    String[] keys = new String[] {"Message", "NewOrderSingle", "scenario", "base"};
-    MutableDetailTable table = factory.createDetailTable(keys , 1);
+    MutableDetailTable table = factory.createDetailTable();
     MutableDetailProperties detailProperties = table.newRow();
     detailProperties.addProperty("Name", "SecurityID");
     detailProperties.addProperty("Tag", "48");
@@ -64,7 +62,7 @@ class DocumentWriterTest {
     detailProperties.addProperty("Name", "SecurityIDSource");
     detailProperties.addProperty("Tag", "22");
     detailProperties.addProperty("Presence", "required");
-    documentWriter.write((DetailTable)table);
+    documentWriter.write(table);
     String output = writer.toString();
     System.out.print(output);
   }

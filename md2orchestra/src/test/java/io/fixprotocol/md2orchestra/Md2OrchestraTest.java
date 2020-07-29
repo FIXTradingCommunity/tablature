@@ -45,7 +45,7 @@ class Md2OrchestraTest {
    * 
    * Equivalent to command line:
    * <pre>
-   * java io.fixprotocol.md2orchestra.Md2Orchestra -i "md2orchestra-proto.md"" -o target/test/main1.xml -r FixRepository50SP2EP247.xml -e target/test/main1-err.txt
+   * java io.fixprotocol.md2orchestra.Md2Orchestra -i "md2orchestra-proto.md"" -o target/test/main1.xml -r OrchestraFIXLatest.xml -e target/test/main1-err.txt
    * </pre>
    */
   @Disabled
@@ -53,7 +53,7 @@ class Md2OrchestraTest {
   void mainWithReference() throws Exception {
     final String outputFilename = "target/test/main1.xml";
     final String args[] = new String[] {"-o", outputFilename,
-        "-r", "FixRepository50SP2EP247.xml", "-e", "target/test/main1-err.txt",
+        "-r", "OrchestraFIXLatest.xml", "-e", "target/test/main1-err.txt",
         "md2orchestra-proto.md", };
     Md2Orchestra.main(args);
   }
@@ -162,9 +162,9 @@ class Md2OrchestraTest {
     URI uri = url.toURI();
     File inputFile = new File(uri);
     
-    url = Thread.currentThread().getContextClassLoader().getResource("FixRepository50SP2EP247.xml");
-    uri = url.toURI();
-    File referenceFile = new File(uri);
+    URL url2 = Thread.currentThread().getContextClassLoader().getResource("OrchestraFIXLatest.xml");
+    URI uri2 = url2.toURI();
+    File referenceFile = new File(uri2);
     Md2Orchestra md2Orchestra = new Md2Orchestra();
     final String outFilename = "target/test/md2orchestra-proto-ref.xml";
     md2Orchestra.generate(List.of(inputFile), new File(outFilename), referenceFile,

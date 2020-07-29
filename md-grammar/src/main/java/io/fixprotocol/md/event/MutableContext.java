@@ -14,7 +14,7 @@
  */
 package io.fixprotocol.md.event;
 
-public interface MutableContext extends Context {
+public interface MutableContext extends Context, MutableContextual {
 
   /**
    * Add a key to the Context
@@ -34,10 +34,4 @@ public interface MutableContext extends Context {
     addKey(value);
   }
 
-  /**
-   * Set a parent Context to build a hierarchy
-   * 
-   * @param parent parent Context
-   */
-  void setParent(Context parent);
 }

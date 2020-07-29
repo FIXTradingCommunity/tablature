@@ -28,27 +28,16 @@ public class ContextFactory {
     return new ContextImpl(keys, level);
   }
 
-  public MutableDetail createDetail(int level) {
-    return new DetailImpl(level);
+  public MutableContextual createDetail() {
+    return new DetailImpl();
   }
 
-  public MutableDetail createDetail(String[] keys, int level) {
-    return new DetailImpl(keys, level);
+  public MutableDetailTable createDetailTable() {
+    return new DetailTableImpl();
   }
 
-  public MutableDetailTable createDetailTable(int level) {
-    return new DetailTableImpl(level);
+  public MutableDocumentation createDocumentation(String documentation) {
+    return new DocumentationImpl(documentation);
   }
 
-  public MutableDetailTable createDetailTable(String[] keys, int level) {
-    return new DetailTableImpl(keys, level);
-  }
-
-  public MutableDocumentation createDocumentation(int level) {
-    return new DocumentationImpl(level);
-  }
-
-  public MutableDocumentation createDocumentation(String[] keys, int level) {
-    return new DocumentationImpl(keys, level);
-  }
 }
