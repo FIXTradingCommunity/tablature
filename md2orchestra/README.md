@@ -44,10 +44,26 @@ usage: Md2Orchestra [options] <input-file>..."
  -v,--verbose           verbose event log
 ```
 
-Example
+`<input-file>` can be a literal name or a glob pattern where 
+- `*` is a wildcard to match any number of characters
+- `?` is a wildcard to match a single character
+- `**` matches multiple characters that may cross directory boundaries
+
+Example with one named input file
 
 ```
 java io.fixprotocol.md2orchestra.Md2Orchestra -o myorchestra.xml -r FixRepository50SP2EP247.xml mymarkdown.md
+```
+
+Example with two inputs
+
+```
+java io.fixprotocol.md2orchestra.Md2Orchestra -o myorchestra.xml -r FixRepository50SP2EP247.xml mymarkdown1.md mymarkdown2.md
+```
+
+Example with glob pattern for inputs
+```
+java io.fixprotocol.md2orchestra.Md2Orchestra -o myorchestra.xml -r FixRepository50SP2EP247.xml *.md
 ```
 
 ### Invoked from an application
@@ -58,7 +74,7 @@ Example
 
 ```java
 Md2Orchestra md2Orchestra1 = Md2Orchestra.builder()
-    .inputFile("mymarkdown.md")
+    .inputFilePattern("mymarkdown.md")
     .referenceFile("FixRepository50SP2EP247.xml")
     .outputFile("myorchestra.xml")
     .build();
