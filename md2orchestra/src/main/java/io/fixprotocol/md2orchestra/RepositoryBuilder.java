@@ -89,7 +89,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     }
   }
   /**
-   * 
+   *
    * Populates the ID of a ComponentRef when the component name is known
    */
   private class ComponentRefBuilder implements ElementBuilder {
@@ -104,7 +104,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
     @Override
     public void build() {
-      ComponentType componentType =
+      final ComponentType componentType =
           repositoryAdapter.findComponentByName(name, componentRef.getScenario());
       if (componentType != null) {
         componentRef.setId(componentType.getId());
@@ -162,7 +162,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     }
   }
   /**
-   * 
+   *
    * Populates the ID of a GroupRef when the group name is known
    */
   private class FieldRefBuilder implements ElementBuilder {
@@ -177,7 +177,8 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
     @Override
     public void build() {
-      FieldType componentType = repositoryAdapter.findFieldByName(name, fieldRef.getScenario());
+      final FieldType componentType =
+          repositoryAdapter.findFieldByName(name, fieldRef.getScenario());
       if (componentType != null) {
         fieldRef.setId(componentType.getId());
       } else {
@@ -210,7 +211,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     }
   }
   /**
-   * 
+   *
    * Populates the ID of a GroupRef when the group name is known
    */
   private class GroupRefBuilder implements ElementBuilder {
@@ -225,7 +226,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
     @Override
     public void build() {
-      GroupType groupType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
+      final GroupType groupType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
       if (groupType != null) {
         groupRef.setId(groupType.getId());
       } else {
@@ -286,6 +287,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
   public static final String DATATYPES_KEYWORD = "datatypes";
+  public static final String DESCRIPTION_KEYWORD = "description";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
   public static final String FIELDS_KEYWORD = "fields";
   public static final String FLOW_KEYWORD = "flow";
@@ -299,10 +301,10 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final String DEFAULT_SCENARIO = "base";
-  
+
   private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
-  
+
   private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
 
   private final String[] contextKeys =
@@ -312,6 +314,8 @@ class RepositoryBuilder implements Consumer<Contextual> {
   private final Logger logger = LogManager.getLogger(getClass());
   private RepositoryAdapter referenceRepositoryAdapter = null;
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
+  private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
+
 
   public RepositoryBuilder() {
     this.repositoryAdapter.createRepository();
@@ -323,7 +327,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
   @Override
   public void accept(Contextual contextual) {
-    Context keyContext = getKeyContext(contextual);
+    final Context keyContext = getKeyContext(contextual);
+    logger.warn("RepositoryBuilder received element with unknown context",
+        contextual.getClass());
+    if (keyContext == null) {
+      return;
+    }
     final String type = keyContext.getKey(KEY_POSITION);
     if (type == null) {
       logger.warn("RepositoryBuilder received element with unknown context of class {}",
@@ -437,15 +446,16 @@ class RepositoryBuilder implements Consumer<Contextual> {
     final String name = context.getKey(NAME_POSITION);
     if (contextual instanceof Documentation) {
       final Documentation documentation = (Documentation) contextual;
-       final ActorType actor = repositoryAdapter.findActorByName(name);
+      final ActorType actor = repositoryAdapter.findActorByName(name);
       if (actor != null) {
         Annotation annotation = actor.getAnnotation();
         if (annotation == null) {
           annotation = new Annotation();
           actor.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else if (contextual instanceof Context) {
       final ActorType actor = new ActorType();
@@ -502,7 +512,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
               final Annotation annotation = new Annotation();
 
               String sourceStateName = null;
-              for (Entry<String, String> p : r.getProperties()) {
+              for (final Entry<String, String> p : r.getProperties()) {
 
                 switch (p.getKey().toLowerCase()) {
                   case "state":
@@ -533,7 +543,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
               if (sourceStateName.equals(initialStateName)) {
                 sourceState = statemachine.getInitial();
               } else {
-                for (StateType state : statemachine.getState()) {
+                for (final StateType state : statemachine.getState()) {
                   if (state.getName().equals(sourceStateName)) {
                     sourceState = state;
                     break;
@@ -570,17 +580,18 @@ class RepositoryBuilder implements Consumer<Contextual> {
     final CodeType codeType = new CodeType();
     final Annotation annotation = new Annotation();
 
-    for (Entry<String, String> p : detail.getProperties()) {
+    for (final Entry<String, String> p : detail.getProperties()) {
 
       switch (p.getKey().toLowerCase()) {
         case "name":
-          codeType.setName(p.getValue());
+          codeType.setName(textUtil.stripName(p.getValue()));
           break;
         case "value":
+          codeType.setValue(p.getValue());
           break;
         case "tag":
         case "id":
-          codeType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
@@ -617,11 +628,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
           annotation = new Annotation();
           codeset.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else if (contextual instanceof Context) {
-      int tag = tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final CodeSetType codeset = new CodeSetType();
       CodeSetType refCodeset = null;
       if (referenceRepositoryAdapter != null) {
@@ -662,7 +674,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
       addMembers(detailTable.rows(), members);
-     } else if (contextual instanceof Documentation) {
+    } else if (contextual instanceof Documentation) {
       final Documentation detail = (Documentation) contextual;
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       if (component != null) {
@@ -671,11 +683,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
           annotation = new Annotation();
           component.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else if (contextual instanceof Context) {
-      int tag = tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final ComponentType component = new ComponentType();
 
       ComponentType refComponent = null;
@@ -731,7 +744,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     final Annotation annotation = new Annotation();
     mapping.setStandard(standard);
 
-    for (Entry<String, String> p : detail.getProperties()) {
+    for (final Entry<String, String> p : detail.getProperties()) {
       switch (p.getKey().toLowerCase()) {
         case "standard":
           mapping.setStandard(p.getValue());
@@ -778,12 +791,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
       final Detail detail = (Detail) contextual;
       final FieldType field = new FieldType();
       final Annotation annotation = new Annotation();
-      for (Entry<String, String> p : detail.getProperties()) {
+      for (final Entry<String, String> p : detail.getProperties()) {
 
         switch (p.getKey().toLowerCase()) {
           case "tag":
           case "id":
-            field.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+            field.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
             break;
           case "name":
             field.setName(p.getValue());
@@ -795,7 +808,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
             field.setType(p.getValue());
             break;
           case "values":
-            String values = p.getValue();
+            final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
               final String[] valueTokens = values.split("[ =\t]");
               final String codesetName = detail.getProperty("name") + "Codeset";
@@ -855,8 +868,9 @@ class RepositoryBuilder implements Consumer<Contextual> {
           annotation = new Annotation();
           flow.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else if (contextual instanceof DetailTable) {
       final DetailTable table = (DetailTable) contextual;
@@ -882,15 +896,16 @@ class RepositoryBuilder implements Consumer<Contextual> {
       final DetailTable detailTable = (DetailTable) contextual;
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
       final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
-      Iterator<? extends DetailProperties> rowIter = detailTable.rows().iterator();
+      final Iterator<? extends DetailProperties> rowIter = detailTable.rows().iterator();
       if (rowIter.hasNext()) {
         populateNumInGroup(rowIter.next(), group);
       } else {
         logger.error("RepositoryBuilder unknown NumInGroup for group; name={}", group.getName());
       }
-      Stream<? extends DetailProperties> stream =
+      final Stream<? extends DetailProperties> stream =
           StreamSupport.stream(detailTable.rows().spliterator(), false);
-      List<? extends DetailProperties> remainingRows = stream.skip(1).collect(Collectors.toList());
+      final List<? extends DetailProperties> remainingRows =
+          stream.skip(1).collect(Collectors.toList());
       addMembers(remainingRows, members);
     } else if (contextual instanceof Documentation) {
       final Documentation detail = (Documentation) contextual;
@@ -901,11 +916,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
           annotation = new Annotation();
           group.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else if (contextual instanceof Context) {
-      int tag = tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final GroupType group = new GroupType();
 
       GroupType refComponent = null;
@@ -974,13 +990,14 @@ class RepositoryBuilder implements Consumer<Contextual> {
           annotation = new Annotation();
           message.setAnnotation(annotation);
         }
-        String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey), annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+            annotation);
       } else {
         logger.error("RepositoryBuilder unknown message; name={} scenario={}", name, scenario);
       }
     } else if (contextual instanceof Context) {
-      final int tag = tagToInt(context.getKeyValue("tag"));
+      final int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final String msgType = context.getKeyValue("type");
       final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
       final String flow = context.getKeyValue(FLOW_KEYWORD);
@@ -995,7 +1012,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
       final Context messageContext = context.getParent();
       if (messageContext != null) {
         final String messageName = messageContext.getKeyValue(MESSAGE_KEYWORD);
-        final int tag = tagToInt(messageContext.getKeyValue("tag"));
+        final int tag = textUtil.tagToInt(messageContext.getKeyValue("tag"));
         final String scenario = scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
         final String msgType = messageContext.getKeyValue("type");
 
@@ -1093,7 +1110,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
       context = contextual.getParent();
     }
     while (context != null) {
-      String key = context.getKey(KEY_POSITION);
+      final String key = context.getKey(KEY_POSITION);
       if ((Arrays.binarySearch(contextKeys, key.toLowerCase()) >= 0) || (context.getLevel() == 1)) {
         break;
       } else {
@@ -1137,7 +1154,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
   }
 
   private String getPurpose(String word) {
-    for (PurposeEnum purpose : PurposeEnum.values()) {
+    for (final PurposeEnum purpose : PurposeEnum.values()) {
       if (purpose.value().compareToIgnoreCase(word) == 0) {
         return word.toUpperCase();
       }
@@ -1146,12 +1163,13 @@ class RepositoryBuilder implements Consumer<Contextual> {
   }
 
   private boolean isDocumentationKey(String word) {
-    for (PurposeEnum purpose : PurposeEnum.values()) {
+    for (final PurposeEnum purpose : PurposeEnum.values()) {
       if (purpose.value().compareToIgnoreCase(word) == 0) {
         return true;
       }
     }
-    return DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0;
+    return (DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0)
+        || (DESCRIPTION_KEYWORD.compareToIgnoreCase(word) == 0);
   }
 
   private boolean isPresence(String word) {
@@ -1240,7 +1258,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     String presenceString = null;
     String valueString = null;
 
-    for (Entry<String, String> p : detail.getProperties()) {
+    for (final Entry<String, String> p : detail.getProperties()) {
       switch (p.getKey().toLowerCase()) {
         case "name":
           name = p.getValue();
@@ -1252,7 +1270,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
           valueString = p.getValue();
         case "tag":
         case "id":
-          fieldRefType.setId(BigInteger.valueOf(tagToInt(p.getValue())));
+          fieldRefType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
           break;
         case SCENARIO_KEYWORD:
           fieldRefType.setScenario(scenarioOrDefault(p.getValue()));
@@ -1282,13 +1300,13 @@ class RepositoryBuilder implements Consumer<Contextual> {
 
     final String scenario = scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     if (fieldRefType.getId() != null) {
-      FieldType fieldType =
+      final FieldType fieldType =
           repositoryAdapter.findFieldByTag(fieldRefType.getId().intValue(), scenario);
       if (fieldType == null) {
         buildSteps.add(new FieldBuilder(fieldRefType.getId().intValue(), name, scenario));
       }
     } else {
-      FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
+      final FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
       if (fieldType != null) {
         fieldRefType.setId(fieldType.getId());
       } else {
@@ -1450,35 +1468,6 @@ class RepositoryBuilder implements Consumer<Contextual> {
         return PresenceT.CONSTANT;
       } else {
         return PresenceT.OPTIONAL;
-      }
-    }
-  }
-
-  private int tagToInt(String str) {
-    if (str == null) {
-      return -1;
-    }
-    final int strLen = str.length();
-    int end = strLen - 1;
-    int begin = 0;
-
-    while ((begin < strLen) && (str.charAt(begin) == ' ' || str.charAt(begin) == '\t'
-        || str.charAt(begin) == '|' || str.charAt(begin) == '(')) {
-      begin++;
-    }
-    while ((begin < end) && (str.charAt(end) == ' ' || str.charAt(end) == ')')) {
-      end--;
-    }
-    final String str2 = ((begin > 0) || (end < strLen)) ? str.substring(begin, end + 1) : str;
-
-    if (str2.isEmpty()) {
-      return -1;
-    } else {
-      try {
-        return Integer.parseInt(str2);
-      } catch (final NumberFormatException e) {
-        logger.warn("RepositoryBuilder numeric tag value expected, was {}", str);
-        return -1;
       }
     }
   }
