@@ -40,7 +40,7 @@ import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
 class MdGrammarTest {
 
   @ParameterizedTest
-  @ValueSource(strings = {"md2orchestra-proto.md"})
+  @ValueSource(strings = {"src/test/resources/md2orchestra-proto.md"})
   void schemaFile(String fileName) throws IOException {
     MarkdownLexer lexer = new MarkdownLexer(CharStreams.fromStream(new FileInputStream(fileName)));
     MarkdownParser parser = new MarkdownParser(new CommonTokenStream(lexer));
@@ -91,9 +91,9 @@ class MdGrammarTest {
   }
 
 
-  @Disabled
+
   @ParameterizedTest
-  @ValueSource(strings = {"md2orchestra-proto.md"})
+  @ValueSource(strings = {"src/test/resources/md2orchestra-proto.md"})
   void testRig(String fileName) throws Exception {
     String[] args = new String[] {"io.fixprotocol.md.antlr.Markdown", "document", "-gui", "-tree",
         "-tokens", fileName};

@@ -11,7 +11,7 @@ The new order message type is used by institutions wishing to electronically sub
 > See Appendix D.
 
 | Name           | Tag | Presence                |
-|----------------|----:|-------------------------|
+| -------------- | --: | ----------------------- |
 | ClOrdID        | 11  | required                |
 | Account        |     |                         |
 | Instrument     | c   |                         |

@@ -224,6 +224,7 @@ public class Md2Orchestra {
                   throws IOException {
 
                 if (matcher.matches(filePath)) {
+                  logger.info("Md2Orchestra opening file {}", filePath.toString());
                   final InputStream inputStream = new FileInputStream(filePath.toFile());
                   appendInput(inputStream, outputRepositoryBuilder);
                 }

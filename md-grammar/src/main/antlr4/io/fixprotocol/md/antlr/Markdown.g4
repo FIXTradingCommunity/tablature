@@ -123,7 +123,7 @@ PARAGRAPHLINE
 
 TABLEDELIMINATORCELL
 :
-	PIPE? ':'? '-'+ ':'?
+	PIPE? ' '? ':'? '-'+ ':'? ' '?
 ;
 
 IGNORE_WS
