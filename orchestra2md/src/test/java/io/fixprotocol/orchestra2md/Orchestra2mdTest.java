@@ -45,15 +45,13 @@ class Orchestra2mdTest {
   @Disabled
   @Test
   void roundtripWithStreams() throws Exception {
-    Orchestra2md orchestra2md = new Orchestra2md();
-    orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("roundtrip.xml"), 
+    Orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("roundtrip.xml"), 
         new OutputStreamWriter(new FileOutputStream("target/test/roundtrip.md"), StandardCharsets.UTF_8));
   }
   
   @Test
   void exampleWithStreams() throws Exception {
-    Orchestra2md orchestra2md = new Orchestra2md();
-    orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.xml"), 
+    Orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.xml"), 
         new OutputStreamWriter(new FileOutputStream("target/test/mit_2016.md"), StandardCharsets.UTF_8));
   }
 }

@@ -15,6 +15,7 @@ package io.fixprotocol.md2orchestra;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -75,7 +76,7 @@ public class Md2Orchestra {
       return this;
     }
 
-    public Builder inputFilePatterns(String inputFilePatterns) {
+    public Builder inputFilePattern(String inputFilePatterns) {
       this.inputFilePatterns = List.of(inputFilePatterns);
       return this;
     }
@@ -101,6 +102,31 @@ public class Md2Orchestra {
   }
 
   /**
+   * Generates an Orchestra file using streams for input and output
+   * 
+   * Intended to be invoked
+   * 
+   * @param inputStreams
+   * @param outputStream
+   * @param referenceStream
+   * @throws IOException
+   */
+  public static void generate(List<InputStream> inputStreams, OutputStream outputStream,
+      InputStream referenceStream) throws IOException {
+    Objects.requireNonNull(inputStreams, "Input stream is missing");
+    Objects.requireNonNull(outputStream, "Output stream is missing");
+    try {
+      final RepositoryBuilder outputRepositoryBuilder = repositoryBuilder(referenceStream);
+      for (final InputStream inputStream : inputStreams) {
+        appendInput(inputStream, outputRepositoryBuilder);
+      }
+      write(outputStream, outputRepositoryBuilder);
+    } catch (final JAXBException e) {
+      throw new IOException(e);
+    }
+  }
+
+  /**
    * Construct and run Md2Orchestra with command line arguments
    *
    * Md2Orchestra reads one or more input files to produce output.
@@ -117,160 +143,17 @@ public class Md2Orchestra {
    * @param args command line arguments
    */
   public static void main(String[] args) {
-    Md2Orchestra mdl2Orchestra = new Md2Orchestra();
-    try {
-      mdl2Orchestra = mdl2Orchestra.parseArgs(args).build();
-      mdl2Orchestra.generate();
-    } catch (final Exception e) {
-      if (mdl2Orchestra.logger != null) {
-        mdl2Orchestra.logger.fatal("Md2Orchestra: exception occurred", e);
-      } else {
-        e.printStackTrace(System.err);
-      }
-    }
+    Md2Orchestra mdl2Orchestra = Md2Orchestra.parseArgs(args).build();
+    mdl2Orchestra.generate();
   }
 
-  private static void showHelp(Options options) {
-    final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
-  }
-
-  private List<String> inputFilePatterns;
-  private String logFilename;
-  private Logger logger = null;
-  private String outputFilename;
-  private String referenceFilename;
-  private boolean verbose = false;
-
-  /**
-   * For testing
-   */
-  Md2Orchestra() {
-
-  }
-
-  private Md2Orchestra(Builder builder) {
-    this.inputFilePatterns = builder.inputFilePatterns;
-    this.outputFilename = builder.outputFile;
-    this.referenceFilename = builder.referenceFile;
-    this.logFilename = builder.logFile;
-    this.verbose = builder.verbose;
-  }
-
-  public void generate() throws IOException {
-    generate(inputFilePatterns, outputFilename, referenceFilename, logFilename);
-  }
-
-  void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename,
-      String logFilename) throws IOException {
-    Objects.requireNonNull(inputFilePatterns, "Input file list is missing");
-    Objects.requireNonNull(outputFilename, "Output file is missing");
-
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFilename != null) {
-      logger = LogUtil.initializeFileLogger(logFilename, level, getClass());
-    } else {
-      logger = LogUtil.initializeDefaultLogger(level, getClass());
-    }
-
-    final File outputFile = new File(outputFilename);
-    final File outputDir = outputFile.getParentFile();
-    if (outputDir != null) {
-      outputDir.mkdirs();
-    }
-
-    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
-
-      InputStream referenceStream = null;
-      if (referenceFilename != null) {
-        referenceStream = new FileInputStream(referenceFilename);
-      }
-
-      final FileSystem fileSystem = FileSystems.getDefault();
-      final String separator = fileSystem.getSeparator();
-
-      final RepositoryBuilder outputRepositoryBuilder = builder(referenceStream);
-      for (final String inputFilePattern : inputFilePatterns) {
-        final int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
-        Path dirPath;
-        String glob;
-        if (lastSeparatorPos != -1) {
-          dirPath = fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos));
-          glob = "**" + separator + inputFilePattern.substring(lastSeparatorPos + 1);
-        } else {
-          // current working directory
-          dirPath = fileSystem.getPath("");
-          glob = inputFilePattern;
-        }
-
-        final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
-        Files.walkFileTree(dirPath, EnumSet.noneOf(FileVisitOption.class), 1,
-            new FileVisitor<Path>() {
-
-              @Override
-              public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                  throws IOException {
-                return FileVisitResult.CONTINUE;
-              }
-
-              @Override
-              public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                  throws IOException {
-                return FileVisitResult.CONTINUE;
-              }
-
-              @Override
-              public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs)
-                  throws IOException {
-
-                if (matcher.matches(filePath)) {
-                  logger.info("Md2Orchestra opening file {}", filePath.toString());
-                  final InputStream inputStream = new FileInputStream(filePath.toFile());
-                  appendInput(inputStream, outputRepositoryBuilder);
-                }
-                return FileVisitResult.CONTINUE;
-              }
-
-              @Override
-              public FileVisitResult visitFileFailed(Path file, IOException exc)
-                  throws IOException {
-                logger.warn("Md2Orchestra failed to access file {}", file.toString());
-                return FileVisitResult.SKIP_SUBTREE;
-              }
-
-            });
-      }
-
-      write(outputStream, outputRepositoryBuilder);
-    } catch (final JAXBException e) {
-      logger.fatal("Md2Orchestra failed to process XML", e);
-      throw new IOException(e);
-    }
-  }
-
-  void generate(String inputFilePattern, String outputFilename, String referenceFilename,
-      String logFilename) throws IOException {
-    generate(List.of(inputFilePattern), outputFilename, referenceFilename, logFilename);
-  }
-
-  private void appendInput(InputStream inputStream, final RepositoryBuilder outputRepositoryBuilder)
+  static void appendInput(InputStream inputStream, final RepositoryBuilder outputRepositoryBuilder)
       throws IOException {
     final DocumentParser parser = new DocumentParser();
     parser.parse(inputStream, outputRepositoryBuilder);
   }
 
-  private RepositoryBuilder builder(InputStream referenceStream) throws JAXBException, IOException {
-    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
-
-    if (referenceStream != null) {
-      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
-      referenceRepository.unmarshal(referenceStream);
-      outputRepositoryBuilder.setReference(referenceRepository);
-    }
-    return outputRepositoryBuilder;
-  }
-
-  private Builder parseArgs(String[] args) throws ParseException {
+  static Builder parseArgs(String[] args) {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of output Orchestra file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
@@ -313,14 +196,160 @@ public class Md2Orchestra {
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
-      throw e;
+      throw new RuntimeException(e);
     }
   }
 
-  private void write(OutputStream outputStream, final RepositoryBuilder outputRepositoryBuilder)
+  static RepositoryBuilder repositoryBuilder(InputStream referenceStream)
+      throws JAXBException, IOException {
+    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
+
+    if (referenceStream != null) {
+      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
+      referenceRepository.unmarshal(referenceStream);
+      outputRepositoryBuilder.setReference(referenceRepository);
+    }
+    return outputRepositoryBuilder;
+  }
+
+  static void write(OutputStream outputStream, final RepositoryBuilder outputRepositoryBuilder)
       throws JAXBException {
     outputRepositoryBuilder.write(outputStream);
-    logger.info("Md2Orchestra completed");
+  }
+
+  private static void showHelp(Options options) {
+    final HelpFormatter formatter = new HelpFormatter();
+    formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
+  }
+
+  private List<String> inputFilePatterns;
+  private String logFilename;
+  private Logger logger = null;
+  private String outputFilename;
+  private String referenceFilename;
+  private boolean verbose = false;
+
+  private Md2Orchestra(Builder builder) {
+    this.inputFilePatterns = builder.inputFilePatterns;
+    this.outputFilename = builder.outputFile;
+    this.referenceFilename = builder.referenceFile;
+    this.logFilename = builder.logFile;
+    this.verbose = builder.verbose;
+  }
+
+  public void generate() {
+    this.logger = initializeLogger(this.verbose, this.logFilename);
+    try {
+      generate(inputFilePatterns, outputFilename, referenceFilename);
+    } catch (IOException e) {
+      logger.fatal("Md2Orchestra failed", e);
+    }
+  }
+
+  void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename)
+      throws IOException {
+    Objects.requireNonNull(inputFilePatterns, "Input file list is missing");
+    Objects.requireNonNull(outputFilename, "Output file is missing");
+
+    final File outputFile = new File(outputFilename);
+    final File outputDir = outputFile.getParentFile();
+    if (outputDir != null) {
+      outputDir.mkdirs();
+    }
+
+    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+
+      InputStream referenceStream = null;
+      if (referenceFilename != null) {
+        referenceStream = new FileInputStream(referenceFilename);
+      }
+
+      final FileSystem fileSystem = FileSystems.getDefault();
+      final String separator = fileSystem.getSeparator();
+
+      final RepositoryBuilder outputRepositoryBuilder = repositoryBuilder(referenceStream);
+      for (final String inputFilePattern : inputFilePatterns) {
+        final int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
+        Path dirPath;
+        String glob;
+        if (lastSeparatorPos != -1) {
+          dirPath = fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos));
+          glob = "**" + separator + inputFilePattern.substring(lastSeparatorPos + 1);
+        } else {
+          // current working directory
+          dirPath = fileSystem.getPath("");
+          glob = inputFilePattern;
+        }
+
+        final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
+        Files.walkFileTree(dirPath, EnumSet.noneOf(FileVisitOption.class), 1,
+            new FileVisitor<Path>() {
+
+              @Override
+              public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                  throws IOException {
+                return FileVisitResult.CONTINUE;
+              }
+
+              @Override
+              public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                  throws IOException {
+                return FileVisitResult.CONTINUE;
+              }
+
+              @Override
+              public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs)
+                  throws IOException {
+
+                if (matcher.matches(filePath)) {
+                  appendInput(filePath, outputRepositoryBuilder);
+                }
+                return FileVisitResult.CONTINUE;
+              }
+
+
+              @Override
+              public FileVisitResult visitFileFailed(Path file, IOException exc)
+                  throws IOException {
+                logger.warn("Md2Orchestra failed to access file {}", file.toString());
+                return FileVisitResult.SKIP_SUBTREE;
+              }
+
+            });
+      }
+
+      write(outputStream, outputRepositoryBuilder);
+      logger.info("Md2Orchestra output written");
+    } catch (final JAXBException e) {
+      logger.fatal("Md2Orchestra failed to process XML", e);
+      throw new IOException(e);
+    }
+  }
+
+  void generate(String inputFilePattern, String outputFilename, String referenceFilename)
+      throws IOException {
+    generate(List.of(inputFilePattern), outputFilename, referenceFilename);
+  }
+
+  private void appendInput(Path filePath, final RepositoryBuilder outputRepositoryBuilder)
+      throws FileNotFoundException, IOException {
+    logger.info("Md2Orchestra opening file {}", filePath.toString());
+    final InputStream inputStream = new FileInputStream(filePath.toFile());
+    appendInput(inputStream, outputRepositoryBuilder);
+  }
+
+  private Logger initializeLogger(boolean verbose) {
+    final Level level = verbose ? Level.DEBUG : Level.ERROR;
+    return LogUtil.initializeDefaultLogger(level, getClass());
+  }
+
+  private Logger initializeLogger(boolean verbose, String logFilename) {
+    final Level level = verbose ? Level.DEBUG : Level.ERROR;
+    if (logFilename != null) {
+      return LogUtil.initializeFileLogger(logFilename, level, getClass());
+    } else {
+      return initializeLogger(verbose);
+    }
   }
 
 }
