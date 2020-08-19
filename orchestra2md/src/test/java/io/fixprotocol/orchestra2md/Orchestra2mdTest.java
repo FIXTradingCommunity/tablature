@@ -29,10 +29,9 @@ class Orchestra2mdTest {
     new File(("target/test")).mkdirs();
   }
   
-  @Disabled
   @Test
   void main() throws Exception {
-    Orchestra2md.main(new String[] {"-i", "mit_2016.xml", "-o", "target/test/mit_2016.md"});
+    Orchestra2md.main(new String[] {"-i", "src/test/resources/md2orchestra-proto.xml", "-o", "target/test/mit_2016.md"});
   }
   
   @Disabled

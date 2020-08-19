@@ -27,9 +27,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import io.fixprotocol.orchestra2md.util.LogUtil;
 
 public class Orchestra2md {
 
@@ -146,7 +145,7 @@ public class Orchestra2md {
 
   private final String inputFilename;
   private final String logFilename;
-  private Logger logger = null;
+  private Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
   private final boolean verbose;
 
@@ -158,9 +157,9 @@ public class Orchestra2md {
   }
 
   public void generate() {
-    this.logger = initializeLogger(this.verbose, logFilename);
     try {
       generate(inputFilename, outputFilename);
+      logger.info("Orchestra2md complete");
     } catch (Exception e) {
       logger.fatal("Orchestra2md failed", e);
     }
@@ -183,17 +182,4 @@ public class Orchestra2md {
     }
   }
 
-  private Logger initializeLogger(boolean verbose) {
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    return LogUtil.initializeDefaultLogger(level, getClass());
-  }
-
-  private Logger initializeLogger(boolean verbose, String logFilename) {
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFilename != null) {
-      return LogUtil.initializeFileLogger(logFilename, level, getClass());
-    } else {
-      return initializeLogger(verbose);
-    }
-  }
 }
