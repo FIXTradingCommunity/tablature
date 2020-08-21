@@ -40,7 +40,7 @@ class Md2OrchestraTest {
     final String inputPath = getResourcePath("mit_2016.md");
     final String outputFilename = "target/test/mit_2016.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
-        .outputFile(outputFilename).eventLog("target/test/mit_2016.log").build();
+        .outputFile(outputFilename).build();
     md2Orchestra1.generate();
   }
 
@@ -49,7 +49,7 @@ class Md2OrchestraTest {
     String inputPath = getResourcePath("md2orchestra-proto.md");
     final String outputFilename = "target/test/md2orchestra-proto.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
-        .outputFile(outputFilename).eventLog("target/test/md2orchestra-proto.log").build();
+        .outputFile(outputFilename).build();
     md2Orchestra1.generate();
 
     RepositoryAdapter outfile = new RepositoryAdapter();
@@ -86,7 +86,7 @@ class Md2OrchestraTest {
     String inputGlob = getResourcePath("md2orchestra-proto-p?.md");
     final String outputFilename = "target/test/md2orchestra-proto2.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputGlob)
-        .outputFile(outputFilename).eventLog("target/test/md2orchestra-proto2.log").build();
+        .outputFile(outputFilename).build();
     md2Orchestra1.generate();
  
     RepositoryAdapter outfile = new RepositoryAdapter();
@@ -123,7 +123,7 @@ class Md2OrchestraTest {
     String outputFilename = "md2orchestra-proto-ref.xml";
     String referencePath = getResourcePath("OrchestraFIXLatest.xml");
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath).referenceFile(referencePath)
-        .outputFile(outputFilename).eventLog("target/test/md2orchestra-proto2.log").build();
+        .outputFile(outputFilename).build();
     md2Orchestra1.generate();
   }
 

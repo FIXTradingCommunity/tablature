@@ -40,10 +40,8 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import io.fixprotocol.md.event.DocumentParser;
-import io.fixprotocol.md2orchestra.util.LogUtil;
 
 
 /**
@@ -56,18 +54,11 @@ public class Md2Orchestra {
 
   public static class Builder {
     private List<String> inputFilePatterns = new ArrayList<>();
-    private String logFile;
     private String outputFile;
     private String referenceFile;
-    private boolean verbose;
-
+  
     public Md2Orchestra build() {
       return new Md2Orchestra(this);
-    }
-
-    public Builder eventLog(String logFile) {
-      this.logFile = logFile;
-      return this;
     }
 
     public Builder inputFilePatterns(List<String> inputFilePatterns) {
@@ -90,41 +81,13 @@ public class Md2Orchestra {
       this.referenceFile = referenceFile;
       return this;
     }
-
-    public Builder verbose(boolean verbose) {
-      this.verbose = verbose;
-      return this;
-    }
   }
 
   public static Builder builder() {
     return new Builder();
   }
 
-  /**
-   * Generates an Orchestra file using streams for input and output
-   * 
-   * Intended to be invoked
-   * 
-   * @param inputStreams
-   * @param outputStream
-   * @param referenceStream
-   * @throws IOException
-   */
-  public static void generate(List<InputStream> inputStreams, OutputStream outputStream,
-      InputStream referenceStream) throws IOException {
-    Objects.requireNonNull(inputStreams, "Input stream is missing");
-    Objects.requireNonNull(outputStream, "Output stream is missing");
-    try {
-      final RepositoryBuilder outputRepositoryBuilder = repositoryBuilder(referenceStream);
-      for (final InputStream inputStream : inputStreams) {
-        appendInput(inputStream, outputRepositoryBuilder);
-      }
-      write(outputStream, outputRepositoryBuilder);
-    } catch (final JAXBException e) {
-      throw new IOException(e);
-    }
-  }
+
 
   /**
    * Construct and run Md2Orchestra with command line arguments
@@ -134,10 +97,8 @@ public class Md2Orchestra {
    * <pre>
   usage: Md2Orchestra [options] <input-file>..."
   -?,--help              display usage
-  -e,--eventlog <arg>    path of log file
   -o,--output <arg>      path of output Orchestra file (required)
   -r,--reference <arg>   path of reference Orchestra file
-  -v,--verbose           verbose event log
    * </pre>
    *
    * @param args command line arguments
@@ -147,11 +108,6 @@ public class Md2Orchestra {
     mdl2Orchestra.generate();
   }
 
-  static void appendInput(InputStream inputStream, final RepositoryBuilder outputRepositoryBuilder)
-      throws IOException {
-    final DocumentParser parser = new DocumentParser();
-    parser.parse(inputStream, outputRepositoryBuilder);
-  }
 
   static Builder parseArgs(String[] args) {
     final Options options = new Options();
@@ -159,9 +115,6 @@ public class Md2Orchestra {
         .longOpt("output").numberOfArgs(1).required().build());
     options.addOption(Option.builder("r").desc("path of reference Orchestra file")
         .longOpt("reference").numberOfArgs(1).build());
-    options.addOption(
-        Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());
-    options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
@@ -185,14 +138,6 @@ public class Md2Orchestra {
         builder.referenceFile = cmd.getOptionValue("r");
       }
 
-      if (cmd.hasOption("e")) {
-        builder.logFile = cmd.getOptionValue("e");
-      }
-
-      if (cmd.hasOption("v")) {
-        builder.verbose = true;
-      }
-
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
@@ -200,22 +145,6 @@ public class Md2Orchestra {
     }
   }
 
-  static RepositoryBuilder repositoryBuilder(InputStream referenceStream)
-      throws JAXBException, IOException {
-    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
-
-    if (referenceStream != null) {
-      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
-      referenceRepository.unmarshal(referenceStream);
-      outputRepositoryBuilder.setReference(referenceRepository);
-    }
-    return outputRepositoryBuilder;
-  }
-
-  static void write(OutputStream outputStream, final RepositoryBuilder outputRepositoryBuilder)
-      throws JAXBException {
-    outputRepositoryBuilder.write(outputStream);
-  }
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
@@ -223,22 +152,17 @@ public class Md2Orchestra {
   }
 
   private List<String> inputFilePatterns;
-  private String logFilename;
-  private Logger logger = null;
+  private Logger logger = LogManager.getLogger(getClass());
   private String outputFilename;
   private String referenceFilename;
-  private boolean verbose = false;
 
   private Md2Orchestra(Builder builder) {
     this.inputFilePatterns = builder.inputFilePatterns;
     this.outputFilename = builder.outputFile;
     this.referenceFilename = builder.referenceFile;
-    this.logFilename = builder.logFile;
-    this.verbose = builder.verbose;
   }
 
   public void generate() {
-    this.logger = initializeLogger(this.verbose, this.logFilename);
     try {
       generate(inputFilePatterns, outputFilename, referenceFilename);
     } catch (IOException e) {
@@ -267,7 +191,7 @@ public class Md2Orchestra {
       final FileSystem fileSystem = FileSystems.getDefault();
       final String separator = fileSystem.getSeparator();
 
-      final RepositoryBuilder outputRepositoryBuilder = repositoryBuilder(referenceStream);
+      final RepositoryBuilder outputRepositoryBuilder = RepositoryBuilder.instance(referenceStream);
       for (final String inputFilePattern : inputFilePatterns) {
         final int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
         Path dirPath;
@@ -318,7 +242,7 @@ public class Md2Orchestra {
             });
       }
 
-      write(outputStream, outputRepositoryBuilder);
+      outputRepositoryBuilder.write(outputStream);
       logger.info("Md2Orchestra output written");
     } catch (final JAXBException e) {
       logger.fatal("Md2Orchestra failed to process XML", e);
@@ -331,25 +255,11 @@ public class Md2Orchestra {
     generate(List.of(inputFilePattern), outputFilename, referenceFilename);
   }
 
-  private void appendInput(Path filePath, final RepositoryBuilder outputRepositoryBuilder)
+  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder) 
       throws FileNotFoundException, IOException {
     logger.info("Md2Orchestra opening file {}", filePath.toString());
     final InputStream inputStream = new FileInputStream(filePath.toFile());
-    appendInput(inputStream, outputRepositoryBuilder);
-  }
-
-  private Logger initializeLogger(boolean verbose) {
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    return LogUtil.initializeDefaultLogger(level, getClass());
-  }
-
-  private Logger initializeLogger(boolean verbose, String logFilename) {
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFilename != null) {
-      return LogUtil.initializeFileLogger(logFilename, level, getClass());
-    } else {
-      return initializeLogger(verbose);
-    }
+    outputRepositoryBuilder.appendInput(inputStream);
   }
 
 }

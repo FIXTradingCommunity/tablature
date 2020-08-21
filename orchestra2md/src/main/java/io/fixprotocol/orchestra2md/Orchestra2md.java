@@ -34,18 +34,11 @@ public class Orchestra2md {
 
 
   public static class Builder {
-    public String logFile;
-    public boolean verbose;
     private String inputFile;
     private String outputFile;
 
     public Orchestra2md build() {
       return new Orchestra2md(this);
-    }
-
-    public Builder eventLog(String logFile) {
-      this.logFile = logFile;
-      return this;
     }
 
     public Builder inputFile(String inputFile) {
@@ -55,11 +48,6 @@ public class Orchestra2md {
 
     public Builder outputFile(String outputFile) {
       this.outputFile = outputFile;
-      return this;
-    }
-
-    public Builder verbose(boolean verbose) {
-      this.verbose = verbose;
       return this;
     }
   }
@@ -81,10 +69,8 @@ public class Orchestra2md {
    * <pre>
   usage: Md2Orchestra
   -?,--help             display usage
-  -e,--eventlog <arg>   path of log file
   -i,--input <arg>      path of Orchestra input file
   -o,--output <arg>     path of markdown output file
-  -v,--verbose          verbose event log
    * </pre>
    *
    * @param args command line arguments
@@ -103,9 +89,6 @@ public class Orchestra2md {
         .longOpt("output").numberOfArgs(1).required().build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
-    options.addOption(
-        Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());
-    options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -123,14 +106,6 @@ public class Orchestra2md {
       builder.inputFile = cmd.getOptionValue("i");
       builder.outputFile = cmd.getOptionValue("o");
 
-      if (cmd.hasOption("e")) {
-        builder.logFile = cmd.getOptionValue("e");
-      }
-
-      if (cmd.hasOption("v")) {
-        builder.verbose = true;
-      }
-
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
@@ -144,16 +119,12 @@ public class Orchestra2md {
   }
 
   private final String inputFilename;
-  private final String logFilename;
   private Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
-  private final boolean verbose;
 
   private Orchestra2md(Builder builder) {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
-    this.logFilename = builder.logFile;
-    this.verbose = builder.verbose;
   }
 
   public void generate() {

@@ -8,7 +8,7 @@ module md2orchestra {
   requires md.grammar;
   requires orchestra.repository;
   requires commons.cli;
-  requires org.apache.logging.log4j;
+  requires transitive org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
   requires jaxb.impl;
 }

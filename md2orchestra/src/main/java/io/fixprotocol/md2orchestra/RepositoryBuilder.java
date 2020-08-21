@@ -13,6 +13,7 @@
  */
 package io.fixprotocol.md2orchestra;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
@@ -61,10 +62,10 @@ import io.fixprotocol.md.event.Contextual;
 import io.fixprotocol.md.event.Detail;
 import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
+import io.fixprotocol.md.event.DocumentParser;
 import io.fixprotocol.md.event.Documentation;
 
-class RepositoryBuilder implements Consumer<Contextual> {
-
+public class RepositoryBuilder {
   private class ComponentBuilder implements ElementBuilder {
 
     private final String name;
@@ -83,11 +84,13 @@ class RepositoryBuilder implements Consumer<Contextual> {
         if (componentType != null) {
           repositoryAdapter.copyComponent(componentType);
         } else {
-          logger.error("RepositoryBuilder unknown component; name={} scenario={}", name, scenario);
+          eventLogger.error("RepositoryBuilder unknown component; name={} scenario={}", name,
+              scenario);
         }
       }
     }
   }
+
   /**
    *
    * Populates the ID of a ComponentRef when the component name is known
@@ -109,14 +112,16 @@ class RepositoryBuilder implements Consumer<Contextual> {
       if (componentType != null) {
         componentRef.setId(componentType.getId());
       } else {
-        logger.error("RepositoryBuilder unknown componentRef ID; name={} scenario={}", name,
+        eventLogger.error("RepositoryBuilder unknown componentRef ID; name={} scenario={}", name,
             componentRef.getScenario());
       }
     }
   }
+
   private interface ElementBuilder {
     void build();
   }
+
   private class FieldBuilder implements ElementBuilder {
     private final String name;
     private final String scenario;
@@ -155,12 +160,15 @@ class RepositoryBuilder implements Consumer<Contextual> {
           fieldType.setId(BigInteger.valueOf(tag));
         } else {
           fieldType.setId(BigInteger.ZERO);
-          logger.error("RepositoryBuilder unknown field ID; name={} scenario={}", name, scenario);
+          eventLogger.error("RepositoryBuilder unknown field ID; name={} scenario={}", name,
+              scenario);
         }
         addFieldAndType(fieldType);
       }
     }
   }
+
+
   /**
    *
    * Populates the ID of a GroupRef when the group name is known
@@ -182,11 +190,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
       if (componentType != null) {
         fieldRef.setId(componentType.getId());
       } else {
-        logger.error("RepositoryBuilder unknown fieldRef ID; name={} scenario={}", name,
+        eventLogger.error("RepositoryBuilder unknown fieldRef ID; name={} scenario={}", name,
             fieldRef.getScenario());
       }
     }
   }
+
   private class GroupBuilder implements ElementBuilder {
 
     private final String name;
@@ -205,7 +214,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
         if (groupType != null) {
           repositoryAdapter.copyGroup(groupType);
         } else {
-          logger.error("RepositoryBuilder unknown group; name={} scenario={}", name, scenario);
+          eventLogger.error("RepositoryBuilder unknown group; name={} scenario={}", name, scenario);
         }
       }
     }
@@ -230,7 +239,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
       if (groupType != null) {
         groupRef.setId(groupType.getId());
       } else {
-        logger.error("RepositoryBuilder unknown groupRef ID; name={} scenario={}", name,
+        eventLogger.error("RepositoryBuilder unknown groupRef ID; name={} scenario={}", name,
             groupRef.getScenario());
       }
     }
@@ -277,7 +286,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
         datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
         datatype.setName(type);
         repositoryAdapter.addDatatype(datatype);
-        logger.info("RepositoryBuilder datatype added; name={}", datatype.getName());
+        eventLogger.info("RepositoryBuilder datatype added; name={}", datatype.getName());
       }
     }
   }
@@ -298,24 +307,106 @@ class RepositoryBuilder implements Consumer<Contextual> {
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
   public static final String WHEN_KEYWORD = "when";
-
+  
   private static final String DEFAULT_CODE_TYPE = "char";
+  private static final String DEFAULT_EVENTLOG = "eventlog";
   private static final String DEFAULT_SCENARIO = "base";
-
+  
   private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
+
+  /**
+   * Create an instance of RepositoryBuilder
+   * 
+   * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
+   *        {@code null}.
+   * @return an instance of RepositoryBuilder
+   * @throws JAXBException if an XML error occurs
+   * @throws IOException if an IO error occurs
+   */
+  public static RepositoryBuilder instance(InputStream referenceStream)
+      throws JAXBException, IOException {
+    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder();
+
+    if (referenceStream != null) {
+      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
+      referenceRepository.unmarshal(referenceStream);
+      outputRepositoryBuilder.setReference(referenceRepository);
+    }
+    return outputRepositoryBuilder;
+  }
 
   private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
 
   private final String[] contextKeys =
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
+  
+  private Logger eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
   private int lastId = 10000;
-  private final Logger logger = LogManager.getLogger(getClass());
+
+  private Consumer<Contextual> markdownConsumer = new Consumer<>() {
+
+    @Override
+    public void accept(Contextual contextual) {
+      final Context keyContext = getKeyContext(contextual);
+      if (keyContext == null) {
+        eventLogger.warn("RepositoryBuilder received element with unknown context",
+            contextual.getClass());
+        return;
+      }
+      final String type = keyContext.getKey(KEY_POSITION);
+      if (type == null) {
+        eventLogger.warn("RepositoryBuilder received element with unknown context of class {}",
+            contextual.getClass());
+      } else
+        switch (type.toLowerCase()) {
+          case ACTOR_KEYWORD:
+            addActor(contextual, keyContext);
+            break;
+          case CODESET_KEYWORD:
+            addCodeset(contextual, keyContext);
+            break;
+          case COMPONENT_KEYWORD:
+            addComponent(contextual, keyContext);
+            break;
+          case DATATYPES_KEYWORD:
+            addDatatype(contextual, keyContext);
+            break;
+          case FIELDS_KEYWORD:
+            addField(contextual, keyContext);
+            break;
+          case FLOW_KEYWORD:
+            addFlow(contextual, keyContext);
+            break;
+          case GROUP_KEYWORD:
+            addGroup(contextual, keyContext);
+            break;
+          case MESSAGE_KEYWORD:
+            addMessage(contextual, keyContext);
+            break;
+          case RESPONSES_KEYWORD:
+            addMessageResponses(contextual, keyContext);
+            break;
+          case STATEMACHINE_KEYWORD:
+            addActorStates(contextual, keyContext);
+            break;
+          case VARIABLES_KEYWORD:
+            addActorVariables(contextual, keyContext);
+            break;
+          default:
+            if (keyContext.getLevel() == 1) {
+              addMetadata(contextual, keyContext);
+            } else {
+              eventLogger.warn("RepositoryBuilder received unknown context type {}", type);
+            }
+        }
+    }
+  };
+
   private RepositoryAdapter referenceRepositoryAdapter = null;
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
-
 
   public RepositoryBuilder() {
     this.repositoryAdapter.createRepository();
@@ -325,66 +416,60 @@ class RepositoryBuilder implements Consumer<Contextual> {
     this.repositoryAdapter.unmarshal(inputStream);
   }
 
-  @Override
-  public void accept(Contextual contextual) {
-    final Context keyContext = getKeyContext(contextual);
-    logger.warn("RepositoryBuilder received element with unknown context",
-        contextual.getClass());
-    if (keyContext == null) {
-      return;
+  /**
+   * Append input to a repository
+   * @param inputStream an markdown file input
+   * @throws IOException if an IO error occurs
+   */
+  public void appendInput(InputStream inputStream) throws IOException {
+    final DocumentParser parser = new DocumentParser();
+    parser.parse(inputStream, markdownConsumer);
+  }
+
+  /**
+   * Generates an Orchestra file using streams for input and output
+   * 
+   * @param inputStreams one or more input streams to read markdown
+   * @param outputStream a stream to write to create an Orchestra repository
+   * @throws IOException if an IO error occurs
+   */
+  public void generate(List<InputStream> inputStreams, OutputStream outputStream)
+      throws IOException {
+    Objects.requireNonNull(inputStreams, "Input stream is missing");
+    Objects.requireNonNull(outputStream, "Output stream is missing");
+
+    final Logger logger = LogManager.getLogger(RepositoryBuilder.class);
+    if (eventLogger == null) {
+      eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
     }
-    final String type = keyContext.getKey(KEY_POSITION);
-    if (type == null) {
-      logger.warn("RepositoryBuilder received element with unknown context of class {}",
-          contextual.getClass());
-    } else
-      switch (type.toLowerCase()) {
-        case ACTOR_KEYWORD:
-          addActor(contextual, keyContext);
-          break;
-        case CODESET_KEYWORD:
-          addCodeset(contextual, keyContext);
-          break;
-        case COMPONENT_KEYWORD:
-          addComponent(contextual, keyContext);
-          break;
-        case DATATYPES_KEYWORD:
-          addDatatype(contextual, keyContext);
-          break;
-        case FIELDS_KEYWORD:
-          addField(contextual, keyContext);
-          break;
-        case FLOW_KEYWORD:
-          addFlow(contextual, keyContext);
-          break;
-        case GROUP_KEYWORD:
-          addGroup(contextual, keyContext);
-          break;
-        case MESSAGE_KEYWORD:
-          addMessage(contextual, keyContext);
-          break;
-        case RESPONSES_KEYWORD:
-          addMessageResponses(contextual, keyContext);
-          break;
-        case STATEMACHINE_KEYWORD:
-          addActorStates(contextual, keyContext);
-          break;
-        case VARIABLES_KEYWORD:
-          addActorVariables(contextual, keyContext);
-          break;
-        default:
-          if (keyContext.getLevel() == 1) {
-            addMetadata(contextual, keyContext);
-          } else {
-            logger.warn("RepositoryBuilder received unknown context type {}", type);
-          }
+
+    try {
+      for (final InputStream inputStream : inputStreams) {
+        appendInput(inputStream);
       }
+      write(outputStream);
+    } catch (final JAXBException e) {
+      logger.fatal("RepositoryBuilder failed to process XML", e);
+      throw new IOException(e);
+    } catch (final Exception e1) {
+      logger.fatal("RepositoryBuilder error", e1);
+      throw e1;
+    }
+  }
+
+  public void setEventLogger(Logger eventLogger) throws Exception {
+    this.eventLogger = eventLogger;
   }
 
   public void setReference(RepositoryAdapter reference) {
     this.referenceRepositoryAdapter = reference;
   }
 
+  /**
+   * Finalize the repository and write it
+   * @param outputStream a stream to write repository to
+   * @throws JAXBException if an XML error occurs
+   */
   public void write(OutputStream outputStream) throws JAXBException {
     executeDefferedBuildSteps();
     repositoryAdapter.marshal(outputStream);
@@ -402,7 +487,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
           if (field != null) {
             addFieldAndType(field);
           } else {
-            logger.error("RepositoryBuilder unknown field; lastId={} scenario={}",
+            eventLogger.error("RepositoryBuilder unknown field; lastId={} scenario={}",
                 fieldRef.getId().intValue(), fieldRef.getScenario());
           }
         }
@@ -418,7 +503,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
             final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
             copyMembers(groupMembers);
           } else {
-            logger.error("RepositoryBuilder unknown group; lastId={} scenario={}",
+            eventLogger.error("RepositoryBuilder unknown group; lastId={} scenario={}",
                 groupRef.getId().intValue(), groupRef.getScenario());
           }
         }
@@ -434,7 +519,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
             final List<Object> componentMembers = component.getComponentRefOrGroupRefOrFieldRef();
             copyMembers(componentMembers);
           } else {
-            logger.error("RepositoryBuilder unknown component; lastId={} scenario={}",
+            eventLogger.error("RepositoryBuilder unknown component; lastId={} scenario={}",
                 componentRef.getId().intValue(), componentRef.getScenario());
           }
         }
@@ -553,10 +638,12 @@ class RepositoryBuilder implements Consumer<Contextual> {
               Objects.requireNonNull(sourceState).getTransition().add(transition);
             });
           } catch (final NoSuchElementException e) {
-            logger.warn("RepositoryBuilder no states defined for state machine; name={}", name);
+            eventLogger.warn("RepositoryBuilder no states defined for state machine; name={}",
+                name);
           }
         } else {
-          logger.error("RepositoryBuilder unknown actor for state machine; name={}", actorName);
+          eventLogger.error("RepositoryBuilder unknown actor for state machine; name={}",
+              actorName);
         }
       }
     }
@@ -571,7 +658,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
         final List<Object> members = actor.getFieldOrFieldRefOrComponent();
         addMembers(detailTable.rows(), members);
       } else {
-        logger.error("RepositoryBuilder unknown actor for variables; name={}", name);
+        eventLogger.error("RepositoryBuilder unknown actor for variables; name={}", name);
       }
     }
   }
@@ -658,7 +745,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
       if (type != null) {
         codeset.setType(type);
       } else {
-        logger.error("RepositoryBuilder unknown CodeSet underlying type; name={}", name);
+        eventLogger.error("RepositoryBuilder unknown CodeSet underlying type; name={}", name);
       }
 
       repositoryAdapter.addCodeset(codeset);
@@ -852,7 +939,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
     if (type != null) {
       buildSteps.add(new TypeBuilder(type, scenario));
     } else {
-      logger.error("RepositoryBuilder unknown type for field; id= {} name={}", field.getId(),
+      eventLogger.error("RepositoryBuilder unknown type for field; id= {} name={}", field.getId(),
           field.getName());
     }
   }
@@ -900,7 +987,8 @@ class RepositoryBuilder implements Consumer<Contextual> {
       if (rowIter.hasNext()) {
         populateNumInGroup(rowIter.next(), group);
       } else {
-        logger.error("RepositoryBuilder unknown NumInGroup for group; name={}", group.getName());
+        eventLogger.error("RepositoryBuilder unknown NumInGroup for group; name={}",
+            group.getName());
       }
       final Stream<? extends DetailProperties> stream =
           StreamSupport.stream(detailTable.rows().spliterator(), false);
@@ -979,7 +1067,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
         final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
         addMembers(detailTable.rows(), members);
       } else {
-        logger.error("RepositoryBuilder unknown message; name={} scenario={}", name, scenario);
+        eventLogger.error("RepositoryBuilder unknown message; name={} scenario={}", name, scenario);
       }
     } else if (contextual instanceof Documentation) {
       final Documentation detail = (Documentation) contextual;
@@ -994,7 +1082,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
         repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
             annotation);
       } else {
-        logger.error("RepositoryBuilder unknown message; name={} scenario={}", name, scenario);
+        eventLogger.error("RepositoryBuilder unknown message; name={} scenario={}", name, scenario);
       }
     } else if (contextual instanceof Context) {
       final int tag = textUtil.tagToInt(context.getKeyValue("tag"));
@@ -1047,7 +1135,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
           responseList.add(response);
         });
       } else {
-        logger.error("RepositoryBuilder unknown message for responses; keys={}",
+        eventLogger.error("RepositoryBuilder unknown message for responses; keys={}",
             String.join(" ", context.getKeys()));
       }
     }
@@ -1368,7 +1456,7 @@ class RepositoryBuilder implements Consumer<Contextual> {
           final String codesetName = name + "Codeset";
           // use the scenario of the parent element
           createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
-          logger.warn("RepositoryBuilder unknown codeset datatype; name={} scenario={}",
+          eventLogger.warn("RepositoryBuilder unknown codeset datatype; name={} scenario={}",
               codesetName, scenario);
         }
       }

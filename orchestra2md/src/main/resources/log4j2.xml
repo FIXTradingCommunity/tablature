@@ -12,7 +12,8 @@
 		<Root level="info">
 			<AppenderRef ref="Console" />
 		</Root>
-		<Logger name="evenlog" level="info" additivity="false">
+		<!-- Errors in translation are written both as JSON objects and to console log -->
+		<Logger name="eventlog" level="info">
 			<AppenderRef ref="JSON" />
 		</Logger>
 	</Loggers>

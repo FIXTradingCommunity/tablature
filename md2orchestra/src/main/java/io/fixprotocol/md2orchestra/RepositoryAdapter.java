@@ -62,7 +62,7 @@ import io.fixprotocol.md.event.MarkdownUtil;
  * @author Don Mendelson
  *
  */
-class RepositoryAdapter {
+public class RepositoryAdapter {
 
   /**
    * Provide deterministic XML namespace prefixes

@@ -57,15 +57,12 @@ public class MarkdownGenerator {
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
 
+  private static final String DEFAULT_EVENTLOG = "eventlog";
   private static final String DEFAULT_SCENARIO = "base";
   private static final String NOPURPOSE_KEYWORD = "documentation";
   
   private final ContextFactory contextFactory = new ContextFactory();
-  private Logger eventLogger;
-  
-  public void setEventLogger(Logger eventLogger) throws Exception {
-    this.eventLogger = eventLogger;
-  }
+  private Logger eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
   
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter) throws Exception {
     Objects.requireNonNull(inputStream, "Input stream is missing");
@@ -73,7 +70,7 @@ public class MarkdownGenerator {
     
     final Logger logger = LogManager.getLogger(MarkdownGenerator.class);
     if (eventLogger == null) {
-      eventLogger = LogManager.getLogger("eventlog");
+      eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
     }
 
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
@@ -94,6 +91,10 @@ public class MarkdownGenerator {
       throw e1;
     }
   }
+  
+  public void setEventLogger(Logger eventLogger) throws Exception {
+    this.eventLogger = eventLogger;
+  }
 
   private void addComponentRef(Repository repository, ComponentRefType componentRef,
       MutableDetailProperties row) {
@@ -111,6 +112,36 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = componentRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
+  }
+
+  private void addDocumentationProperties(MutableDetailProperties properties,
+      Annotation annotation) {
+    if (annotation == null) {
+      return;
+    }
+    List<Object> objects = annotation.getDocumentationOrAppinfo();
+    for (Object obj : objects) {
+      if (obj instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
+        io.fixprotocol._2020.orchestra.repository.Documentation documentation = (Documentation) obj;
+        String purpose = documentation.getPurpose();
+        String markdown = null;
+        if (MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(documentation.getContentType())) {
+          markdown = documentation.getContent().stream().map(Object::toString)
+              .collect(Collectors.joining(" "));
+        } else {
+          markdown = documentation.getContent().stream()
+              .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
+              .collect(Collectors.joining(" "));
+        }
+
+        properties.addProperty(Objects.requireNonNullElse(purpose, NOPURPOSE_KEYWORD), markdown);
+      } else if (obj instanceof Appinfo) {
+        Appinfo appinfo = (Appinfo) obj;
+        String contents =
+            appinfo.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
+        properties.addProperty(appinfo.getPurpose(), contents);
+      }
+    }
   }
 
   private void addFieldRef(Repository repository, FieldRefType fieldRef,
@@ -206,6 +237,26 @@ public class MarkdownGenerator {
     }
   }
 
+  private String concatenateDocumentation(Annotation annotation, List<String> purposes) {
+    if (annotation == null) {
+      return "";
+    } else {
+      final List<Object> objects = annotation.getDocumentationOrAppinfo();
+      return objects.stream()
+          .filter(o -> o instanceof io.fixprotocol._2020.orchestra.repository.Documentation)
+          .map(o -> (io.fixprotocol._2020.orchestra.repository.Documentation) o)
+          .filter(d -> purposes.contains(Objects.requireNonNullElse(d.getPurpose(), NOPURPOSE_KEYWORD)))
+          .map(d -> {
+            if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
+              return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
+            } else
+              return d.getContent().stream()
+                  .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
+                  .collect(Collectors.joining(" "));
+          }).collect(Collectors.joining(" "));
+    }
+  }
+
   private ComponentType findComponentByTag(Repository repository, int tag, String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
@@ -225,6 +276,7 @@ public class MarkdownGenerator {
     }
     return null;
   }
+
 
   private GroupType findGroupByTag(Repository repository, int tag, String scenario) {
     final List<GroupType> groups = repository.getGroups().getGroup();
@@ -260,20 +312,6 @@ public class MarkdownGenerator {
         generateStateMachine((StateMachineType) state, documentWriter);
       }
     }
-  }
-
-
-  private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
-      throws IOException {
-    MutableContext context = contextFactory.createContext(2);
-    context.addPair("Flow", flow.getName());
-    documentWriter.write(context);
-
-    final MutableDetailTable table = contextFactory.createDetailTable();
-    final MutableDetailProperties row = table.newRow();
-    row.addProperty("source", flow.getSource());
-    row.addProperty("destination", flow.getDestination());
-    documentWriter.write(table);
   }
 
   private void generateActorsAndFlows(Repository repository, DocumentWriter documentWriter)
@@ -322,26 +360,6 @@ public class MarkdownGenerator {
       addDocumentationProperties(row, code.getAnnotation());
     }
     documentWriter.write(table);
-  }
-
-  private void generateDocumentation(final Annotation annotation, DocumentWriter documentWriter)
-      throws IOException {
-    String synopsis = concatenateDocumentation(annotation, List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value()));
-    if (!synopsis.isBlank()) {
-      MutableContext documentationContext = contextFactory.createContext(new String[] {"Synopsis"}, 4);
-      documentWriter.write(documentationContext);
-      MutableDocumentation documentation =
-          contextFactory.createDocumentation(synopsis);
-      documentWriter.write(documentation);
-    }
-    String elaboration = concatenateDocumentation(annotation, List.of(PurposeEnum.ELABORATION.value()));
-    if (!elaboration.isBlank()) {
-      MutableContext documentationContext = contextFactory.createContext(new String[] {"Elaboration"}, 4);
-      documentWriter.write(documentationContext);
-      MutableDocumentation documentation =
-          contextFactory.createDocumentation(elaboration);
-      documentWriter.write(documentation);
-    }
   }
 
   private void generateCodesets(Repository repository, DocumentWriter documentWriter)
@@ -442,6 +460,26 @@ public class MarkdownGenerator {
     documentWriter.write(table);
   }
 
+  private void generateDocumentation(final Annotation annotation, DocumentWriter documentWriter)
+      throws IOException {
+    String synopsis = concatenateDocumentation(annotation, List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value()));
+    if (!synopsis.isBlank()) {
+      MutableContext documentationContext = contextFactory.createContext(new String[] {"Synopsis"}, 4);
+      documentWriter.write(documentationContext);
+      MutableDocumentation documentation =
+          contextFactory.createDocumentation(synopsis);
+      documentWriter.write(documentation);
+    }
+    String elaboration = concatenateDocumentation(annotation, List.of(PurposeEnum.ELABORATION.value()));
+    if (!elaboration.isBlank()) {
+      MutableContext documentationContext = contextFactory.createContext(new String[] {"Elaboration"}, 4);
+      documentWriter.write(documentationContext);
+      MutableDocumentation documentation =
+          contextFactory.createDocumentation(elaboration);
+      documentWriter.write(documentation);
+    }
+  }
+
   private void generateFields(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     MutableContext context = contextFactory.createContext(2);
@@ -478,6 +516,19 @@ public class MarkdownGenerator {
         row.addIntProperty("implLength", implLength);
       }
     }
+    documentWriter.write(table);
+  }
+
+  private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    MutableContext context = contextFactory.createContext(2);
+    context.addPair("Flow", flow.getName());
+    documentWriter.write(context);
+
+    final MutableDetailTable table = contextFactory.createDetailTable();
+    final MutableDetailProperties row = table.newRow();
+    row.addProperty("source", flow.getSource());
+    row.addProperty("destination", flow.getDestination());
     documentWriter.write(table);
   }
 
@@ -652,56 +703,6 @@ public class MarkdownGenerator {
       row.addProperty("target", transition.getTarget());
       addDocumentationProperties(row, transition.getAnnotation());
       row.addProperty("when", transition.getWhen());
-    }
-  }
-
-  private String concatenateDocumentation(Annotation annotation, List<String> purposes) {
-    if (annotation == null) {
-      return "";
-    } else {
-      final List<Object> objects = annotation.getDocumentationOrAppinfo();
-      return objects.stream()
-          .filter(o -> o instanceof io.fixprotocol._2020.orchestra.repository.Documentation)
-          .map(o -> (io.fixprotocol._2020.orchestra.repository.Documentation) o)
-          .filter(d -> purposes.contains(Objects.requireNonNullElse(d.getPurpose(), NOPURPOSE_KEYWORD)))
-          .map(d -> {
-            if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
-              return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
-            } else
-              return d.getContent().stream()
-                  .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
-                  .collect(Collectors.joining(" "));
-          }).collect(Collectors.joining(" "));
-    }
-  }
-
-  private void addDocumentationProperties(MutableDetailProperties properties,
-      Annotation annotation) {
-    if (annotation == null) {
-      return;
-    }
-    List<Object> objects = annotation.getDocumentationOrAppinfo();
-    for (Object obj : objects) {
-      if (obj instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        io.fixprotocol._2020.orchestra.repository.Documentation documentation = (Documentation) obj;
-        String purpose = documentation.getPurpose();
-        String markdown = null;
-        if (MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(documentation.getContentType())) {
-          markdown = documentation.getContent().stream().map(Object::toString)
-              .collect(Collectors.joining(" "));
-        } else {
-          markdown = documentation.getContent().stream()
-              .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
-              .collect(Collectors.joining(" "));
-        }
-
-        properties.addProperty(Objects.requireNonNullElse(purpose, NOPURPOSE_KEYWORD), markdown);
-      } else if (obj instanceof Appinfo) {
-        Appinfo appinfo = (Appinfo) obj;
-        String contents =
-            appinfo.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
-        properties.addProperty(appinfo.getPurpose(), contents);
-      }
     }
   }
 
