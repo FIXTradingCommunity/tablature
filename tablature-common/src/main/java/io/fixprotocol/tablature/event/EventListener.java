@@ -8,7 +8,7 @@ import static io.fixprotocol.tablature.event.Event.Severity.*;
  * @author Don Mendelson
  *
  */
-public interface EventListener {
+public interface EventListener extends AutoCloseable {
 
   /**
    * Reports an event

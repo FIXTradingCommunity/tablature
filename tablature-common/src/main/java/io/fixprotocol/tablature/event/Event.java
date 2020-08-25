@@ -4,7 +4,7 @@ import java.text.MessageFormat;
 
 /**
  * Reportable generic event
- * 
+ *
  * @author Don Mendelson
  * @see java.text.MessageFormat
  */
@@ -28,7 +28,7 @@ public class Event {
 
   /**
    * An event to report
-   * 
+   *
    * @param severity of an event for reporting
    * @param pattern a message without arguments
    */
@@ -38,7 +38,7 @@ public class Event {
 
   /**
    * An event to report
-   * 
+   *
    * @param severity of an event for reporting
    * @param pattern a format with substitutable arguments as in {@link java.text.MessageFormat}
    * @param arguments arguments to substitute in the pattern

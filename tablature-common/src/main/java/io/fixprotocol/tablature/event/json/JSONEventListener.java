@@ -7,12 +7,12 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import io.fixprotocol.tablature.event.Event;
 import io.fixprotocol.tablature.event.EventListener;
 
-public class JSONEventListener implements EventListener, AutoCloseable {
+public class JSONEventListener implements EventListener {
 
   private final JsonGenerator generator;
 
   public JSONEventListener(OutputStream outputStream) throws IOException {
-    JsonFactory factory = new JsonFactory();
+    final JsonFactory factory = new JsonFactory();
     generator = factory.createGenerator(outputStream);
     generator.writeStartObject();
     generator.writeArrayFieldStart("events");
@@ -30,7 +30,7 @@ public class JSONEventListener implements EventListener, AutoCloseable {
       generator.writeObjectField("severity", event.getSeverity().name());
       generator.writeObjectField("message", event.getMessage());
       generator.writeEndObject();
-     } catch (IOException e) {
+    } catch (final IOException e) {
       throw new RuntimeException(e);
     }
   }
