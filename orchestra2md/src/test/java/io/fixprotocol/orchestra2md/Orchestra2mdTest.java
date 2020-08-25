@@ -31,7 +31,8 @@ class Orchestra2mdTest {
   
   @Test
   void main() throws Exception {
-    Orchestra2md.main(new String[] {"-i", "src/test/resources/md2orchestra-proto.xml", "-o", "target/test/mit_2016.md"});
+    Orchestra2md.main(new String[] {"-o", "target/test/md2orchestra-proto.md", "-e", "target/test/md2orchestra-proto.json", 
+        "src/test/resources/md2orchestra-proto.xml", });
   }
   
   @Disabled
@@ -44,13 +45,15 @@ class Orchestra2mdTest {
   @Disabled
   @Test
   void roundtripWithStreams() throws Exception {
-    Orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("roundtrip.xml"), 
-        new OutputStreamWriter(new FileOutputStream("target/test/roundtrip.md"), StandardCharsets.UTF_8));
+    MarkdownGenerator generator = new MarkdownGenerator();
+    generator.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("roundtrip.xml"), 
+        new OutputStreamWriter(new FileOutputStream("target/test/roundtrip.md"), StandardCharsets.UTF_8), null);
   }
   
   @Test
   void exampleWithStreams() throws Exception {
-    Orchestra2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.xml"), 
-        new OutputStreamWriter(new FileOutputStream("target/test/mit_2016.md"), StandardCharsets.UTF_8));
+    MarkdownGenerator generator = new MarkdownGenerator();
+    generator.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.xml"), 
+        new OutputStreamWriter(new FileOutputStream("target/test/mit_2016.md"), StandardCharsets.UTF_8), null);
   }
 }

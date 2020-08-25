@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -32,13 +33,18 @@ import org.apache.logging.log4j.Logger;
 
 public class Orchestra2md {
 
-
   public static class Builder {
     private String inputFile;
     private String outputFile;
+    public String eventFile;
 
     public Orchestra2md build() {
       return new Orchestra2md(this);
+    }
+
+    public Builder eventFile(String eventFile) {
+      this.eventFile = eventFile;
+      return this;
     }
 
     public Builder inputFile(String inputFile) {
@@ -57,12 +63,6 @@ public class Orchestra2md {
     return new Builder();
   }
 
-  public static void generate(InputStream inputStream, OutputStreamWriter outputWriter)
-      throws Exception {
-    MarkdownGenerator generator = new MarkdownGenerator();
-    generator.generate(inputStream, outputWriter);
-  }
-
   /**
    * Construct and run Md2Orchestra with command line arguments
    *
@@ -77,16 +77,16 @@ public class Orchestra2md {
    */
 
   public static void main(String[] args) {
-    Orchestra2md orchestra2md = parseArgs(args).build();
+    final Orchestra2md orchestra2md = parseArgs(args).build();
     orchestra2md.generate();
   }
 
   private static Builder parseArgs(String[] args) {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of Orchestra input file (required)")
-        .longOpt("input").numberOfArgs(1).required().build());
     options.addOption(Option.builder("o").desc("path of markdown output file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
+    options.addOption(Option.builder("e").desc("path of JSON event file")
+        .longOpt("eventlog").numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
@@ -103,8 +103,12 @@ public class Orchestra2md {
         System.exit(0);
       }
 
-      builder.inputFile = cmd.getOptionValue("i");
+      builder.inputFile = !cmd.getArgList().isEmpty() ? cmd.getArgList().get(0) : null;
       builder.outputFile = cmd.getOptionValue("o");
+      
+      if (cmd.hasOption("e")) {
+        builder.eventFile = cmd.getOptionValue("e");
+      }
 
       return builder;
     } catch (final ParseException e) {
@@ -112,31 +116,34 @@ public class Orchestra2md {
       throw new RuntimeException(e);
     }
   }
-
+  
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Orchestra2md [options]", options);
+    formatter.printHelp("Orchestra2md [options] <input-file>", options);
   }
 
   private final String inputFilename;
-  private Logger logger = LogManager.getLogger(getClass());
+  private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
+  private final String eventFilename;
 
   private Orchestra2md(Builder builder) {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
+    this.eventFilename = builder.eventFile;
   }
 
   public void generate() {
     try {
-      generate(inputFilename, outputFilename);
+      generate(inputFilename, outputFilename, eventFilename);
       logger.info("Orchestra2md complete");
-    } catch (Exception e) {
+    } catch (final Exception e) {
       logger.fatal("Orchestra2md failed", e);
     }
   }
 
-  void generate(String inputFilename, String outputFilename) throws Exception {
+  void generate(String inputFilename, String outputFilename, String eventFilename)
+      throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
 
@@ -149,7 +156,18 @@ public class Orchestra2md {
     try (InputStream inputStream = new FileInputStream(inputFilename);
         OutputStreamWriter outputWriter =
             new OutputStreamWriter(new FileOutputStream(outputFilename), StandardCharsets.UTF_8)) {
-      generate(inputStream, outputWriter);
+
+      OutputStream eventStream = null;
+      if (eventFilename != null) {
+        final File eventFile = new File(eventFilename);
+        final File eventDir = eventFile.getParentFile();
+        if (eventDir != null) {
+          eventDir.mkdirs();
+        }
+        eventStream = new FileOutputStream(eventFile);
+      }
+      final MarkdownGenerator generator = new MarkdownGenerator();
+      generator.generate(inputStream, outputWriter, eventStream);
     }
   }
 

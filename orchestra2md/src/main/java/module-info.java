@@ -7,6 +7,7 @@ module orchestra2md {
   requires java.xml.bind;
   requires orchestra.repository;
   requires commons.cli;
-  requires transitive org.apache.logging.log4j;
+  requires org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
+  requires tablature.common;
 }

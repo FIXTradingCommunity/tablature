@@ -1,6 +1,5 @@
 package io.fixprotocol.tablature.event.log4j2;
 
-import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol.tablature.event.Event;
@@ -20,7 +19,7 @@ public class EventLogger implements EventListener {
   /**
    * Uses a Logger qualified by this class name
    */
-  EventLogger() {
+  public EventLogger() {
     logger = LogManager.getLogger(EventLogger.class);
   }
 
@@ -29,7 +28,7 @@ public class EventLogger implements EventListener {
    *
    * @param logger a log4j2 Logger
    */
-  EventLogger(Logger logger) {
+  public EventLogger(Logger logger) {
     this.logger = logger;
   }
 

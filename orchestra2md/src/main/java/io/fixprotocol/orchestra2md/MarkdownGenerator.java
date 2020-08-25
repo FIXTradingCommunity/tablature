@@ -2,6 +2,7 @@ package io.fixprotocol.orchestra2md;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.util.Comparator;
@@ -49,6 +50,9 @@ import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
+import io.fixprotocol.tablature.event.TeeEventListener;
+import io.fixprotocol.tablature.event.json.JSONEventListener;
+import io.fixprotocol.tablature.event.log4j2.EventLogger;
 
 public class MarkdownGenerator {
 
@@ -57,20 +61,21 @@ public class MarkdownGenerator {
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
 
-  private static final String DEFAULT_EVENTLOG = "eventlog";
   private static final String DEFAULT_SCENARIO = "base";
   private static final String NOPURPOSE_KEYWORD = "documentation";
   
   private final ContextFactory contextFactory = new ContextFactory();
-  private Logger eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
+  private final Logger logger = LogManager.getLogger(getClass());
+  private TeeEventListener eventLogger;
   
-  public void generate(InputStream inputStream, OutputStreamWriter outputWriter) throws Exception {
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter, OutputStream jsonOutputStream) throws Exception {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputWriter, "Output writer is missing");
     
-    final Logger logger = LogManager.getLogger(MarkdownGenerator.class);
-    if (eventLogger == null) {
-      eventLogger = LogManager.getLogger(DEFAULT_EVENTLOG);
+    eventLogger = new TeeEventListener();
+    eventLogger.addEventListener(new EventLogger(logger));
+    if (jsonOutputStream != null) {
+      eventLogger.addEventListener(new JSONEventListener(jsonOutputStream));
     }
 
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
@@ -89,11 +94,9 @@ public class MarkdownGenerator {
     } catch (final Exception e1) {
       logger.fatal("Orchestra2md error", e1);
       throw e1;
+    } finally {
+      eventLogger.close();
     }
-  }
-  
-  public void setEventLogger(Logger eventLogger) throws Exception {
-    this.eventLogger = eventLogger;
   }
 
   private void addComponentRef(Repository repository, ComponentRefType componentRef,
@@ -104,7 +107,7 @@ public class MarkdownGenerator {
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown component; id={} scenario={}", tag, scenario);
+      eventLogger.warn("Orchestra2md unknown component; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -152,7 +155,7 @@ public class MarkdownGenerator {
     if (field != null) {
       row.addProperty("name", field.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown field; id={} scenario={}", tag, scenario);
+      eventLogger.warn("Orchestra2md unknown field; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", Integer.toString(tag));
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -211,7 +214,7 @@ public class MarkdownGenerator {
     if (group != null) {
       row.addProperty("name", group.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown group; id={} scenario={}", tag, scenario);
+      eventLogger.warn("Orchestra2md unknown group; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "group");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -355,7 +358,7 @@ public class MarkdownGenerator {
       if (id != null) {
         row.addProperty("id", id.toString());
       } else {
-        eventLogger.warn("Orchestra2md unknown code id; name={} scenario={}", name, scenario);
+        eventLogger.warn("Orchestra2md unknown code id; name={0} scenario={1}", name, scenario);
       }
       addDocumentationProperties(row, code.getAnnotation());
     }
@@ -555,7 +558,7 @@ public class MarkdownGenerator {
       final MutableDetailProperties row = table.newRow();
       addFieldRef(repository, numInGroup, row);
     } else {
-      eventLogger.warn("Orchestra2md unknown numInGroup for group; name={} scenario={}", name, scenario);
+      eventLogger.warn("Orchestra2md unknown numInGroup for group; name={0} scenario={1}", name, scenario);
     }
     final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
     addMembers(table, repository, members);
@@ -662,17 +665,18 @@ public class MarkdownGenerator {
     }
     documentWriter.write(context);
 
-    final MutableDetailTable table = contextFactory.createDetailTable();
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
-    for (final JAXBElement<SimpleLiteral> element : elements) {
-      final MutableDetailProperties row = table.newRow();
-      final String name = element.getName().getLocalPart();
-      final String value = String.join(" ", element.getValue().getContent());
-      row.addProperty("term", name);
-      row.addProperty("value", value);
+    if (!elements.isEmpty()) {
+      final MutableDetailTable table = contextFactory.createDetailTable();
+      for (final JAXBElement<SimpleLiteral> element : elements) {
+        final MutableDetailProperties row = table.newRow();
+        final String name = element.getName().getLocalPart();
+        final String value = String.join(" ", element.getValue().getContent());
+        row.addProperty("term", name);
+        row.addProperty("value", value);
+      }
+      documentWriter.write(table);
     }
-
-    documentWriter.write(table);
   }
 
   private void generateStateMachine(StateMachineType stateMachine, DocumentWriter documentWriter)
