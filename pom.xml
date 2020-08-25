@@ -53,12 +53,14 @@
 		<module>orchestra2md</module>
 		<module>interfaces2md</module>
 		<module>md2interfaces</module>
+		<module>tablature-common</module>
 	</modules>
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<antlr.version>4.8-1</antlr.version>
 		<commons-cli.version>1.4</commons-cli.version>
+		<jackson.version>2.11.2</jackson.version>
 		<java.version>11</java.version>
 		<junit.version>5.6.1</junit.version>
 		<log4j.version>2.13.3</log4j.version>
