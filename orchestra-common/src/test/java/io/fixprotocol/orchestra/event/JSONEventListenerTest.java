@@ -1,21 +1,16 @@
-package io.fixprotocol.tablature.event.json;
+package io.fixprotocol.orchestra.event;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static io.fixprotocol.orchestra.event.Event.Severity.ERROR;
+import static io.fixprotocol.orchestra.event.Event.Severity.WARN;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import io.fixprotocol.tablature.event.Event;
-import static io.fixprotocol.tablature.event.Event.Severity.*;
 
-/**
- * Serializes events as JSON
- * 
- * @author Don Mendelson
- *
- */
+
 class JSONEventListenerTest {
-
-  private JSONEventListener listener;
+  private final EventListenerFactory factory = new EventListenerFactory();
+  private EventListener listener;
   private ByteArrayOutputStream outputStream;
   private Event event1;
   private Event event2;
@@ -28,7 +23,8 @@ class JSONEventListenerTest {
   @BeforeEach
   void setUp() throws Exception {
     outputStream = new ByteArrayOutputStream(4096);
-    listener = new JSONEventListener(outputStream);
+    listener = factory.getInstance("JSON");
+    listener.setResource(outputStream);
   }
 
   @Test

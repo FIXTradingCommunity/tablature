@@ -1,6 +1,6 @@
-package io.fixprotocol.tablature.event;
+package io.fixprotocol.orchestra.event;
 
-import static io.fixprotocol.tablature.event.Event.Severity.*;
+import static io.fixprotocol.orchestra.event.Event.Severity.*;
 
 /**
  * Reports generic events
@@ -9,6 +9,16 @@ import static io.fixprotocol.tablature.event.Event.Severity.*;
  *
  */
 public interface EventListener extends AutoCloseable {
+  
+  /**
+   * Set a resource to handle events
+   * 
+   * @param resource used to handle events
+   * @throws Exception if the resource is of an unrecognized type or implementation fails to use it
+   */
+  default void setResource(Object resource) throws Exception {
+    
+  }
 
   /**
    * Reports an event

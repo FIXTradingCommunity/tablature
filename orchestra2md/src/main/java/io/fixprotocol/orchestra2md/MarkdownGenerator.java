@@ -50,9 +50,9 @@ import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
-import io.fixprotocol.tablature.event.TeeEventListener;
-import io.fixprotocol.tablature.event.json.JSONEventListener;
-import io.fixprotocol.tablature.event.log4j2.EventLogger;
+import io.fixprotocol.orchestra.event.EventListener;
+import io.fixprotocol.orchestra.event.EventListenerFactory;
+import io.fixprotocol.orchestra.event.TeeEventListener;
 
 public class MarkdownGenerator {
 
@@ -66,6 +66,7 @@ public class MarkdownGenerator {
   
   private final ContextFactory contextFactory = new ContextFactory();
   private final Logger logger = LogManager.getLogger(getClass());
+  private final EventListenerFactory factory = new EventListenerFactory();
   private TeeEventListener eventLogger;
   
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter, OutputStream jsonOutputStream) throws Exception {
@@ -73,9 +74,13 @@ public class MarkdownGenerator {
     Objects.requireNonNull(outputWriter, "Output writer is missing");
     
     eventLogger = new TeeEventListener();
-    eventLogger.addEventListener(new EventLogger(logger));
+    final EventListener logEventLogger = factory.getInstance("LOG4J");
+    logEventLogger.setResource(logger);
+    eventLogger.addEventListener(logEventLogger);
     if (jsonOutputStream != null) {
-      eventLogger.addEventListener(new JSONEventListener(jsonOutputStream));
+      final EventListener jsonEventLogger = factory.getInstance("JSON");
+      jsonEventLogger.setResource(jsonOutputStream);
+      eventLogger.addEventListener(jsonEventLogger);
     }
 
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
@@ -107,7 +112,7 @@ public class MarkdownGenerator {
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown component; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown component; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -155,7 +160,7 @@ public class MarkdownGenerator {
     if (field != null) {
       row.addProperty("name", field.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown field; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown field; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", Integer.toString(tag));
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -214,7 +219,7 @@ public class MarkdownGenerator {
     if (group != null) {
       row.addProperty("name", group.getName());
     } else {
-      eventLogger.warn("Orchestra2md unknown group; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown group; id={0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "group");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -358,7 +363,7 @@ public class MarkdownGenerator {
       if (id != null) {
         row.addProperty("id", id.toString());
       } else {
-        eventLogger.warn("Orchestra2md unknown code id; name={0} scenario={1}", name, scenario);
+        eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
       }
       addDocumentationProperties(row, code.getAnnotation());
     }
@@ -558,7 +563,7 @@ public class MarkdownGenerator {
       final MutableDetailProperties row = table.newRow();
       addFieldRef(repository, numInGroup, row);
     } else {
-      eventLogger.warn("Orchestra2md unknown numInGroup for group; name={0} scenario={1}", name, scenario);
+      eventLogger.warn("Unknown numInGroup for group; name={0} scenario={1}", name, scenario);
     }
     final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
     addMembers(table, repository, members);

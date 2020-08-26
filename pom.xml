@@ -53,7 +53,7 @@
 		<module>orchestra2md</module>
 		<module>interfaces2md</module>
 		<module>md2interfaces</module>
-		<module>tablature-common</module>
+		<module>orchestra-common</module>
 	</modules>
 
 	<properties>

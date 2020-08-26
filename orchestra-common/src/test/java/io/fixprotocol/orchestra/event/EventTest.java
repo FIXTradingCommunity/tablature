@@ -1,10 +1,10 @@
-package io.fixprotocol.tablature.event;
+package io.fixprotocol.orchestra.event;
 
+import static io.fixprotocol.orchestra.event.Event.Severity.*;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import static io.fixprotocol.tablature.event.Event.Severity.*;
+import io.fixprotocol.orchestra.event.Event;
 
 class EventTest {
 

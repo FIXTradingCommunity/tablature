@@ -4,17 +4,10 @@
 		<Console name="Console" target="STDOUT">
 			<PatternLayout pattern="%d %-5p: %m%n"/>
 		</Console>
-		<File name="JSON" fileName="eventlog.json" append="true">
-			<JsonLayout complete="true" compact="false" />
-		</File>
 	</Appenders>
 	<Loggers>
 		<Root level="info">
 			<AppenderRef ref="Console" />
 		</Root>
-		<!-- Errors in translation are written both as JSON objects and to console log -->
-		<Logger name="eventlog" level="info">
-			<AppenderRef ref="JSON" />
-		</Logger>
 	</Loggers>
 </Configuration>

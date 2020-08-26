@@ -11,4 +11,5 @@ module md2orchestra {
   requires transitive org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
   requires jaxb.impl;
+  requires orchestra.common;
 }

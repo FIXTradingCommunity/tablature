@@ -40,7 +40,7 @@ class Md2OrchestraTest {
     final String inputPath = getResourcePath("mit_2016.md");
     final String outputFilename = "target/test/mit_2016.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
-        .outputFile(outputFilename).build();
+        .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
     md2Orchestra1.generate();
   }
 
