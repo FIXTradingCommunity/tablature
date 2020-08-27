@@ -72,15 +72,19 @@ public class Md2Interfaces {
   }
 
   /**
+   * Convert markdown to Orchestra interfaces schema
+   * 
+   * <pre>
+   * usage: Md2Interfaces [OPTIONS]
+   *        -?,--help display usage 
+   *        -e,--eventlog &lt;arg&gt; path of log file
+   *        -i,--input &lt;arg&gt; path of markdown input file 
+   *        -o,--output &lt;arg&gt; path of output interfaces file 
+   *        -v,--verbose verbose event log
+   * </pre>
    * 
    * @param args command line arguments
    * 
-   *        usage: Md2Interfaces 
-   *        -?,--help display usage 
-   *        -e,--eventlog <arg> path of log file
-   *        -i,--input <arg> path of markdown input file 
-   *        -o,--output <arg> path of output interfaces file 
-   *        -v,--verbose verbose event log
    */
   public static void main(String[] args) {
     Md2Interfaces md2interfaces = new Md2Interfaces();

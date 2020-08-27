@@ -24,7 +24,7 @@ public final class MarkdownUtil {
    * <ul>
    * <li>Escape these characters: pipe '|'</li>
    * <li>Convert internal line break to a space</li>
-   * <li>Pass through XML/HTML entity references/li>
+   * <li>Pass through XML/HTML entity references</li>
    * </ul>
    *
    * @param text plaintext

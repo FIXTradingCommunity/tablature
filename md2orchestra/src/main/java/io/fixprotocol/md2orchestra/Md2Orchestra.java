@@ -100,10 +100,11 @@ public class Md2Orchestra {
    * Md2Orchestra reads one or more input files to produce output.
    *
    * <pre>
-  usage: Md2Orchestra [options] <input-file>..."
+  usage: Md2Orchestra [options] &lt;input-file&gt;..."
   -?,--help              display usage
-  -o,--output <arg>      path of output Orchestra file (required)
-  -r,--reference <arg>   path of reference Orchestra file
+  -e,--eventlog &lt;arg&gt;    path of JSON event file
+  -o,--output &lt;arg&gt;      path of output Orchestra file (required)
+  -r,--reference &lt;arg&gt;   path of reference Orchestra file
    * </pre>
    *
    * @param args command line arguments

@@ -67,15 +67,14 @@ public class Orchestra2md {
    * Construct and run Md2Orchestra with command line arguments
    *
    * <pre>
-  usage: Md2Orchestra
+  usage: Md2Orchestra [options] &lt;input-file&gt;"
   -?,--help             display usage
-  -i,--input <arg>      path of Orchestra input file
-  -o,--output <arg>     path of markdown output file
+  -e,--eventlog &lt;arg&gt;   path of JSON event file
+  -o,--output &lt;arg&gt;     path of markdown output file
    * </pre>
    *
    * @param args command line arguments
    */
-
   public static void main(String[] args) {
     final Orchestra2md orchestra2md = parseArgs(args).build();
     orchestra2md.generate();
