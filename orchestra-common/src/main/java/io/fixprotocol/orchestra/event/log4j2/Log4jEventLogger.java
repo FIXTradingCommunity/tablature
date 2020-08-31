@@ -11,7 +11,7 @@ import io.fixprotocol.orchestra.event.EventListener;
  * @author Don Mendelson
  *
  */
-public class EventLogger implements EventListener {
+public class Log4jEventLogger implements EventListener {
 
   private volatile boolean isOpen = true;
   private Logger logger;
@@ -19,8 +19,8 @@ public class EventLogger implements EventListener {
   /**
    * Uses a Logger qualified by this class name
    */
-  public EventLogger() {
-    logger = LogManager.getLogger(EventLogger.class);
+  public Log4jEventLogger() {
+    logger = LogManager.getLogger(Log4jEventLogger.class);
   }
 
   /**
@@ -28,7 +28,7 @@ public class EventLogger implements EventListener {
    *
    * @param logger a log4j2 Logger
    */
-  public EventLogger(Logger logger) {
+  public Log4jEventLogger(Logger logger) {
     this.logger = logger;
   }
 

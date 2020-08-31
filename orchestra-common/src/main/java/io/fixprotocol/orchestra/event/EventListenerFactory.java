@@ -1,7 +1,7 @@
 package io.fixprotocol.orchestra.event;
 
 import io.fixprotocol.orchestra.event.json.JSONEventListener;
-import io.fixprotocol.orchestra.event.log4j2.EventLogger;
+import io.fixprotocol.orchestra.event.log4j2.Log4jEventLogger;
 
 /**
  * Creates instances of EventListener implementations
@@ -19,6 +19,7 @@ public class EventListenerFactory {
    * <ul>
    * <li>JSON</li>
    * <li>LOG4J</li>
+   * <li>STDOUT</li>
    * </ul>
    * 
    * @param type key to an EventListener implementation
@@ -30,7 +31,9 @@ public class EventListenerFactory {
       case "JSON":
         return new JSONEventListener();
       case "LOG4J":
-        return new EventLogger();
+        return new Log4jEventLogger();
+      case "STDOUT":
+        return new ConsoleEventListener();
       default:
         throw new IllegalArgumentException("Unknown type");
     }
