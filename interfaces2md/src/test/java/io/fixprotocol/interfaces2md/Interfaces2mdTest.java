@@ -30,9 +30,10 @@ class Interfaces2mdTest {
 
   @Test
   void exampleWithStreams() throws Exception {
-    Interfaces2md interfaces2md = new Interfaces2md();
-    interfaces2md.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("SampleInterfaces.xml"), 
-        new OutputStreamWriter(new FileOutputStream("target/test/SampleInterfaces.md"), StandardCharsets.UTF_8));
+    MarkdownGenerator generator = new MarkdownGenerator();
+    generator.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("SampleInterfaces.xml"),
+        new OutputStreamWriter(new FileOutputStream("target/test/SampleInterfaces.md"), StandardCharsets.UTF_8),
+        new FileOutputStream("target/test/SampleInterfaces.json"));
   }
 
 }

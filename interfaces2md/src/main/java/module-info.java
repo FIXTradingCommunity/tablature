@@ -7,4 +7,5 @@ module interfaces2md {
   requires commons.cli;
   requires org.apache.logging.log4j;
   requires org.apache.logging.log4j.core;
+  requires orchestra.common;
 }
