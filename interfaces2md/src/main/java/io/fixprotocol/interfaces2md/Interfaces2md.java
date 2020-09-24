@@ -39,7 +39,6 @@ public class Interfaces2md {
     private String eventFile;
     private String inputFile;
     private String outputFile;
-    private boolean verbose = false;
 
     public Interfaces2md build() {
       return new Interfaces2md(this);
@@ -59,29 +58,32 @@ public class Interfaces2md {
       this.outputFile = outputFile;
       return this;
     }
-
-    public Builder verbose(boolean verbose) {
-      this.verbose = verbose;
-      return this;
-    }
   }
 
-  public static void main(String[] args) throws Exception {
-    Interfaces2md interfaces2md = parseArgs(args).build();
+  /**
+   * Construct and run Interfaces2md with command line arguments
+   *
+   * <pre>
+   * usage: Interfaces2md [options] &lt;input-file&gt;
+ -?,--help             display usage
+ -e,--eventlog <arg>   path of JSON event file
+ -o,--output <arg>     path of markdown output file (required)
+   * </pre>
+   * @param args command line arguments
+   */
+  public static void main(String[] args) {
+    final Interfaces2md interfaces2md = parseArgs(args).build();
     interfaces2md.generate();
   }
 
-  private static Builder parseArgs(String[] args) throws ParseException {
+  private static Builder parseArgs(String[] args) {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of interfaces input file (required)").longOpt("input")
-        .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of markdown output file (required)").longOpt("output")
-        .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("e").desc("path of JSON event file")
-        .longOpt("eventlog").numberOfArgs(1).build());
+    options.addOption(Option.builder("o").desc("path of markdown output file (required)")
+        .longOpt("output").numberOfArgs(1).required().build());
+    options.addOption(Option.builder("e").desc("path of JSON event file").longOpt("eventlog")
+        .numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
-    options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -96,30 +98,25 @@ public class Interfaces2md {
         System.exit(0);
       }
 
-      builder.inputFile = cmd.getOptionValue("i");
+      builder.inputFile = !cmd.getArgList().isEmpty() ? cmd.getArgList().get(0) : null;
       builder.outputFile = cmd.getOptionValue("o");
 
       if (cmd.hasOption("e")) {
         builder.eventFile = cmd.getOptionValue("e");
       }
 
-      if (cmd.hasOption("v")) {
-        builder.verbose = true;
-      }
-
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
-      throw e;
+      throw new RuntimeException(e);
     }
   }
 
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Interfaces2md [options]", options);
+    formatter.printHelp("Interfaces2md [options] <input-file>", options);
   }
-  
-  public final boolean verbose;
+
   private final String eventFilename;
   private final String inputFilename;
   private final Logger logger = LogManager.getLogger(getClass());
@@ -129,10 +126,9 @@ public class Interfaces2md {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
     this.eventFilename = builder.eventFile;
-    this.verbose = builder.verbose;
   }
 
-  public void generate() throws Exception {
+  public void generate() {
     try {
       generate(inputFilename, outputFilename, eventFilename);
       logger.info("Interfaces2md complete");
@@ -141,8 +137,9 @@ public class Interfaces2md {
     }
   }
 
- 
-  void generate(String inputFilename, String outputFilename, String eventFilename) throws Exception {
+
+  void generate(String inputFilename, String outputFilename, String eventFilename)
+      throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
 

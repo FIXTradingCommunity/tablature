@@ -26,12 +26,13 @@ class Md2InterfacesTest {
   public static void setupOnce() {
     new File(("target/test")).mkdirs();
   }
-  
+
   @Test
   void testMain() throws Exception {
-    Md2Interfaces md2Interfaces = new Md2Interfaces();
-    md2Interfaces.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("SampleInterfaces.md"), 
-        new FileOutputStream("target/test/SampleInterfaces.xml"));
+    Md2Interfaces md2Interfaces = Md2Interfaces.builder().inputFile("src/test/resources/SampleInterfaces.md")
+        .outputFile("target/test/SampleInterfaces.xml")
+        .eventFile("target/test/SampleInterfaces.json").build();
+    md2Interfaces.generate();
   }
 
 }

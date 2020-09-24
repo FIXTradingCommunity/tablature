@@ -19,6 +19,7 @@ import io.fixprotocol._2020.orchestra.interfaces.BaseInterfaceType;
 import io.fixprotocol._2020.orchestra.interfaces.EncodingType;
 import io.fixprotocol._2020.orchestra.interfaces.IdentifierType;
 import io.fixprotocol._2020.orchestra.interfaces.InterfaceType;
+import io.fixprotocol._2020.orchestra.interfaces.InterfaceType.Sessions;
 import io.fixprotocol._2020.orchestra.interfaces.Interfaces;
 import io.fixprotocol._2020.orchestra.interfaces.LayerT;
 import io.fixprotocol._2020.orchestra.interfaces.MessageCastT;
@@ -29,7 +30,6 @@ import io.fixprotocol._2020.orchestra.interfaces.SessionProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.SessionType;
 import io.fixprotocol._2020.orchestra.interfaces.TransportProtocolType;
 import io.fixprotocol._2020.orchestra.interfaces.UserIntefaceType;
-import io.fixprotocol._2020.orchestra.interfaces.InterfaceType.Sessions;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DocumentWriter;
 import io.fixprotocol.md.event.MarkdownUtil;
@@ -41,6 +41,12 @@ import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
 
+/**
+ * Generates markdown from an Orchestra interfaces file
+ *
+ * @author Don Mendelson
+ *
+ */
 public class MarkdownGenerator {
 
   private final ContextFactory contextFactory = new ContextFactory();
@@ -50,7 +56,17 @@ public class MarkdownGenerator {
   private final Logger logger = LogManager.getLogger(getClass());
 
 
-  void generate(InputStream inputStream, OutputStreamWriter outputWriter,
+  /**
+   * Generates markdown from an Orchestra interfaces file
+   *
+   * Warning or error events are written both to a log and a JSON event file.
+   *
+   * @param inputStream input as interfaces schema
+   * @param outputWriter output as markdown
+   * @param jsonOutputStream output stream for events
+   * @throws Exception if an IO or fatal parsing error occurs
+   */
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
       OutputStream jsonOutputStream) throws Exception {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputWriter, "Output writer is missing");
@@ -86,7 +102,7 @@ public class MarkdownGenerator {
 
   private void generateInterface(InterfaceType interfaceInstance, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(2);
     context.addPair("Interface", interfaceInstance.getName());
     documentWriter.write(context);
     final MutableDocumentation documentation =
@@ -106,7 +122,7 @@ public class MarkdownGenerator {
 
   private void generateMetadata(Interfaces interfaces, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(1);
+    final MutableContext context = contextFactory.createContext(1);
     context.addKey("Interfaces");
     documentWriter.write(context);
     final MutableDetailTable table = contextFactory.createDetailTable();
@@ -134,7 +150,7 @@ public class MarkdownGenerator {
     if (!(services.isEmpty() && uis.isEmpty() && encodings.isEmpty() && sessionProtocols.isEmpty()
         && transports.isEmpty()) && protocols.isEmpty()) {
 
-      MutableContext context = contextFactory.createContext(4);
+      final MutableContext context = contextFactory.createContext(4);
       context.addKey("Protocols");
       documentWriter.write(context);
 
@@ -205,7 +221,7 @@ public class MarkdownGenerator {
       throws IOException {
     final List<IdentifierType> ids = session.getIdentifier();
     if (!ids.isEmpty()) {
-      MutableContext context = contextFactory.createContext(4);
+      final MutableContext context = contextFactory.createContext(4);
       context.addKey("Identifiers");
       documentWriter.write(context);
 

@@ -7,13 +7,10 @@ The interfaces2md utilty documents an Orchestra interfaces file as a markdown do
 ### Command line arguments
 
 ```
-usage: Interfaces2md [options] 
- -?,--help              display usage
- -e,--eventlog <arg>    path of log file
- -i,--input <arg>       path of markdown input file (required)
- -o,--output <arg>      path of output Orchestra file (required)
- -r,--reference <arg>   path of reference Orchestra file
- -v,--verbose           verbose event log
+usage: Interfaces2md [options] <input-file>
+ -?,--help             display usage
+ -e,--eventlog <arg>   path of JSON event file
+ -o,--output <arg>     path of markdown output file (required)
  ```
 
 ### Invoked from an application
@@ -28,3 +25,7 @@ Interfaces2md interfaces2md = Interfaces2md.builder()
     .outputFile("mymarkdown.md").build();
 interfaces2md.generate();
 ```
+
+### Event logging
+
+The application uses log4j2 for event logging. Additionally, a JSON event file may be specified to convey warnings and errors encountered during translation. Such a file may be more easily rendered on a web page.

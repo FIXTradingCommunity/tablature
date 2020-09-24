@@ -16,10 +16,13 @@ package io.fixprotocol.md2interfaces;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import javax.xml.bind.JAXBException;
 import org.apache.commons.cli.CommandLine;
@@ -28,31 +31,33 @@ import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import io.fixprotocol.md.event.DocumentParser;
-import io.fixprotocol.md2interfaces.util.LogUtil;
 
 public class Md2Interfaces {
 
   public static class Builder {
-    private String inputFile;
-    private String logFile;
+    private List<String> inputFiles = new ArrayList<>();
+    private String eventFile;
     private String outputFile;
-    private boolean verbose;
-
 
     public Md2Interfaces build() {
       return new Md2Interfaces(this);
     }
 
-    public Builder eventLog(String logFile) {
-      this.logFile = logFile;
+    public Builder eventFile(String eventFile) {
+      this.eventFile = eventFile;
       return this;
     }
 
     public Builder inputFile(String inputFile) {
-      this.inputFile = inputFile;
+      inputFiles(List.of(inputFile));
+      return this;
+    }
+
+    public Builder inputFiles(List<String> inputFiles) {
+      this.inputFiles.clear();
+      this.inputFiles.addAll(inputFiles);
       return this;
     }
 
@@ -61,10 +66,6 @@ public class Md2Interfaces {
       return this;
     }
 
-    public Builder verbose(boolean verbose) {
-      this.verbose = verbose;
-      return this;
-    }
   }
 
   public static Builder builder() {
@@ -73,116 +74,28 @@ public class Md2Interfaces {
 
   /**
    * Convert markdown to Orchestra interfaces schema
-   * 
+   *
    * <pre>
-   * usage: Md2Interfaces [OPTIONS]
-   *        -?,--help display usage 
-   *        -e,--eventlog &lt;arg&gt; path of log file
-   *        -i,--input &lt;arg&gt; path of markdown input file 
-   *        -o,--output &lt;arg&gt; path of output interfaces file 
-   *        -v,--verbose verbose event log
+  usage: Md2Interfaces  [options] &lt;input-file&gt;...
+  -?,--help             display usage
+  -e,--eventlog <arg>   path of JSON event file
+  -o,--output <arg>     path of output interfaces file (required)
    * </pre>
-   * 
+   *
    * @param args command line arguments
-   * 
+   *
    */
   public static void main(String[] args) {
-    Md2Interfaces md2interfaces = new Md2Interfaces();
-    try {
-      md2interfaces = md2interfaces.parseArgs(args).build();
-      md2interfaces.generate();
-    } catch (final Exception e) {
-      if (md2interfaces.logger != null) {
-        md2interfaces.logger.fatal("Md2Interfaces: exception occurred", e);
-      } else {
-        e.printStackTrace(System.err);
-      }
-    }
+    final Md2Interfaces md2interfaces = parseArgs(args).build();
+    md2interfaces.generate();
   }
 
-  private static void showHelp(Options options) {
-    final HelpFormatter formatter = new HelpFormatter();
-    formatter.printHelp("Md2Interfaces [options]", options);
-  }
-
-  private File inputFile;
-  private File logFile;
-  private Logger logger = null;
-  private File outputFile;
-
-  private boolean verbose = false;
-
-  /**
-   * For testing only
-   */
-  Md2Interfaces() {
-
-  }
-
-  private Md2Interfaces(Builder builder) {
-    this.inputFile = new File(builder.inputFile);
-    this.outputFile = new File(builder.outputFile);
-    this.logFile = builder.logFile != null ? new File(builder.logFile) : null;
-    this.verbose = builder.verbose;
-  }
-
-  public void generate() throws IOException {
-    generate(inputFile, outputFile, logFile);
-  }
-
-  void generate(File inputFile, File outputFile, File logFile) throws IOException {
-    Objects.requireNonNull(inputFile, "Input File is missing");
-    Objects.requireNonNull(outputFile, "Output File is missing");
-
-    final Level level = verbose ? Level.DEBUG : Level.ERROR;
-    if (logFile != null) {
-      logger = LogUtil.initializeFileLogger(logFile.getCanonicalPath(), level, getClass());
-    } else {
-      logger = LogUtil.initializeDefaultLogger(level, getClass());
-    }
-
-    final File outputDir = outputFile.getParentFile();
-    if (outputDir != null) {
-      outputDir.mkdirs();
-    }
-
-    try (InputStream inputStream = new FileInputStream(inputFile);
-        OutputStream outputStream = new FileOutputStream(outputFile)) {
-
-      generate(inputStream, outputStream);
-    } catch (final JAXBException e) {
-      logger.fatal("Md2Interfaces failed to process XML", e);
-      throw new IOException(e);
-    }
-  }
-
-  void generate(InputStream inputStream, OutputStream outputStream)
-      throws JAXBException, IOException {
-    Objects.requireNonNull(inputStream, "Input stream is missing");
-    Objects.requireNonNull(outputStream, "Output stream is missing");
-
-    if (logger == null) {
-      logger = LogUtil.initializeDefaultLogger(Level.ERROR, getClass());
-    }
-
-    final InterfacesBuilder interfacesBuilder = new InterfacesBuilder();
-
-    final DocumentParser parser = new DocumentParser();
-    parser.parse(inputStream, interfacesBuilder);
-
-    interfacesBuilder.marshal(outputStream);
-    logger.info("Md2Interfaces completed");
-  }
-
-  private Builder parseArgs(String[] args) throws ParseException {
+  private static Builder parseArgs(String[] args) {
     final Options options = new Options();
-    options.addOption(Option.builder("i").desc("path of markdown input file (required)").longOpt("input")
-        .numberOfArgs(1).required().build());
-    options.addOption(Option.builder("o").desc("path of output interfaces file (required)").longOpt("output")
-        .numberOfArgs(1).required().build());
-    options.addOption(
-        Option.builder("e").desc("path of log file").longOpt("eventlog").numberOfArgs(1).build());
-    options.addOption(Option.builder("v").desc("verbose event log").longOpt("verbose").build());
+    options.addOption(Option.builder("o").desc("path of output interfaces file (required)")
+        .longOpt("output").numberOfArgs(1).required().build());
+    options.addOption(Option.builder("e").desc("path of JSON event file").longOpt("eventlog")
+        .numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
@@ -199,23 +112,82 @@ public class Md2Interfaces {
         System.exit(0);
       }
 
-      builder.inputFile = cmd.getOptionValue("i");
+      builder.inputFiles = cmd.getArgList();
       builder.outputFile = cmd.getOptionValue("o");
 
       if (cmd.hasOption("e")) {
-        builder.logFile = cmd.getOptionValue("e");
-      }
-
-      if (cmd.hasOption("v")) {
-        builder.verbose = true;
+        builder.eventFile = cmd.getOptionValue("e");
       }
 
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
-      throw e;
+      throw new RuntimeException(e);
     }
   }
 
+  private static void showHelp(Options options) {
+    final HelpFormatter formatter = new HelpFormatter();
+    formatter.printHelp("Md2Interfaces  [options] <input-file>...", options);
+  }
+
+  private final List<String> inputFiles;
+  private final String eventFile;
+  private final Logger logger = LogManager.getLogger(getClass());
+
+  private final String outputFile;
+
+  private Md2Interfaces(Builder builder) {
+    this.inputFiles = builder.inputFiles;
+    this.outputFile = builder.outputFile;
+    this.eventFile = builder.eventFile;
+  }
+
+  public void generate() {
+    try {
+      generate(inputFiles, outputFile, eventFile);
+    } catch (final Exception e) {
+      logger.fatal("Md2Interfaces failed", e);
+    }
+  }
+
+  void generate(List<String> inputFiles, String outputFilename, String eventFilename)
+      throws Exception {
+    Objects.requireNonNull(inputFiles, "Input File is missing");
+    Objects.requireNonNull(outputFile, "Output File is missing");
+
+
+    final File outputFile = new File(outputFilename);
+    final File outputDir = outputFile.getParentFile();
+    if (outputDir != null) {
+      outputDir.mkdirs();
+    }
+
+    OutputStream jsonOutputStream = null;
+    if (eventFilename != null) {
+      jsonOutputStream = new FileOutputStream(eventFilename);
+    }
+
+    final InterfacesBuilder interfacesBuilder = new InterfacesBuilder(jsonOutputStream);
+
+    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+
+      for (final String inputFile : inputFiles) {
+        appendInput(inputFile, interfacesBuilder);
+      }
+      interfacesBuilder.marshal(outputStream);
+      logger.info("Md2Interfaces completed");
+    } catch (final JAXBException e) {
+      logger.fatal("Md2Interfaces failed to process XML", e);
+      throw new IOException(e);
+    }
+  }
+
+  private void appendInput(String filePath, InterfacesBuilder interfacesBuilder)
+      throws FileNotFoundException, IOException {
+    logger.info("Md2Interfaces opening file {}", filePath);
+    final InputStream inputStream = new FileInputStream(filePath);
+    interfacesBuilder.appendInput(inputStream);
+  }
 
 }
