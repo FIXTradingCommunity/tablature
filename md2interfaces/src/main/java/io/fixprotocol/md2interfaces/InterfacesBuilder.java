@@ -56,7 +56,7 @@ import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
 
-class InterfacesBuilder implements Consumer<Contextual> {
+public class InterfacesBuilder implements Consumer<Contextual> {
 
   public static final String IDENTIFIERS_KEYWORD = "identifiers";
   public static final String INTERFACE_KEYWORD = "interface";
