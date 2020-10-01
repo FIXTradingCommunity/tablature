@@ -66,8 +66,8 @@ public class Interfaces2md {
    * <pre>
    * usage: Interfaces2md [options] &lt;input-file&gt;
  -?,--help             display usage
- -e,--eventlog <arg>   path of JSON event file
- -o,--output <arg>     path of markdown output file (required)
+ -e,--eventlog lt;arg&gt;   path of JSON event file
+ -o,--output lt;arg&gt;     path of markdown output file (required)
    * </pre>
    * @param args command line arguments
    */

@@ -78,8 +78,8 @@ public class Md2Interfaces {
    * <pre>
   usage: Md2Interfaces  [options] &lt;input-file&gt;...
   -?,--help             display usage
-  -e,--eventlog <arg>   path of JSON event file
-  -o,--output <arg>     path of output interfaces file (required)
+  -e,--eventlog &lt;arg&gt;   path of JSON event file
+  -o,--output &lt;arg&gt;     path of output interfaces file (required)
    * </pre>
    *
    * @param args command line arguments
