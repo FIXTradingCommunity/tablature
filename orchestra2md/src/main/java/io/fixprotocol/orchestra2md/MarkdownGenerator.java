@@ -63,17 +63,17 @@ public class MarkdownGenerator {
 
   private static final String DEFAULT_SCENARIO = "base";
   private static final String NOPURPOSE_KEYWORD = "documentation";
-  
+
   private final ContextFactory contextFactory = new ContextFactory();
   private final Logger logger = LogManager.getLogger(getClass());
-  private final EventListenerFactory factory = new EventListenerFactory();
-  private TeeEventListener eventLogger;
-  
-  public void generate(InputStream inputStream, OutputStreamWriter outputWriter, OutputStream jsonOutputStream) throws Exception {
+  private EventListener eventLogger;
+
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
+      OutputStream jsonOutputStream) throws Exception {
     Objects.requireNonNull(inputStream, "Input stream is missing");
     Objects.requireNonNull(outputWriter, "Output writer is missing");
-    
-    eventLogger = new TeeEventListener();
+    final EventListenerFactory factory = new EventListenerFactory();
+    final TeeEventListener eventLogger = new TeeEventListener();
     final EventListener logEventLogger = factory.getInstance("LOG4J");
     logEventLogger.setResource(logger);
     eventLogger.addEventListener(logEventLogger);
@@ -83,6 +83,12 @@ public class MarkdownGenerator {
       eventLogger.addEventListener(jsonEventLogger);
     }
 
+    generate(inputStream, outputWriter, eventLogger);
+  }
+
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
+      EventListener eventLogger) throws Exception {
+    this.eventLogger = eventLogger;
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Repository repository = unmarshal(inputStream);
       generateRepositoryMetadata(repository, documentWriter);
@@ -253,7 +259,8 @@ public class MarkdownGenerator {
       return objects.stream()
           .filter(o -> o instanceof io.fixprotocol._2020.orchestra.repository.Documentation)
           .map(o -> (io.fixprotocol._2020.orchestra.repository.Documentation) o)
-          .filter(d -> purposes.contains(Objects.requireNonNullElse(d.getPurpose(), NOPURPOSE_KEYWORD)))
+          .filter(
+              d -> purposes.contains(Objects.requireNonNullElse(d.getPurpose(), NOPURPOSE_KEYWORD)))
           .map(d -> {
             if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
               return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
@@ -396,7 +403,7 @@ public class MarkdownGenerator {
 
     final Annotation annotation = component.getAnnotation();
     generateDocumentation(annotation, documentWriter);
-    
+
     final MutableDetailTable table = contextFactory.createDetailTable();
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
     addMembers(table, repository, members);
@@ -431,8 +438,8 @@ public class MarkdownGenerator {
       final List<MappedDatatype> mappings = datatype.getMappedDatatype();
       MutableDetailProperties row = table.newRow();
       row.addProperty("name", datatype.getName());
-      row.addProperty(NOPURPOSE_KEYWORD, concatenateDocumentation(datatype.getAnnotation(), 
-          List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value(), PurposeEnum.ELABORATION.value())));
+      row.addProperty(NOPURPOSE_KEYWORD, concatenateDocumentation(datatype.getAnnotation(), List
+          .of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value(), PurposeEnum.ELABORATION.value())));
       for (final MappedDatatype mapping : mappings) {
         row = table.newRow();
         row.addProperty("name", datatype.getName());
@@ -470,20 +477,22 @@ public class MarkdownGenerator {
 
   private void generateDocumentation(final Annotation annotation, DocumentWriter documentWriter)
       throws IOException {
-    String synopsis = concatenateDocumentation(annotation, List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value()));
+    String synopsis = concatenateDocumentation(annotation,
+        List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value()));
     if (!synopsis.isBlank()) {
-      MutableContext documentationContext = contextFactory.createContext(new String[] {"Synopsis"}, 4);
+      MutableContext documentationContext =
+          contextFactory.createContext(new String[] {"Synopsis"}, 4);
       documentWriter.write(documentationContext);
-      MutableDocumentation documentation =
-          contextFactory.createDocumentation(synopsis);
+      MutableDocumentation documentation = contextFactory.createDocumentation(synopsis);
       documentWriter.write(documentation);
     }
-    String elaboration = concatenateDocumentation(annotation, List.of(PurposeEnum.ELABORATION.value()));
+    String elaboration =
+        concatenateDocumentation(annotation, List.of(PurposeEnum.ELABORATION.value()));
     if (!elaboration.isBlank()) {
-      MutableContext documentationContext = contextFactory.createContext(new String[] {"Elaboration"}, 4);
+      MutableContext documentationContext =
+          contextFactory.createContext(new String[] {"Elaboration"}, 4);
       documentWriter.write(documentationContext);
-      MutableDocumentation documentation =
-          contextFactory.createDocumentation(elaboration);
+      MutableDocumentation documentation = contextFactory.createDocumentation(elaboration);
       documentWriter.write(documentation);
     }
   }
@@ -689,7 +698,7 @@ public class MarkdownGenerator {
     MutableContext context = contextFactory.createContext(3);
     context.addPair("StateMachine", stateMachine.getName());
     documentWriter.write(context);
-    
+
     final Annotation annotation = stateMachine.getAnnotation();
     generateDocumentation(annotation, documentWriter);
 

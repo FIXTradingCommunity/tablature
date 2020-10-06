@@ -51,36 +51,13 @@ public class MarkdownGenerator {
 
   private final ContextFactory contextFactory = new ContextFactory();
   // User facing event notifications should be written to eventLogger
-  private TeeEventListener eventLogger;
-  private final EventListenerFactory factory = new EventListenerFactory();
+  private EventListener eventLogger;
   private final Logger logger = LogManager.getLogger(getClass());
 
 
-  /**
-   * Generates markdown from an Orchestra interfaces file
-   *
-   * Warning or error events are written both to a log and a JSON event file.
-   *
-   * @param inputStream input as interfaces schema
-   * @param outputWriter output as markdown
-   * @param jsonOutputStream output stream for events
-   * @throws Exception if an IO or fatal parsing error occurs
-   */
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
-      OutputStream jsonOutputStream) throws Exception {
-    Objects.requireNonNull(inputStream, "Input stream is missing");
-    Objects.requireNonNull(outputWriter, "Output writer is missing");
-
-    eventLogger = new TeeEventListener();
-    final EventListener logEventLogger = factory.getInstance("LOG4J");
-    logEventLogger.setResource(logger);
-    eventLogger.addEventListener(logEventLogger);
-    if (jsonOutputStream != null) {
-      final EventListener jsonEventLogger = factory.getInstance("JSON");
-      jsonEventLogger.setResource(jsonOutputStream);
-      eventLogger.addEventListener(jsonEventLogger);
-    }
-
+      EventListener eventLogger) throws Exception {
+    this.eventLogger = eventLogger;
     try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Interfaces interfaces = unmarshal(inputStream);
       generateMetadata(interfaces, documentWriter);
@@ -98,6 +75,35 @@ public class MarkdownGenerator {
     } finally {
       eventLogger.close();
     }
+  }
+
+  /**
+   * Generates markdown from an Orchestra interfaces file
+   *
+   * Warning or error events are written both to a log and a JSON event file.
+   *
+   * @param inputStream input as interfaces schema
+   * @param outputWriter output as markdown
+   * @param jsonOutputStream output stream for events
+   * @throws Exception if an IO or fatal parsing error occurs
+   */
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
+      OutputStream jsonOutputStream) throws Exception {
+    Objects.requireNonNull(inputStream, "Input stream is missing");
+    Objects.requireNonNull(outputWriter, "Output writer is missing");
+    final EventListenerFactory factory = new EventListenerFactory();
+
+    TeeEventListener eventLogger = new TeeEventListener();
+    final EventListener logEventLogger = factory.getInstance("LOG4J");
+    logEventLogger.setResource(logger);
+    eventLogger.addEventListener(logEventLogger);
+    if (jsonOutputStream != null) {
+      final EventListener jsonEventLogger = factory.getInstance("JSON");
+      jsonEventLogger.setResource(jsonOutputStream);
+      eventLogger.addEventListener(jsonEventLogger);
+    }
+
+    generate(inputStream, outputWriter, eventLogger);
   }
 
   private void generateInterface(InterfaceType interfaceInstance, DocumentWriter documentWriter)

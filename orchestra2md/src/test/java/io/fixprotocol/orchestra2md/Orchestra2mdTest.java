@@ -47,13 +47,13 @@ class Orchestra2mdTest {
   void roundtripWithStreams() throws Exception {
     MarkdownGenerator generator = new MarkdownGenerator();
     generator.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("roundtrip.xml"), 
-        new OutputStreamWriter(new FileOutputStream("target/test/roundtrip.md"), StandardCharsets.UTF_8), null);
+        new OutputStreamWriter(new FileOutputStream("target/test/roundtrip.md"), StandardCharsets.UTF_8), new FileOutputStream("target/test/roundtrip.json"));
   }
   
   @Test
   void exampleWithStreams() throws Exception {
     MarkdownGenerator generator = new MarkdownGenerator();
     generator.generate(Thread.currentThread().getContextClassLoader().getResourceAsStream("mit_2016.xml"), 
-        new OutputStreamWriter(new FileOutputStream("target/test/mit_2016.md"), StandardCharsets.UTF_8), null);
+        new OutputStreamWriter(new FileOutputStream("target/test/mit_2016.md"), StandardCharsets.UTF_8), new FileOutputStream("target/test/mit_2016.json"));
   }
 }
