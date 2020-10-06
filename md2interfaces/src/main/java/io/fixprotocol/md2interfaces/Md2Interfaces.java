@@ -175,7 +175,7 @@ public class Md2Interfaces {
       for (final String inputFile : inputFiles) {
         appendInput(inputFile, interfacesBuilder);
       }
-      interfacesBuilder.marshal(outputStream);
+      interfacesBuilder.write(outputStream);
       logger.info("Md2Interfaces completed");
     } catch (final JAXBException e) {
       logger.fatal("Md2Interfaces failed to process XML", e);

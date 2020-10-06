@@ -124,11 +124,12 @@ public class InterfacesBuilder implements Consumer<Contextual> {
     parser.parse(inputStream, this);
   }
 
-  public void marshal(OutputStream os) throws JAXBException {
+  public void write(OutputStream os) throws Exception {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Interfaces.class);
     final Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
     jaxbMarshaller.setProperty("jaxb.formatted.output", true);
     jaxbMarshaller.marshal(interfaces, os);
+    eventLogger.close();
   }
 
   private void addDocumentation(String markdown, Annotation annotation) {
