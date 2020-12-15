@@ -41,6 +41,12 @@ The `Instrument` component block contains all the fields commonly used to descri
 | SecurityID       | 48  | required  |        
 | SecurityIDSource | 22  | constant  | 8      
 
+### FIXML Example
+
+```xml 
+<Instrmt ID="HGZ0" src="ExchangeSymbol" />
+```
+
 ## Group Parties 
 
 The Parties component block is used to identify and convey information on the

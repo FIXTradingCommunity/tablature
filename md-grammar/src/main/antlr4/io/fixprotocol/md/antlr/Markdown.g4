@@ -12,6 +12,7 @@ block
 	| paragraph
 	| list
 	| blockquote
+	| fencedcodeblock
 	| table
 	| NEWLINE
 ;
@@ -63,6 +64,18 @@ quoteline
 	)
 ;
 
+fencedcodeblock
+:
+	FENCE infostring? NEWLINE
+	paragraphline+
+	FENCE
+;
+
+infostring
+:
+	PARAGRAPHLINE
+;
+
 table
 :
 	NEWLINE* tableheading tabledelimiterrow tablerow+
@@ -91,6 +104,7 @@ tabledelimiterrow
 :
 	TABLEDELIMINATORCELL+ PIPE? NEWLINE
 ;
+
 
 LITERAL
 :
@@ -124,6 +138,11 @@ PARAGRAPHLINE
 TABLEDELIMINATORCELL
 :
 	PIPE? ' '? ':'? '-'+ ':'? ' '?
+;
+
+FENCE
+:
+	'```'
 ;
 
 IGNORE_WS
@@ -249,5 +268,6 @@ LINECHAR
 :
 	~[\n\r`]
 ;
+
 
 

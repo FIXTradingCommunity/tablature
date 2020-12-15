@@ -29,14 +29,16 @@ import org.junit.jupiter.params.provider.ValueSource;
 import io.fixprotocol.md.antlr.MarkdownParser.BlockContext;
 import io.fixprotocol.md.antlr.MarkdownParser.CellContext;
 import io.fixprotocol.md.antlr.MarkdownParser.DocumentContext;
+import io.fixprotocol.md.antlr.MarkdownParser.FencedcodeblockContext;
 import io.fixprotocol.md.antlr.MarkdownParser.HeadingContext;
+import io.fixprotocol.md.antlr.MarkdownParser.InfostringContext;
 import io.fixprotocol.md.antlr.MarkdownParser.ParagraphContext;
 import io.fixprotocol.md.antlr.MarkdownParser.ParagraphlineContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TableheadingContext;
 import io.fixprotocol.md.antlr.MarkdownParser.TablerowContext;
 
-@Disabled
+
 class MdGrammarTest {
 
   @ParameterizedTest
@@ -68,20 +70,30 @@ class MdGrammarTest {
               .collect(Collectors.joining(" "));
           System.out.format("Paragraph text: %s%n", paragraphText);
         } else {
-          TableContext table = block.table();
-          if (table != null) {
-            TableheadingContext tableHeading = table.tableheading();
-            TablerowContext headingRow = tableHeading.tablerow();
-            List<CellContext> colHeadings = headingRow.cell();
-            for (CellContext colHeading : colHeadings) {
-              System.out.format("Column heading: %s%n", colHeading.getText());
-            }
-            List<TablerowContext> rows = table.tablerow();
-            for (TablerowContext row : rows) {
-              List<CellContext> cells = row.cell();
-              for (CellContext cell : cells) {
-                String celltext = cell.CELLTEXT().getText();
-                System.out.format("Cell: %s%n", celltext);
+          FencedcodeblockContext fencedCodeBlock = block.fencedcodeblock();
+          if (fencedCodeBlock != null) {
+            InfostringContext infoString = fencedCodeBlock.infostring();
+            System.out.format("Fenced code block infostring: %s%n", infoString.getText());
+            List<ParagraphlineContext> textlines = fencedCodeBlock.paragraphline();
+            String paragraphText = textlines.stream().map(p -> p.PARAGRAPHLINE().getText())
+                .collect(Collectors.joining(" "));
+            System.out.format("Fenced code block text: %s%n", paragraphText);
+          } else {
+            TableContext table = block.table();
+            if (table != null) {
+              TableheadingContext tableHeading = table.tableheading();
+              TablerowContext headingRow = tableHeading.tablerow();
+              List<CellContext> colHeadings = headingRow.cell();
+              for (CellContext colHeading : colHeadings) {
+                System.out.format("Column heading: %s%n", colHeading.getText());
+              }
+              List<TablerowContext> rows = table.tablerow();
+              for (TablerowContext row : rows) {
+                List<CellContext> cells = row.cell();
+                for (CellContext cell : cells) {
+                  String celltext = cell.CELLTEXT().getText();
+                  System.out.format("Cell: %s%n", celltext);
+                }
               }
             }
           }
@@ -90,8 +102,7 @@ class MdGrammarTest {
     }
   }
 
-
-
+  @Disabled
   @ParameterizedTest
   @ValueSource(strings = {"src/test/resources/md2orchestra-proto.md"})
   void testRig(String fileName) throws Exception {
