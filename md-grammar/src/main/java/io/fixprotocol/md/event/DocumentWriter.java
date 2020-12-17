@@ -30,6 +30,7 @@ public class DocumentWriter implements AutoCloseable {
   private static final char[] HEADING_LEVELS = "######".toCharArray();
   private static final char[] HYPHENS = new char[128];
   private static final char[] SPACES = new char[128];
+  private static final char[] FENCE = "```".toCharArray();
 
   private final Logger logger = LogManager.getLogger(getClass());
   private final Writer writer;
@@ -83,9 +84,19 @@ public class DocumentWriter implements AutoCloseable {
 
   public void write(Documentation documentation) throws IOException {
     final String text = documentation.getDocumentation();
+    final String format = documentation.getFormat();
     if (text != null) {
+      if (format.equals(Documentation.MARKDOWN)) {
       writer.write(text);
       writer.write("\n\n");
+      } else {
+        writer.write(FENCE);
+        writer.write(format);
+        writer.write("\n");
+        writer.write(text);
+        writer.write(FENCE);
+        writer.write("\n\n");
+      }
     }
   }
 

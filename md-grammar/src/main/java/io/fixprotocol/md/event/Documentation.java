@@ -23,8 +23,24 @@ package io.fixprotocol.md.event;
 public interface Documentation extends Contextual {
 
   /**
-   *
+   * Default documentation format
+   */
+  static final String MARKDOWN = "markdown";
+
+  /**
+   * Return the contents
+   * 
    * @return documentation
    */
   String getDocumentation();
+
+  /**
+   * Returns the format of the documentation. This corresponds to infostring of a fenced code block,
+   * as defined by the markdown specification. Originally, it was the name of a programming language
+   * to support syntax-specific highlighting. However, it has been extended to support various
+   * encodings, such as XML. In some cases, it may map to a media type.
+   * 
+   * @return the format of documentation
+   */
+  String getFormat();
 }

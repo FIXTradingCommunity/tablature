@@ -36,8 +36,28 @@ public class ContextFactory {
     return new DetailTableImpl();
   }
 
+  /**
+   * Create markdown documentation as ordinary paragraphs
+   * 
+   * @param documentation contents
+   * @return a mutable documentation object
+   */
   public MutableDocumentation createDocumentation(String documentation) {
     return new DocumentationImpl(documentation);
+  }
+
+  /**
+   * Create markdown documentation as ordinary paragraphs
+   * 
+   * @param documentation contents
+   * @format the format of the documentation. This corresponds to infostring of a fenced code block,
+   *         as defined by the markdown specification. Originally, it was the name of a programming
+   *         language to support syntax-specific highlighting. However, it has been extended to
+   *         support various encodings, such as XML. In some cases, it may map to a media type.
+   * @return a mutable documentation object
+   */
+  public MutableDocumentation createDocumentation(String documentation, String format) {
+    return new DocumentationImpl(documentation, format);
   }
 
 }

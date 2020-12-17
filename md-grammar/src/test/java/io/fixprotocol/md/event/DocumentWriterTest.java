@@ -50,6 +50,14 @@ class DocumentWriterTest {
     String output = writer.toString();
     assertEquals("This is a paragraph.\n\n", output);
   }
+  
+  @Test
+  void codeblock() throws IOException {
+    MutableDocumentation documentation = factory.createDocumentation("<Instrmt ID=\"HGZ0\" src=\"ExchangeSymbol\" />", "xml");
+    documentWriter.write(documentation);
+    String output = writer.toString();
+    assertEquals("```xml\n<Instrmt ID=\"HGZ0\" src=\"ExchangeSymbol\" />```\n\n", output);
+  }
 
   @Test
   void table() throws IOException {
