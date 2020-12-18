@@ -6,7 +6,7 @@
     <version>0.4.2-SNAPSHOT</version>
   </parent>
   <artifactId>interfaces2md</artifactId>
-  
+
   	<dependencies>
 		<dependency>
 			<groupId>io.fixprotocol.tablature</groupId>
@@ -77,7 +77,7 @@
             <optional>true</optional>
         </dependency>
 	</dependencies>
-	
+
 		<!-- Building an assembly for now; the ultimate goal is to build a modular image -->
 	<build>
 		<plugins>

@@ -85,7 +85,7 @@
 		</dependency>
 	</dependencies>
 
-	<!-- Building an assembly for now; the ultimate goal is to build a modular 
+	<!-- Building an assembly for now; the ultimate goal is to build a modular
 		image -->
 	<build>
 		<plugins>
