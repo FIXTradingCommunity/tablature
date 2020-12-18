@@ -14,9 +14,9 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>io.fixprotocol.tablature</groupId>
+			<groupId>io.fixprotocol.orchestra</groupId>
 			<artifactId>orchestra-common</artifactId>
-			<version>${project.version}</version>
+			<version>${orchestra.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>

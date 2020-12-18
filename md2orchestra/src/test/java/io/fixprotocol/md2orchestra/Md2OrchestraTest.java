@@ -120,7 +120,7 @@ class Md2OrchestraTest {
   @Test
   void withReference() throws Exception {
     String inputPath = getResourcePath("md2orchestra-proto.md");
-    String outputFilename = "md2orchestra-proto-ref.xml";
+    String outputFilename = "target/test/md2orchestra-proto-ref.xml";
     String referencePath = getResourcePath("OrchestraFIXLatest.xml");
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath).referenceFile(referencePath)
         .outputFile(outputFilename).build();
