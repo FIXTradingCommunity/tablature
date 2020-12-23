@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>io.fixprotocol.tablature</groupId>
 	<artifactId>tablature-parent</artifactId>
-	<version>0.4.2-SNAPSHOT</version>
+	<version>0.4.2</version>
 	<packaging>pom</packaging>
 	<name>tablature-parent</name>
 	<description>Easy authoring for rules of engagement using markdown</description>
@@ -64,11 +64,11 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<antlr.version>4.8-1</antlr.version>
 		<commons-cli.version>1.4</commons-cli.version>
-		<jackson.version>2.11.2</jackson.version>
+		<jackson.version>2.12.0</jackson.version>
 		<java.version>11</java.version>
-		<junit.version>5.6.1</junit.version>
-		<log4j.version>2.13.3</log4j.version>
-		<orchestra.version>1.6.8</orchestra.version>
+		<junit.version>5.7.0</junit.version>
+		<log4j.version>2.14.0</log4j.version>
+		<orchestra.version>1.6.9</orchestra.version>
 		<stringtemplate.version>4.1</stringtemplate.version>
 	</properties>
 
