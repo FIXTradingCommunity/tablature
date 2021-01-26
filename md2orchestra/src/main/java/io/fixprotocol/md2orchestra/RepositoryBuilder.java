@@ -155,6 +155,25 @@ public class RepositoryBuilder {
           repositoryAdapter.copyField(fieldType);
         }
       }
+      
+      // if not found retry with base scenario
+      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario) && referenceRepositoryAdapter != null) {
+        FieldType baseFieldType = null;
+        if (tag > 0) {
+          baseFieldType = referenceRepositoryAdapter.findFieldByTag(tag, DEFAULT_SCENARIO);
+        } else {
+          baseFieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
+        }
+        if (baseFieldType != null) {
+          fieldType = new FieldType();
+          fieldType.setId(baseFieldType.getId());
+          fieldType.setName(baseFieldType.getName());
+          fieldType.setType(baseFieldType.getType());
+          fieldType.setScenario(scenario);
+          repositoryAdapter.copyField(fieldType);
+        }
+      }
+      
       if (fieldType == null) {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
@@ -173,7 +192,7 @@ public class RepositoryBuilder {
 
   /**
    *
-   * Populates the ID of a GroupRef when the group name is known
+   * Populates the ID of a FieldRef when the field name is known
    */
   private class FieldRefBuilder implements ElementBuilder {
 
@@ -187,13 +206,18 @@ public class RepositoryBuilder {
 
     @Override
     public void build() {
-      final FieldType componentType =
-          repositoryAdapter.findFieldByName(name, fieldRef.getScenario());
-      if (componentType != null) {
-        fieldRef.setId(componentType.getId());
+      final String scenario = fieldRef.getScenario();
+      FieldType fieldType =
+          repositoryAdapter.findFieldByName(name, scenario);
+      // if not found retry with base scenario
+      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)) {
+        fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
+      }
+      if (fieldType != null) {
+        fieldRef.setId(fieldType.getId());
       } else {
         eventLogger.error("Unknown fieldRef ID; name={0} scenario={1}", name,
-            fieldRef.getScenario());
+            scenario);
       }
     }
   }
@@ -449,6 +473,10 @@ public class RepositoryBuilder {
   public void write(OutputStream outputStream) throws Exception {
     executeDefferedBuildSteps();
     repositoryAdapter.marshal(outputStream);
+    closeEventLogger();
+  }
+
+  void closeEventLogger() throws Exception {
     eventLogger.close();
   }
 
