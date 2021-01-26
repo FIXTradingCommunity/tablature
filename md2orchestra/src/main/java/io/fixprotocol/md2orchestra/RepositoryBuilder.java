@@ -640,7 +640,7 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addCode(final DetailProperties detail, List<? super CodeType> codes) {
+  void addCode(final DetailProperties detail, List<? super CodeType> codes, CodeSetType codeset) {
     final CodeType codeType = new CodeType();
     final Annotation annotation = new Annotation();
 
@@ -671,10 +671,21 @@ public class RepositoryBuilder {
     if (codeType.getId() == null) {
       codeType.setId(BigInteger.valueOf(assignId()));
     }
+    
+    if (codeType.getName() == null) {
+      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(), 
+          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
+    }
+    
+    if (codeType.getValue() == null) {
+      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(), 
+          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
+    }
+
     codes.add(codeType);
   }
 
-  private void addCodeset(Contextual contextual, Context context) {
+  void addCodeset(Contextual contextual, Context context) {
     final String name = context.getKey(NAME_POSITION);
     final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
 
@@ -682,7 +693,7 @@ public class RepositoryBuilder {
       final DetailTable detailTable = (DetailTable) contextual;
       final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
       final List<CodeType> codes = codeset.getCode();
-      detailTable.rows().forEach(detail -> addCode(detail, codes));
+      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
     } else if (contextual instanceof Documentation) {
       final Documentation documentation = (Documentation) contextual;
       final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
