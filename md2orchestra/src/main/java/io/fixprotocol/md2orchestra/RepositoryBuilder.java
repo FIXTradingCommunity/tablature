@@ -1188,12 +1188,20 @@ public class RepositoryBuilder {
     }
     if (type != null) {
       codeset.setType(type);
+    } else {
+      eventLogger.warn("Unknown codeset datatype; name={0} scenario={1}",
+          codesetName, scenario);
     }
     final List<CodeType> codes = codeset.getCode();
     for (int i = 0; i < valueTokens.length; i += 2) {
       final CodeType code = new CodeType();
       code.setValue(valueTokens[i]);
-      code.setName(valueTokens[i + 1]);
+      if (i + 1 < valueTokens.length) {
+        code.setName(valueTokens[i + 1]);
+      } else {
+        eventLogger.error("Missing name for code in codeset {0}; value={1}", codesetName, 
+            code.getValue());
+      }
       codes.add(code);
     }
     repositoryAdapter.addCodeset(codeset);
@@ -1472,10 +1480,10 @@ public class RepositoryBuilder {
           final String codesetName = name + "Codeset";
           // use the scenario of the parent element
           createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
-          eventLogger.warn("Unknown codeset datatype; name={0} scenario={1}",
-              codesetName, scenario);
         }
       }
+    } else if (presence == PresenceT.CONSTANT) {
+      eventLogger.error("Missing value for constant presence field; id={0}", fieldRefType.getId());
     }
     return fieldRefType;
   }

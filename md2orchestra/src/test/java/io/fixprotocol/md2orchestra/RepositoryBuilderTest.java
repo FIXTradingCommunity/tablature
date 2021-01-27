@@ -100,5 +100,31 @@ class RepositoryBuilderTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   }
+  
+  @Test //ODOC-23
+  void inlineCode() throws Exception {
+    String text =
+        "## Component Instrument scenario test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | |\n"
+        + "| SecurityStatus | 965 | | 1 |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Missing name for code"));
+    assertTrue(errors.contains("Missing value for constant"));
+  }
 
 }
