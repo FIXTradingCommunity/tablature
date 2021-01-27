@@ -1,5 +1,6 @@
 package io.fixprotocol.md2orchestra;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
@@ -7,6 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,6 +71,34 @@ class RepositoryBuilderTest {
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertFalse(errors.contains("Unknown fieldRef ID"));
+  }
+  
+  @Test //ODOC-45
+  void redundantField() throws Exception {
+    String text =
+        "## Component Instrument\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values | Scenario |\n"
+        + "|------------------|----:|-----------|--------|--------------|\n"
+        + "| SecurityID | 48 | required | | |\n"
+        + "| SecurityIDSource | 22 | required | | SecIDSources |\n"
+        + "| SecurityStatus | 965 | | | |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    Pattern fieldPattern = Pattern.compile("<fixr:field\s.+?id=\"22\".*?>");
+    Matcher countEmailMatcher = fieldPattern.matcher(xml);
+    long count = countEmailMatcher.results() .count();
+    assertEquals(1, count);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
   }
 
 }

@@ -170,7 +170,7 @@ public class RepositoryBuilder {
           fieldType.setName(baseFieldType.getName());
           fieldType.setType(baseFieldType.getType());
           fieldType.setScenario(scenario);
-          repositoryAdapter.copyField(fieldType);
+          repositoryAdapter.addField(fieldType);
         }
       }
       
