@@ -530,7 +530,9 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
             annotation);
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && CODESET_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final CodeSetType codeset = new CodeSetType();
       CodeSetType refCodeset = null;
@@ -634,7 +636,9 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
             annotation);
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && ACTOR_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       final ActorType actor = new ActorType();
       actor.setName(name);
 
@@ -775,7 +779,9 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
             annotation);
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final ComponentType component = new ComponentType();
 
@@ -930,17 +936,17 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addFieldAndType(FieldType field) {   
+  private void addFieldAndType(FieldType field) {
     final BigInteger id = field.getId();
     final String name = field.getName();
     final String type = field.getType();
     final String scenario = field.getScenario();
-    
+
     if (id == null) {
-        buildSteps.add(new FieldBuilder(0, name, scenario));
+      buildSteps.add(new FieldBuilder(0, name, scenario));
     } else if (name == null) {
       buildSteps.add(new FieldBuilder(id.intValue(), null, scenario));
-  } else {
+    } else {
       repositoryAdapter.addField(field);
     }
 
@@ -975,7 +981,9 @@ public class RepositoryBuilder {
           flow.setDestination(r.getProperty("destination"));
         });
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && FLOW_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       final FlowType flow = new FlowType();
       flow.setName(name);
       repositoryAdapter.addFlow(flow);
@@ -1014,7 +1022,9 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
             annotation);
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && GROUP_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final GroupType group = new GroupType();
 
@@ -1090,7 +1100,9 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1}", name, scenario);
       }
-    } else if (contextual instanceof Context) {
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
       final int tag = textUtil.tagToInt(context.getKeyValue("tag"));
       final String msgType = context.getKeyValue("type");
       final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
@@ -1168,7 +1180,8 @@ public class RepositoryBuilder {
     return lastId;
   }
 
-  private void createCodesetFromString(String codesetName, String scenario, String type, String valueString) {
+  private void createCodesetFromString(String codesetName, String scenario, String type,
+      String valueString) {
     final CodeSetType codeset = new CodeSetType();
     codeset.setId(BigInteger.valueOf(assignId()));
     codeset.setName(codesetName);
