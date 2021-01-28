@@ -339,7 +339,8 @@ public class RepositoryBuilder {
   private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
 
-  private static final Pattern codePattern = Pattern.compile("(\\S+)\\s*=\\s*(\\S[^=]*\\S)");
+  // the form code=name with optional space before and after =
+  private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
 
   /**
    * Create an instance of RepositoryBuilder
@@ -898,7 +899,7 @@ public class RepositoryBuilder {
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
               final String codesetName = detail.getProperty("name") + "Codeset";
-              createCodeset(codesetName, detail.getProperty(SCENARIO_KEYWORD),
+              createCodesetFromString(codesetName, detail.getProperty(SCENARIO_KEYWORD),
                   detail.getProperty("type"), values);
               field.setType(codesetName);
             }
@@ -1159,7 +1160,7 @@ public class RepositoryBuilder {
     return lastId;
   }
 
-  private void createCodeset(String codesetName, String scenario, String type, String valueString) {
+  private void createCodesetFromString(String codesetName, String scenario, String type, String valueString) {
     final CodeSetType codeset = new CodeSetType();
     codeset.setId(BigInteger.valueOf(assignId()));
     codeset.setName(codesetName);
@@ -1177,7 +1178,8 @@ public class RepositoryBuilder {
     while (codeMatcher.find()) {
       final CodeType code = new CodeType();
       code.setValue(codeMatcher.group(1));
-      code.setName(codeMatcher.group(2));
+      code.setName(codeMatcher.group(2).replaceAll("\"", ""));
+      code.setId(BigInteger.valueOf(assignId()));
       codes.add(code);
     }
 
@@ -1474,7 +1476,7 @@ public class RepositoryBuilder {
         if (codeMatcher.find()) {
           final String codesetName = name + "Codeset";
           // use the scenario of the parent element
-          createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueString);
+          createCodesetFromString(codesetName, scenario, DEFAULT_CODE_TYPE, valueString);
         } else if (presence == PresenceT.CONSTANT) {
           fieldRefType.setValue(valueString);
           if (!DEFAULT_SCENARIO.equals(scenario)) {

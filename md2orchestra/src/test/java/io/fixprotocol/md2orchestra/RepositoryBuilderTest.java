@@ -135,7 +135,7 @@ class RepositoryBuilderTest {
         + "|------------------|----:|-----------|--------|\n"
         + "| SecurityID | 48 | required | |\n"
         + "| SecurityIDSource | 22 | constant | |\n"
-        + "| SecurityStatus | 965 | | 1=Active firm |\n";   
+        + "| SecurityStatus | 965 | | 1=\"Active firm\" |\n";   
     
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
@@ -143,11 +143,12 @@ class RepositoryBuilderTest {
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
-    //String xml = xmlStream.toString();
-    //System.out.println(xml);
+    String xml = xmlStream.toString();
+    System.out.println(xml);
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Active firm\""));
     assertTrue(errors.contains("Missing value for constant"));
     assertFalse(errors.contains("Malformed inline code"));
   }
@@ -198,6 +199,29 @@ class RepositoryBuilderTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
+  }
+  
+  @Test // ODOC-24
+  void inlineCodes() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name             | Tag | Type         |  Values                  |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| OrdType          | 40  | char         | 1=Market 2=Limit         |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+   // System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Market\""));
+    assertTrue(xml.contains("name=\"Limit\""));
   }
 
 }
