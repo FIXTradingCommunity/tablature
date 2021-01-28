@@ -60,6 +60,29 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing value for constant"));
   }
   
+  @Test //ODOC-20
+  void constant() throws Exception {
+    String text =
+        "## Component Instrument\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | 8 |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("value=\"8\""));
+  }
+  
   @Test // ODOC-30
   void extraComponentWithSynopsis() throws Exception {
     String text =
@@ -189,14 +212,14 @@ class RepositoryBuilderTest {
   @Test //ODOC-19
   void missingFieldTag() throws Exception {
     String text =
-        "## Fields\r\n"
-        + "\r\n"
-        + "| Name | Tag | Type | Values |\r\n"
-        + "|------------------|----:|--------------|--------------------------|\r\n"
-        + "| Account | 1 | String | |\r\n"
-        + "| ClOrdID | | String | |\r\n"
-        + "| NoParties | 453 | NumInGroup | |\r\n"
-        + "| OrderQty | 38 | String | |";   
+        "## Fields\n"
+        + "\n"
+        + "| Name | Tag | Type | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| Account | 1 | String | |\n"
+        + "| ClOrdID | | String | |\n"
+        + "| NoParties | 453 | NumInGroup | |\n"
+        + "| OrderQty | 38 | String | |\n";   
     
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
