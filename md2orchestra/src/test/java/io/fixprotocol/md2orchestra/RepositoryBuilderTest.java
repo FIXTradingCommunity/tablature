@@ -186,6 +186,31 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("name=\"Account\""));
   }
   
+  @Test //ODOC-19
+  void missingFieldTag() throws Exception {
+    String text =
+        "## Fields\r\n"
+        + "\r\n"
+        + "| Name | Tag | Type | Values |\r\n"
+        + "|------------------|----:|--------------|--------------------------|\r\n"
+        + "| Account | 1 | String | |\r\n"
+        + "| ClOrdID | | String | |\r\n"
+        + "| NoParties | 453 | NumInGroup | |\r\n"
+        + "| OrderQty | 38 | String | |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test //ODOC-45
   void redundantField() throws Exception {
     String text =
