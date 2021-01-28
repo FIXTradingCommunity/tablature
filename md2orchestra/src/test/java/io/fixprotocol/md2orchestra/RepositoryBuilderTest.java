@@ -17,11 +17,6 @@ class RepositoryBuilderTest {
 
   private OutputStream jsonOutputStream;
   
-  @BeforeEach
-  void setUp() throws Exception {
-    jsonOutputStream = new ByteArrayOutputStream(8096);
-  }
-
   @Test // ODOC-49
   void badCodes() throws Exception {
     String text =
@@ -38,6 +33,139 @@ class RepositoryBuilderTest {
     String errors = jsonOutputStream.toString();
     assertTrue(errors.contains("Missing value"));
     assertTrue(errors.contains("Missing name"));
+  }
+
+  @Test //ODOC-23
+  void badConstant() throws Exception {
+    String text =
+        "## Component Instrument scenario test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | |\n"
+        + "| SecurityStatus | 965 | | 1 |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Missing value for constant"));
+  }
+  
+  @Test //ODOC-22
+  // TODO: currently "Active firm" with space is not valid in Orchestra, but consider changing that
+  void inlineCode() throws Exception {
+    String text =
+        "## Component Instrument scenario test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | |\n"
+        + "| SecurityStatus | 965 | | 1=\"Active firm\" |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Active firm\""));
+    assertTrue(errors.contains("Missing value for constant"));
+    assertFalse(errors.contains("Malformed inline code"));
+  }
+  
+  @Test // ODOC-24
+  void inlineCodes() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name             | Tag | Type         |  Values                  |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| OrdType          | 40  | char         | 1=Market 2=Limit         |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+   // System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Market\""));
+    assertTrue(xml.contains("name=\"Limit\""));
+  }
+  
+  @Test //ODOC-45
+  void redundantField() throws Exception {
+    String text =
+        "## Component Instrument\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values | Scenario |\n"
+        + "|------------------|----:|-----------|--------|--------------|\n"
+        + "| SecurityID | 48 | required | | |\n"
+        + "| SecurityIDSource | 22 | required | | SecIDSources |\n"
+        + "| SecurityStatus | 965 | | | |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    Pattern fieldPattern = Pattern.compile("<fixr:field\\s.+?id=\"22\".*?>");
+    Matcher fieldMatcher = fieldPattern.matcher(xml);
+    long count = fieldMatcher.results().count();
+    assertEquals(1, count);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @BeforeEach
+  void setUp() throws Exception {
+    jsonOutputStream = new ByteArrayOutputStream(8096);
+  }
+  
+  @Test //ODOC-22
+  void spaceInCodeName() throws Exception {
+    String text =
+        "### Codeset SecIDSources type String\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| CUSIP | 1 | Explaining CUSIP |\n"
+        + "| ISIN | 4 | ISINs *are* great |\n"
+        + "| Exchange symbol | 8 | **Good** as well |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
   }
   
   @Test //ODOC-42
@@ -72,111 +200,6 @@ class RepositoryBuilderTest {
     assertFalse(errors.contains("Unknown fieldRef ID"));
   }
   
-  @Test //ODOC-45
-  void redundantField() throws Exception {
-    String text =
-        "## Component Instrument\n"
-        + "\n"
-        + "| Name | Tag | Presence | Values | Scenario |\n"
-        + "|------------------|----:|-----------|--------|--------------|\n"
-        + "| SecurityID | 48 | required | | |\n"
-        + "| SecurityIDSource | 22 | required | | SecIDSources |\n"
-        + "| SecurityStatus | 965 | | | |";   
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    Pattern fieldPattern = Pattern.compile("<fixr:field\\s.+?id=\"22\".*?>");
-    Matcher fieldMatcher = fieldPattern.matcher(xml);
-    long count = fieldMatcher.results().count();
-    assertEquals(1, count);
-    builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-  }
-  
-  @Test //ODOC-23
-  void brokenConstant() throws Exception {
-    String text =
-        "## Component Instrument scenario test\n"
-        + "\n"
-        + "| Name | Tag | Presence | Values |\n"
-        + "|------------------|----:|-----------|--------|\n"
-        + "| SecurityID | 48 | required | |\n"
-        + "| SecurityIDSource | 22 | constant | |\n"
-        + "| SecurityStatus | 965 | | 1 |\n";   
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(errors.contains("Missing value for constant"));
-  }
-  
-  @Test //ODOC-22
-  // TODO: currently "Active firm" with space is not valid in Orchestra, but consider changing that
-  void inlineCode() throws Exception {
-    String text =
-        "## Component Instrument scenario test\n"
-        + "\n"
-        + "| Name | Tag | Presence | Values |\n"
-        + "|------------------|----:|-----------|--------|\n"
-        + "| SecurityID | 48 | required | |\n"
-        + "| SecurityIDSource | 22 | constant | |\n"
-        + "| SecurityStatus | 965 | | 1=\"Active firm\" |\n";   
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    String xml = xmlStream.toString();
-    System.out.println(xml);
-    builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(xml.contains("name=\"Active firm\""));
-    assertTrue(errors.contains("Missing value for constant"));
-    assertFalse(errors.contains("Malformed inline code"));
-  }
-  
-  @Test //ODOC-22
-  void spaceInCodeName() throws Exception {
-    String text =
-        "### Codeset SecIDSources type String\n"
-        + "\n"
-        + "| Name | Value | Documentation |\n"
-        + "|------------------|:-------:|---------------|\n"
-        + "| CUSIP | 1 | Explaining CUSIP |\n"
-        + "| ISIN | 4 | ISINs *are* great |\n"
-        + "| Exchange symbol | 8 | **Good** as well |";   
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    //String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-  }
-  
   @Test // ODOC-60
   void userDefinedColumns() throws Exception {
     String text =
@@ -201,27 +224,50 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
   }
   
-  @Test // ODOC-24
-  void inlineCodes() throws Exception {
+  @Test // ODOC-40
+  void missingFieldName() throws Exception {
     String text =
         "## Fields\n"
         + "\n"
-        + "| Name             | Tag | Type         |  Values                  |\n"
+        + "| Name | Tag | Type | Values |\n"
         + "|------------------|----:|--------------|--------------------------|\n"
-        + "| OrdType          | 40  | char         | 1=Market 2=Limit         |";
+        + "| | 1 | String | |\n";
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.appendInput(inputStream);
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-   // System.out.println(xml);
+    //System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(xml.contains("name=\"Market\""));
-    assertTrue(xml.contains("name=\"Limit\""));
+    assertTrue(xml.contains("name=\"Account\""));
+  }
+  
+  @Test // ODOC-40
+  void missingFieldId() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name | Tag | Type | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| Account | | String | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Account\""));
   }
 
 }

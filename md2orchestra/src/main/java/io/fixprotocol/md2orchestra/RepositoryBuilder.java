@@ -930,11 +930,19 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addFieldAndType(FieldType field) {
-    repositoryAdapter.addField(field);
-
+  private void addFieldAndType(FieldType field) {   
+    final BigInteger id = field.getId();
+    final String name = field.getName();
     final String type = field.getType();
     final String scenario = field.getScenario();
+    
+    if (id == null) {
+        buildSteps.add(new FieldBuilder(0, name, scenario));
+    } else if (name == null) {
+      buildSteps.add(new FieldBuilder(id.intValue(), null, scenario));
+  } else {
+      repositoryAdapter.addField(field);
+    }
 
     if (type != null) {
       buildSteps.add(new TypeBuilder(type, scenario));
