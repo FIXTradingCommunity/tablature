@@ -40,7 +40,6 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing name"));
   }
   
-  
   @Test //ODOC-42
   void unknownTagForFieldScenario() throws Exception {
     String text =
@@ -65,7 +64,7 @@ class RepositoryBuilderTest {
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
-    String xml = xmlStream.toString();
+    //String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
@@ -92,9 +91,9 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     String xml = xmlStream.toString();
     //System.out.println(xml);
-    Pattern fieldPattern = Pattern.compile("<fixr:field\s.+?id=\"22\".*?>");
-    Matcher countEmailMatcher = fieldPattern.matcher(xml);
-    long count = countEmailMatcher.results() .count();
+    Pattern fieldPattern = Pattern.compile("<fixr:field\\s.+?id=\"22\".*?>");
+    Matcher fieldMatcher = fieldPattern.matcher(xml);
+    long count = fieldMatcher.results().count();
     assertEquals(1, count);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
@@ -102,7 +101,7 @@ class RepositoryBuilderTest {
   }
   
   @Test //ODOC-23
-  void inlineCode() throws Exception {
+  void brokenConstant() throws Exception {
     String text =
         "## Component Instrument scenario test\n"
         + "\n"
@@ -123,8 +122,82 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(errors.contains("Missing name for code"));
     assertTrue(errors.contains("Missing value for constant"));
+  }
+  
+  @Test //ODOC-22
+  // TODO: currently "Active firm" with space is not valid in Orchestra, but consider changing that
+  void inlineCode() throws Exception {
+    String text =
+        "## Component Instrument scenario test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | |\n"
+        + "| SecurityStatus | 965 | | 1=Active firm |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Missing value for constant"));
+    assertFalse(errors.contains("Malformed inline code"));
+  }
+  
+  @Test //ODOC-22
+  void spaceInCodeName() throws Exception {
+    String text =
+        "### Codeset SecIDSources type String\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| CUSIP | 1 | Explaining CUSIP |\n"
+        + "| ISIN | 4 | ISINs *are* great |\n"
+        + "| Exchange symbol | 8 | **Good** as well |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-60
+  void userDefinedColumns() throws Exception {
+    String text =
+        "## Component Instrument\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values | Notes |\n"
+        + "|------------------|----:|-----------|--------|---------|\n"
+        + "| SecurityID | 48 | required | | blabla \n"
+        + "| SecurityIDSource | 22 | | |\n"
+        + "| SecurityStatus | 965 | | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
   }
 
 }

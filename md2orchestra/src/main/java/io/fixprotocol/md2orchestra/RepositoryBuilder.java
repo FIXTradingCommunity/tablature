@@ -29,6 +29,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -86,8 +88,7 @@ public class RepositoryBuilder {
         if (componentType != null) {
           repositoryAdapter.copyComponent(componentType);
         } else {
-          eventLogger.error("Unknown component; name={0} scenario={1}", name,
-              scenario);
+          eventLogger.error("Unknown component; name={0} scenario={1}", name, scenario);
         }
       }
     }
@@ -155,9 +156,10 @@ public class RepositoryBuilder {
           repositoryAdapter.copyField(fieldType);
         }
       }
-      
+
       // if not found retry with base scenario
-      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario) && referenceRepositoryAdapter != null) {
+      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)
+          && referenceRepositoryAdapter != null) {
         FieldType baseFieldType = null;
         if (tag > 0) {
           baseFieldType = referenceRepositoryAdapter.findFieldByTag(tag, DEFAULT_SCENARIO);
@@ -173,7 +175,7 @@ public class RepositoryBuilder {
           repositoryAdapter.addField(fieldType);
         }
       }
-      
+
       if (fieldType == null) {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
@@ -181,8 +183,7 @@ public class RepositoryBuilder {
           fieldType.setId(BigInteger.valueOf(tag));
         } else {
           fieldType.setId(BigInteger.ZERO);
-          eventLogger.error("Unknown field ID; name={0} scenario={1}", name,
-              scenario);
+          eventLogger.error("Unknown field ID; name={0} scenario={1}", name, scenario);
         }
         addFieldAndType(fieldType);
       }
@@ -207,8 +208,7 @@ public class RepositoryBuilder {
     @Override
     public void build() {
       final String scenario = fieldRef.getScenario();
-      FieldType fieldType =
-          repositoryAdapter.findFieldByName(name, scenario);
+      FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
       // if not found retry with base scenario
       if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)) {
         fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
@@ -216,8 +216,7 @@ public class RepositoryBuilder {
       if (fieldType != null) {
         fieldRef.setId(fieldType.getId());
       } else {
-        eventLogger.error("Unknown fieldRef ID; name={0} scenario={1}", name,
-            scenario);
+        eventLogger.error("Unknown fieldRef ID; name={0} scenario={1}", name, scenario);
       }
     }
   }
@@ -333,24 +332,26 @@ public class RepositoryBuilder {
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
   public static final String WHEN_KEYWORD = "when";
-  
+
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final String DEFAULT_SCENARIO = "base";
-  
+
   private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
 
+  private static final Pattern codePattern = Pattern.compile("(\\S+)\\s*=\\s*(\\S[^=]*\\S)");
+
   /**
    * Create an instance of RepositoryBuilder
-   * 
+   *
    * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
    *        {@code null}.
-   * @param jsonOutputStream 
+   * @param jsonOutputStream
    * @return an instance of RepositoryBuilder
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
    */
-  public static RepositoryBuilder instance(InputStream referenceStream, OutputStream jsonOutputStream)
-      throws Exception {
+  public static RepositoryBuilder instance(InputStream referenceStream,
+      OutputStream jsonOutputStream) throws Exception {
     final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder(jsonOutputStream);
 
     if (referenceStream != null) {
@@ -366,70 +367,65 @@ public class RepositoryBuilder {
   private final String[] contextKeys =
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
-  
   private final EventListenerFactory factory = new EventListenerFactory();
   private TeeEventListener eventLogger;
   private final Logger logger = LogManager.getLogger(getClass());
+
   private int lastId = 10000;
 
-  private Consumer<Contextual> markdownConsumer = new Consumer<>() {
-
-    @Override
-    public void accept(Contextual contextual) {
-      final Context keyContext = getKeyContext(contextual);
-      if (keyContext == null) {
-        eventLogger.warn("Element with unknown context");
-        return;
-      }
-      final String type = keyContext.getKey(KEY_POSITION);
-      if (type == null) {
-        eventLogger.warn("RepositoryBuilder received element with unknown context of class {0}",
-            contextual.getClass());
-      } else
-        switch (type.toLowerCase()) {
-          case ACTOR_KEYWORD:
-            addActor(contextual, keyContext);
-            break;
-          case CODESET_KEYWORD:
-            addCodeset(contextual, keyContext);
-            break;
-          case COMPONENT_KEYWORD:
-            addComponent(contextual, keyContext);
-            break;
-          case DATATYPES_KEYWORD:
-            addDatatype(contextual, keyContext);
-            break;
-          case FIELDS_KEYWORD:
-            addField(contextual, keyContext);
-            break;
-          case FLOW_KEYWORD:
-            addFlow(contextual, keyContext);
-            break;
-          case GROUP_KEYWORD:
-            addGroup(contextual, keyContext);
-            break;
-          case MESSAGE_KEYWORD:
-            addMessage(contextual, keyContext);
-            break;
-          case RESPONSES_KEYWORD:
-            addMessageResponses(contextual, keyContext);
-            break;
-          case STATEMACHINE_KEYWORD:
-            addActorStates(contextual, keyContext);
-            break;
-          case VARIABLES_KEYWORD:
-            addActorVariables(contextual, keyContext);
-            break;
-          default:
-            if (keyContext.getLevel() == 1) {
-              addMetadata(contextual, keyContext);
-            } else {
-              eventLogger.warn("RepositoryBuilder received unknown context type {}", type);
-            }
-        }
+  private final Consumer<Contextual> markdownConsumer = contextual -> {
+    final Context keyContext = getKeyContext(contextual);
+    if (keyContext == null) {
+      eventLogger.warn("Element with unknown context");
+      return;
     }
+    final String type = keyContext.getKey(KEY_POSITION);
+    if (type == null) {
+      eventLogger.warn("RepositoryBuilder received element with unknown context of class {0}",
+          contextual.getClass());
+    } else
+      switch (type.toLowerCase()) {
+        case ACTOR_KEYWORD:
+          addActor(contextual, keyContext);
+          break;
+        case CODESET_KEYWORD:
+          addCodeset(contextual, keyContext);
+          break;
+        case COMPONENT_KEYWORD:
+          addComponent(contextual, keyContext);
+          break;
+        case DATATYPES_KEYWORD:
+          addDatatype(contextual, keyContext);
+          break;
+        case FIELDS_KEYWORD:
+          addField(contextual, keyContext);
+          break;
+        case FLOW_KEYWORD:
+          addFlow(contextual, keyContext);
+          break;
+        case GROUP_KEYWORD:
+          addGroup(contextual, keyContext);
+          break;
+        case MESSAGE_KEYWORD:
+          addMessage(contextual, keyContext);
+          break;
+        case RESPONSES_KEYWORD:
+          addMessageResponses(contextual, keyContext);
+          break;
+        case STATEMACHINE_KEYWORD:
+          addActorStates(contextual, keyContext);
+          break;
+        case VARIABLES_KEYWORD:
+          addActorVariables(contextual, keyContext);
+          break;
+        default:
+          if (keyContext.getLevel() == 1) {
+            addMetadata(contextual, keyContext);
+          } else {
+            eventLogger.warn("RepositoryBuilder received unknown context type {}", type);
+          }
+      }
   };
-
   private RepositoryAdapter referenceRepositoryAdapter = null;
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
@@ -438,21 +434,10 @@ public class RepositoryBuilder {
     this.repositoryAdapter.createRepository();
     createLogger(jsonOutputStream);
   }
-  
-  private void createLogger(OutputStream jsonOutputStream) throws Exception {
-    eventLogger = new TeeEventListener();
-    final EventListener logEventLogger = factory.getInstance("LOG4J");
-    logEventLogger.setResource(logger);
-    eventLogger.addEventListener(logEventLogger);
-    if (jsonOutputStream != null) {
-      final EventListener jsonEventLogger = factory.getInstance("JSON");
-      jsonEventLogger.setResource(jsonOutputStream);
-      eventLogger.addEventListener(jsonEventLogger);
-    }
-  }
 
   /**
    * Append input to a repository
+   *
    * @param inputStream an markdown file input
    * @throws IOException if an IO error occurs
    */
@@ -467,13 +452,114 @@ public class RepositoryBuilder {
 
   /**
    * Finalize the repository and write it
+   *
    * @param outputStream a stream to write repository to
-   * @throws Exception  if output fails to be written
+   * @throws Exception if output fails to be written
    */
   public void write(OutputStream outputStream) throws Exception {
     executeDefferedBuildSteps();
     repositoryAdapter.marshal(outputStream);
     closeEventLogger();
+  }
+
+  void addCode(final DetailProperties detail, List<? super CodeType> codes, CodeSetType codeset) {
+    final CodeType codeType = new CodeType();
+    final Annotation annotation = new Annotation();
+
+    for (final Entry<String, String> p : detail.getProperties()) {
+
+      switch (p.getKey().toLowerCase()) {
+        case "name":
+          codeType.setName(textUtil.stripName(p.getValue()));
+          break;
+        case "value":
+          codeType.setValue(p.getValue());
+          break;
+        case "tag":
+        case "id":
+          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
+          break;
+        default:
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            codeType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            codeType.setAnnotation(annotation);
+          }
+      }
+    }
+
+    if (codeType.getId() == null) {
+      codeType.setId(BigInteger.valueOf(assignId()));
+    }
+
+    if (codeType.getName() == null) {
+      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(),
+          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
+    }
+
+    if (codeType.getValue() == null) {
+      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(),
+          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
+    }
+
+    codes.add(codeType);
+  }
+
+  void addCodeset(Contextual contextual, Context context) {
+    final String name = context.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+
+    if (contextual instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) contextual;
+      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      final List<CodeType> codes = codeset.getCode();
+      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
+    } else if (contextual instanceof Documentation) {
+      final Documentation documentation = (Documentation) contextual;
+      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      if (codeset != null) {
+        Annotation annotation = codeset.getAnnotation();
+        if (annotation == null) {
+          annotation = new Annotation();
+          codeset.setAnnotation(annotation);
+        }
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+            annotation);
+      }
+    } else if (contextual instanceof Context) {
+      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+      final CodeSetType codeset = new CodeSetType();
+      CodeSetType refCodeset = null;
+      if (referenceRepositoryAdapter != null) {
+        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
+      }
+      if (tag == -1 && refCodeset != null) {
+        tag = refCodeset.getId().intValue();
+      }
+      if (tag == -1) {
+        tag = assignId();
+      }
+      codeset.setId(BigInteger.valueOf(tag));
+      codeset.setName(name);
+      if (!DEFAULT_SCENARIO.equals(scenario)) {
+        codeset.setScenario(scenario);
+      }
+
+      String type = context.getKeyValue("type");
+      if (type == null && refCodeset != null) {
+        type = refCodeset.getType();
+      }
+      if (type != null) {
+        codeset.setType(type);
+      } else {
+        eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
+      }
+
+      repositoryAdapter.addCodeset(codeset);
+    }
   }
 
   void closeEventLogger() throws Exception {
@@ -492,8 +578,8 @@ public class RepositoryBuilder {
           if (field != null) {
             addFieldAndType(field);
           } else {
-            eventLogger.error("Unknown field; lastId={0} scenario={1}",
-                fieldRef.getId().intValue(), fieldRef.getScenario());
+            eventLogger.error("Unknown field; lastId={0} scenario={1}", fieldRef.getId().intValue(),
+                fieldRef.getScenario());
           }
         }
       } else if (member instanceof GroupRefType) {
@@ -508,8 +594,8 @@ public class RepositoryBuilder {
             final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
             copyMembers(groupMembers);
           } else {
-            eventLogger.error("Unknown group; lastId={0} scenario={1}",
-                groupRef.getId().intValue(), groupRef.getScenario());
+            eventLogger.error("Unknown group; lastId={0} scenario={1}", groupRef.getId().intValue(),
+                groupRef.getScenario());
           }
         }
       } else if (member instanceof ComponentRefType) {
@@ -643,12 +729,10 @@ public class RepositoryBuilder {
               Objects.requireNonNull(sourceState).getTransition().add(transition);
             });
           } catch (final NoSuchElementException e) {
-            eventLogger.warn("No states defined for state machine; name={0}",
-                name);
+            eventLogger.warn("No states defined for state machine; name={0}", name);
           }
         } else {
-          eventLogger.error("Unknown actor for state machine; name={0}",
-              actorName);
+          eventLogger.error("Unknown actor for state machine; name={0}", actorName);
         }
       }
     }
@@ -665,106 +749,6 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown actor for variables; name={0}", name);
       }
-    }
-  }
-
-  void addCode(final DetailProperties detail, List<? super CodeType> codes, CodeSetType codeset) {
-    final CodeType codeType = new CodeType();
-    final Annotation annotation = new Annotation();
-
-    for (final Entry<String, String> p : detail.getProperties()) {
-
-      switch (p.getKey().toLowerCase()) {
-        case "name":
-          codeType.setName(textUtil.stripName(p.getValue()));
-          break;
-        case "value":
-          codeType.setValue(p.getValue());
-          break;
-        case "tag":
-        case "id":
-          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
-          break;
-        default:
-          if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
-            codeType.setAnnotation(annotation);
-          } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
-            codeType.setAnnotation(annotation);
-          }
-      }
-    }
-
-    if (codeType.getId() == null) {
-      codeType.setId(BigInteger.valueOf(assignId()));
-    }
-    
-    if (codeType.getName() == null) {
-      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(), 
-          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
-    }
-    
-    if (codeType.getValue() == null) {
-      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(), 
-          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
-    }
-
-    codes.add(codeType);
-  }
-
-  void addCodeset(Contextual contextual, Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
-
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
-      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
-      final List<CodeType> codes = codeset.getCode();
-      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
-    } else if (contextual instanceof Documentation) {
-      final Documentation documentation = (Documentation) contextual;
-      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
-      if (codeset != null) {
-        Annotation annotation = codeset.getAnnotation();
-        if (annotation == null) {
-          annotation = new Annotation();
-          codeset.setAnnotation(annotation);
-        }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
-            annotation);
-      }
-    } else if (contextual instanceof Context) {
-      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
-      final CodeSetType codeset = new CodeSetType();
-      CodeSetType refCodeset = null;
-      if (referenceRepositoryAdapter != null) {
-        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
-      }
-      if (tag == -1 && refCodeset != null) {
-        tag = refCodeset.getId().intValue();
-      }
-      if (tag == -1) {
-        tag = assignId();
-      }
-      codeset.setId(BigInteger.valueOf(tag));
-      codeset.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenario)) {
-        codeset.setScenario(scenario);
-      }
-
-      String type = context.getKeyValue("type");
-      if (type == null && refCodeset != null) {
-        type = refCodeset.getType();
-      }
-      if (type != null) {
-        codeset.setType(type);
-      } else {
-        eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
-      }
-
-      repositoryAdapter.addCodeset(codeset);
     }
   }
 
@@ -913,10 +897,9 @@ public class RepositoryBuilder {
           case "values":
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
-              final String[] valueTokens = values.split("[ =\t]");
               final String codesetName = detail.getProperty("name") + "Codeset";
               createCodeset(codesetName, detail.getProperty(SCENARIO_KEYWORD),
-                  detail.getProperty("type"), valueTokens);
+                  detail.getProperty("type"), values);
               field.setType(codesetName);
             }
             break;
@@ -955,8 +938,7 @@ public class RepositoryBuilder {
     if (type != null) {
       buildSteps.add(new TypeBuilder(type, scenario));
     } else {
-      eventLogger.error("Unknown type for field; id= {0} name={1}", field.getId(),
-          field.getName());
+      eventLogger.error("Unknown type for field; id= {0} name={1}", field.getId(), field.getName());
     }
   }
 
@@ -1003,8 +985,7 @@ public class RepositoryBuilder {
       if (rowIter.hasNext()) {
         populateNumInGroup(rowIter.next(), group);
       } else {
-        eventLogger.error("Unknown NumInGroup for group; name={0}",
-            group.getName());
+        eventLogger.error("Unknown NumInGroup for group; name={0}", group.getName());
       }
       final Stream<? extends DetailProperties> stream =
           StreamSupport.stream(detailTable.rows().spliterator(), false);
@@ -1178,8 +1159,7 @@ public class RepositoryBuilder {
     return lastId;
   }
 
-  private void createCodeset(String codesetName, String scenario, String type,
-      String[] valueTokens) {
+  private void createCodeset(String codesetName, String scenario, String type, String valueString) {
     final CodeSetType codeset = new CodeSetType();
     codeset.setId(BigInteger.valueOf(assignId()));
     codeset.setName(codesetName);
@@ -1189,22 +1169,42 @@ public class RepositoryBuilder {
     if (type != null) {
       codeset.setType(type);
     } else {
-      eventLogger.warn("Unknown codeset datatype; name={0} scenario={1}",
-          codesetName, scenario);
+      eventLogger.warn("Unknown codeset datatype; name={0} scenario={1}", codesetName, scenario);
     }
     final List<CodeType> codes = codeset.getCode();
-    for (int i = 0; i < valueTokens.length; i += 2) {
+
+    final Matcher codeMatcher = codePattern.matcher(valueString);
+    while (codeMatcher.find()) {
       final CodeType code = new CodeType();
-      code.setValue(valueTokens[i]);
-      if (i + 1 < valueTokens.length) {
-        code.setName(valueTokens[i + 1]);
-      } else {
-        eventLogger.error("Missing name for code in codeset {0}; value={1}", codesetName, 
-            code.getValue());
-      }
+      code.setValue(codeMatcher.group(1));
+      code.setName(codeMatcher.group(2));
       codes.add(code);
     }
+
+    if (!codeMatcher.hitEnd()) {
+      String unmatched = valueString;
+      try {
+        unmatched = valueString.substring(codeMatcher.end());
+      } catch (final IllegalStateException e) {
+      }
+      if (!unmatched.isBlank()) {
+        eventLogger.error("Malformed inline code in codeset {0}; {1}", codesetName, unmatched);
+      }
+    }
+
     repositoryAdapter.addCodeset(codeset);
+  }
+
+  private void createLogger(OutputStream jsonOutputStream) throws Exception {
+    eventLogger = new TeeEventListener();
+    final EventListener logEventLogger = factory.getInstance("LOG4J");
+    logEventLogger.setResource(logger);
+    eventLogger.addEventListener(logEventLogger);
+    if (jsonOutputStream != null) {
+      final EventListener jsonEventLogger = factory.getInstance("JSON");
+      jsonEventLogger.setResource(jsonOutputStream);
+      eventLogger.addEventListener(jsonEventLogger);
+    }
   }
 
   private void executeDefferedBuildSteps() {
@@ -1380,6 +1380,7 @@ public class RepositoryBuilder {
           break;
         case "values":
           valueString = p.getValue();
+          break;
         case "tag":
         case "id":
           fieldRefType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
@@ -1464,24 +1465,27 @@ public class RepositoryBuilder {
       rules.add(rule);
     }
 
-
     if (valueString != null && !valueString.isEmpty()) {
       final int keywordPos = valueString.indexOf(ASSIGN_KEYWORD);
       if (keywordPos != -1) {
         fieldRefType.setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
       } else {
-        if (presence == PresenceT.CONSTANT) {
+        final Matcher codeMatcher = codePattern.matcher(valueString);
+        if (codeMatcher.find()) {
+          final String codesetName = name + "Codeset";
+          // use the scenario of the parent element
+          createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueString);
+        } else if (presence == PresenceT.CONSTANT) {
           fieldRefType.setValue(valueString);
           if (!DEFAULT_SCENARIO.equals(scenario)) {
             fieldRefType.setScenario(scenario);
           }
         } else {
-          final String[] valueTokens = valueString.split("[ =\t]");
-          final String codesetName = name + "Codeset";
-          // use the scenario of the parent element
-          createCodeset(codesetName, scenario, DEFAULT_CODE_TYPE, valueTokens);
+          eventLogger.error("Field has value but not constant; id={0}, presence={1}",
+              fieldRefType.getId(), fieldRefType.getPresence().toString());
         }
       }
+
     } else if (presence == PresenceT.CONSTANT) {
       eventLogger.error("Missing value for constant presence field; id={0}", fieldRefType.getId());
     }

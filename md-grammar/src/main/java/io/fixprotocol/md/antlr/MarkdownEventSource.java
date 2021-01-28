@@ -271,7 +271,7 @@ public class MarkdownEventSource implements MarkdownListener {
       for (final TablerowContext tablerow : tablerows) {
         final MutableDetailProperties detail = detailTable.newRow();
 
-        for (int i = 0; i < lastColumnNo && i < lastTableHeadings.size(); i++) {
+        for (int i = 0; i < tablerow.cell().size() && i < lastTableHeadings.size(); i++) {
           final CellContext cell = tablerow.cell(i);
           if (cell != null) {
             detail.addProperty(lastTableHeadings.get(i), cell.getText());
