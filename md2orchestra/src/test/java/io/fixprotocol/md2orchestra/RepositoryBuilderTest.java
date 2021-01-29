@@ -75,12 +75,12 @@ class RepositoryBuilderTest {
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
-    //String xml = xmlStream.toString();
+    String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
+    //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(errors.contains("value=\"8\""));
+    assertTrue(xml.contains("value=\"8\""));
   }
   
   @Test // ODOC-30
@@ -323,7 +323,7 @@ class RepositoryBuilderTest {
     assertFalse(errors.contains("Unknown fieldRef ID"));
   }
   
-  @Test // ODOC-60
+  @Test // ODOC-60, ODOC-55
   void userDefinedColumns() throws Exception {
     String text =
         "## Component Instrument\n"
@@ -332,19 +332,24 @@ class RepositoryBuilderTest {
         + "|------------------|----:|-----------|--------|---------|\n"
         + "| SecurityID | 48 | required | | blabla \n"
         + "| SecurityIDSource | 22 | | |\n"
-        + "| SecurityStatus | 965 | | |";
+        + "| SecurityStatus | 965 | | |\n"
+        + "| OptionExercise | component | required | | yada yada \n"
+        + "| EvntGrp | group | required | | nonsense \n";
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
     builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
+    String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
+    assertTrue(xml.contains("appinfo purpose=\"notes\">yada yada"));
+    assertTrue(xml.contains("appinfo purpose=\"notes\">nonsense"));
   }
 
 }

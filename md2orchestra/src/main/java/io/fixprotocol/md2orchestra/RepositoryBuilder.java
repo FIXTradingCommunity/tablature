@@ -465,7 +465,6 @@ public class RepositoryBuilder {
 
   void addCode(final DetailProperties detail, List<? super CodeType> codes, CodeSetType codeset) {
     final CodeType codeType = new CodeType();
-    final Annotation annotation = new Annotation();
 
     for (final Entry<String, String> p : detail.getProperties()) {
 
@@ -481,6 +480,7 @@ public class RepositoryBuilder {
           codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
           break;
         default:
+          final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
             codeType.setAnnotation(annotation);
@@ -1319,9 +1319,33 @@ public class RepositoryBuilder {
   }
 
   private ComponentRefType populateComponentRef(DetailProperties detail) {
-    final String name = detail.getProperty("name");
-    final String scenario = scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     final ComponentRefType componentRefType = new ComponentRefType();
+
+    String name = null;
+    String scenario = DEFAULT_SCENARIO;
+    String presenceString = null;
+    for (final Entry<String, String> p : detail.getProperties()) {
+      switch (p.getKey().toLowerCase()) {
+        case "name":
+          name = p.getValue();
+          break;
+        case SCENARIO_KEYWORD:
+          scenario = scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
+          break;
+        case "presence":
+          presenceString = p.getValue();
+          break;
+        default:
+          final Annotation annotation = new Annotation();
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            componentRefType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            componentRefType.setAnnotation(annotation);
+          }
+      }
+    }
 
     ComponentType componentType = repositoryAdapter.findComponentByName(name, scenario);
     if (componentType != null) {
@@ -1343,7 +1367,6 @@ public class RepositoryBuilder {
     final List<ComponentRuleType> rules = componentRefType.getRule();
 
     PresenceT presence = PresenceT.OPTIONAL;
-    final String presenceString = detail.getProperty("presence");
     if (presenceString != null) {
       final String[] presenceWords = presenceString.split("[ \t]");
 
@@ -1388,7 +1411,6 @@ public class RepositoryBuilder {
 
   private FieldRefType populateFieldRef(DetailProperties detail) {
     final FieldRefType fieldRefType = new FieldRefType();
-    final Annotation annotation = new Annotation();
     String name = null;
     String presenceString = null;
     String valueString = null;
@@ -1424,6 +1446,7 @@ public class RepositoryBuilder {
           fieldRefType.setImplLength(Short.parseShort(p.getValue()));
           break;
         default:
+          final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
             fieldRefType.setAnnotation(annotation);
@@ -1516,10 +1539,33 @@ public class RepositoryBuilder {
   }
 
   private GroupRefType populateGroupRef(DetailProperties detail) {
-    final String name = detail.getProperty("name");
-    final String scenario = scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     final GroupRefType groupRefType = new GroupRefType();
 
+    String name = null;
+    String scenario = DEFAULT_SCENARIO;
+    String presenceString = null;
+    for (final Entry<String, String> p : detail.getProperties()) {
+      switch (p.getKey().toLowerCase()) {
+        case "name":
+          name = p.getValue();
+          break;
+        case SCENARIO_KEYWORD:
+          scenario = scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
+          break;
+        case "presence":
+          presenceString = p.getValue();
+          break;
+        default:
+          final Annotation annotation = new Annotation();
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            groupRefType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            groupRefType.setAnnotation(annotation);
+          }
+      }
+    }
     GroupType groupType = repositoryAdapter.findGroupByName(name, scenario);
     if (groupType != null) {
       groupRefType.setId(groupType.getId());
@@ -1540,7 +1586,6 @@ public class RepositoryBuilder {
     final List<ComponentRuleType> rules = groupRefType.getRule();
 
     PresenceT presence = PresenceT.OPTIONAL;
-    final String presenceString = detail.getProperty("presence");
     if (presenceString != null) {
       final String[] presenceWords = presenceString.split("[ \t]");
 
