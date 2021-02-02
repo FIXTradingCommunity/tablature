@@ -87,8 +87,8 @@ public class DocumentWriter implements AutoCloseable {
     final String format = documentation.getFormat();
     if (text != null) {
       if (format.equals(Documentation.MARKDOWN)) {
-      writer.write(text);
-      writer.write("\n\n");
+        writer.write(text);
+        writer.write("\n\n");
       } else {
         writer.write(FENCE);
         writer.write(format);
@@ -138,8 +138,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("|\n");
   }
 
-  private void writeTableHeadings(Iterable<? extends TableColumn> tableColumns)
-      throws IOException {
+  private void writeTableHeadings(Iterable<? extends TableColumn> tableColumns) throws IOException {
     for (final TableColumn column : tableColumns) {
       writer.write(CELL_PREFIX);
       writer.write(column.getHeading());
@@ -158,7 +157,7 @@ public class DocumentWriter implements AutoCloseable {
       if (value == null) {
         value = "";
       }
-        writeCell(value, column.getWidth());
+      writeCell(value, column.getWidth());
 
     }
     writer.write("|\n");

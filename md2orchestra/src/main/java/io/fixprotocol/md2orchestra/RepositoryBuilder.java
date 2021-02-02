@@ -341,7 +341,14 @@ public class RepositoryBuilder {
 
   // the form code=name with optional space before and after =
   private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
+  
+  /**
+   * Default token to represent a paragraph break in tables (not natively supported by markdown)
+   */
+  public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
 
+  private final String paragraphDelimiterInTables;
+  
   /**
    * Create an instance of RepositoryBuilder
    *
@@ -353,7 +360,23 @@ public class RepositoryBuilder {
    */
   public static RepositoryBuilder instance(InputStream referenceStream,
       OutputStream jsonOutputStream) throws Exception {
-    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder(jsonOutputStream);
+    return instance(referenceStream,
+        jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
+  }
+  
+  /**
+   * Create an instance of RepositoryBuilder
+   *
+   * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
+   *        {@code null}.
+   * @param jsonOutputStream
+   * @param paragraphDelimiterInTables token to represent a paragraph break in markdown tables
+   * @return an instance of RepositoryBuilder
+   * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
+   */
+  public static RepositoryBuilder instance(InputStream referenceStream,
+      OutputStream jsonOutputStream, String paragraphDelimiterInTables) throws Exception {
+    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
 
     if (referenceStream != null) {
       final RepositoryAdapter referenceRepository = new RepositoryAdapter();
@@ -432,6 +455,11 @@ public class RepositoryBuilder {
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
 
   RepositoryBuilder(OutputStream jsonOutputStream) throws Exception {
+    this(jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
+  }
+  
+  RepositoryBuilder(OutputStream jsonOutputStream, String paragraphDelimiterInTables) throws Exception {
+    this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.repositoryAdapter.createRepository();
     createLogger(jsonOutputStream);
   }
@@ -482,10 +510,10 @@ public class RepositoryBuilder {
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
             codeType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
             codeType.setAnnotation(annotation);
           }
       }
@@ -581,7 +609,7 @@ public class RepositoryBuilder {
           if (field != null) {
             addFieldAndType(field);
           } else {
-            eventLogger.error("Unknown field; lastId={0} scenario={1}", fieldRef.getId().intValue(),
+            eventLogger.error("Unknown field; lastId={0, number, ###} scenario={1}", fieldRef.getId().intValue(),
                 fieldRef.getScenario());
           }
         }
@@ -710,11 +738,11 @@ public class RepositoryBuilder {
                     break;
                   default:
                     if (isDocumentationKey(p.getKey())) {
-                      repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()),
+                      repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()),
                           annotation);
                       transition.setAnnotation(annotation);
                     } else {
-                      repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+                      repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
                       transition.setAnnotation(annotation);
                     }
                 }
@@ -808,27 +836,31 @@ public class RepositoryBuilder {
     if (contextual instanceof Detail) {
       final Detail detail = (Detail) contextual;
       final String name = detail.getProperty("name");
-      io.fixprotocol._2020.orchestra.repository.Datatype datatype =
-          repositoryAdapter.findDatatypeByName(name);
-      if (datatype == null) {
-        datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
-        datatype.setName(name);
-        repositoryAdapter.addDatatype(datatype);
-        final String markdown = detail.getProperty(DOCUMENTATION_KEYWORD);
-        if (markdown != null && !markdown.isEmpty()) {
-          Annotation annotation = datatype.getAnnotation();
-          if (annotation == null) {
-            annotation = new Annotation();
-            datatype.setAnnotation(annotation);
+      if (name != null) {
+        io.fixprotocol._2020.orchestra.repository.Datatype datatype =
+            repositoryAdapter.findDatatypeByName(name);
+        if (datatype == null) {
+          datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
+          datatype.setName(name);
+          repositoryAdapter.addDatatype(datatype);
+          final String markdown = detail.getProperty(DOCUMENTATION_KEYWORD);
+          if (markdown != null && !markdown.isEmpty()) {
+            Annotation annotation = datatype.getAnnotation();
+            if (annotation == null) {
+              annotation = new Annotation();
+              datatype.setAnnotation(annotation);
+            }
+            repositoryAdapter.addDocumentation(markdown, null, annotation);
           }
-          repositoryAdapter.addDocumentation(markdown, null, annotation);
+        }
+        final List<MappedDatatype> mappings = datatype.getMappedDatatype();
+        final String standard = detail.getProperty("standard");
+        if (standard != null && !standard.isEmpty()) {
+          addDatatypeMapping(detail, standard, mappings);
         }
       }
-      final List<MappedDatatype> mappings = datatype.getMappedDatatype();
-      final String standard = detail.getProperty("standard");
-      if (standard != null && !standard.isEmpty()) {
-        addDatatypeMapping(detail, standard, mappings);
-      }
+    } else {
+      eventLogger.error("Unknown name for datatype");
     }
   }
 
@@ -869,10 +901,10 @@ public class RepositoryBuilder {
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
             mapping.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
             mapping.setAnnotation(annotation);
           }
       }
@@ -924,10 +956,10 @@ public class RepositoryBuilder {
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
-              repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
               field.setAnnotation(annotation);
             } else {
-              repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+              repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
               field.setAnnotation(annotation);
             }
         }
@@ -953,7 +985,7 @@ public class RepositoryBuilder {
     if (type != null) {
       buildSteps.add(new TypeBuilder(type, scenario));
     } else {
-      eventLogger.error("Unknown type for field; id= {0} name={1}", field.getId(), field.getName());
+      eventLogger.error("Unknown type for field; id={0, number, ###} name={1}", field.getId(), field.getName());
     }
   }
 
@@ -1335,13 +1367,20 @@ public class RepositoryBuilder {
         case "presence":
           presenceString = p.getValue();
           break;
+        case "tag":
+        case "id":
+          final int id = textUtil.tagToInt(p.getValue());
+          if (id >= 0) {
+            componentRefType.setId(BigInteger.valueOf(id));
+          }
+          break;
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
             componentRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
             componentRefType.setAnnotation(annotation);
           }
       }
@@ -1448,10 +1487,10 @@ public class RepositoryBuilder {
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
             fieldRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
             fieldRefType.setAnnotation(annotation);
           }
       }
@@ -1527,13 +1566,13 @@ public class RepositoryBuilder {
             fieldRefType.setScenario(scenario);
           }
         } else {
-          eventLogger.error("Field has value but not constant; id={0}, presence={1}",
+          eventLogger.error("Field has value but not constant; id={0, number, ###}, presence={1}",
               fieldRefType.getId(), fieldRefType.getPresence().toString());
         }
       }
 
     } else if (presence == PresenceT.CONSTANT) {
-      eventLogger.error("Missing value for constant presence field; id={0}", fieldRefType.getId());
+      eventLogger.error("Missing value for constant presence field; id={0, number, ###}", fieldRefType.getId());
     }
     return fieldRefType;
   }
@@ -1555,13 +1594,20 @@ public class RepositoryBuilder {
         case "presence":
           presenceString = p.getValue();
           break;
+        case "tag":
+        case "id":
+          final int id = textUtil.tagToInt(p.getValue());
+          if (id >= 0) {
+            groupRefType.setId(BigInteger.valueOf(id));
+          }
+          break;
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
             groupRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
             groupRefType.setAnnotation(annotation);
           }
       }

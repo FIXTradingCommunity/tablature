@@ -127,9 +127,21 @@ public class MarkdownEventSource implements MarkdownListener {
   }
 
   @Override
+  public void enterFencedcodeblock(FencedcodeblockContext ctx) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
   public void enterHeading(HeadingContext ctx) {
     supplyLastDocumentation();
     lastBlocks.clear();
+  }
+
+  @Override
+  public void enterInfostring(InfostringContext ctx) {
+    // TODO Auto-generated method stub
+
   }
 
   @Override
@@ -220,6 +232,12 @@ public class MarkdownEventSource implements MarkdownListener {
   }
 
   @Override
+  public void exitFencedcodeblock(FencedcodeblockContext ctx) {
+    // TODO Auto-generated method stub
+
+  }
+
+  @Override
   public void exitHeading(HeadingContext ctx) {
     final String headingLine = ctx.HEADINGLINE().getText();
     // Only a new heading changes the context
@@ -230,6 +248,12 @@ public class MarkdownEventSource implements MarkdownListener {
     updateParentContext(context);
 
     contextConsumer.accept(context);
+  }
+
+  @Override
+  public void exitInfostring(InfostringContext ctx) {
+    // TODO Auto-generated method stub
+
   }
 
   @Override
@@ -357,30 +381,6 @@ public class MarkdownEventSource implements MarkdownListener {
       updateParentContext(documentation);
       contextConsumer.accept(documentation);
     }
-  }
-
-  @Override
-  public void enterFencedcodeblock(FencedcodeblockContext ctx) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  @Override
-  public void exitFencedcodeblock(FencedcodeblockContext ctx) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  @Override
-  public void enterInfostring(InfostringContext ctx) {
-    // TODO Auto-generated method stub
-    
-  }
-
-  @Override
-  public void exitInfostring(InfostringContext ctx) {
-    // TODO Auto-generated method stub
-    
   }
 
 }

@@ -20,6 +20,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import io.fixprotocol.md.event.Context;
+import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.event.MutableDetail;
 
 public class DetailImpl implements MutableDetail {
@@ -64,7 +65,7 @@ public class DetailImpl implements MutableDetail {
 
   @Override
   public String getProperty(String key) {
-    return StringUtil.stripCell(properties.get(key.toLowerCase()));
+    return MarkdownUtil.stripCell(properties.get(key.toLowerCase()));
   }
 
   @Override

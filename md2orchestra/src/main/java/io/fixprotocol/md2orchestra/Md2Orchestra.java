@@ -52,17 +52,24 @@ import org.apache.logging.log4j.Logger;
 public class Md2Orchestra {
 
   public static class Builder {
+    public String eventFilename;
+    public String paragraphDelimiter = RepositoryBuilder.DEFAULT_PARAGRAPH_DELIMITER;
     private List<String> inputFilePatterns = new ArrayList<>();
     private String outputFilename;
     private String referenceFile;
-    public String eventFilename;
-  
+
+
     public Md2Orchestra build() {
       return new Md2Orchestra(this);
     }
-    
+
     public Builder eventFile(String eventFilename) {
       this.eventFilename = eventFilename;
+      return this;
+    }
+
+    public Builder inputFilePattern(String inputFilePatterns) {
+      this.inputFilePatterns = List.of(inputFilePatterns);
       return this;
     }
 
@@ -72,13 +79,19 @@ public class Md2Orchestra {
       return this;
     }
 
-    public Builder inputFilePattern(String inputFilePatterns) {
-      this.inputFilePatterns = List.of(inputFilePatterns);
+    public Builder outputFile(String outputFilename) {
+      this.outputFilename = outputFilename;
       return this;
     }
 
-    public Builder outputFile(String outputFilename) {
-      this.outputFilename = outputFilename;
+    /**
+     * Token to represent a paragraph break in tables (not natively supported by markdown)
+     * 
+     * @param paragraphDelimiter token
+     * @return this Builder
+     */
+    public Builder paragraphDelimiter(String paragraphDelimiter) {
+      this.paragraphDelimiter = paragraphDelimiter;
       return this;
     }
 
@@ -100,31 +113,38 @@ public class Md2Orchestra {
    * Md2Orchestra reads one or more input files to produce output.
    *
    * <pre>
-  usage: Md2Orchestra [options] &lt;input-file&gt;..."
+  usage: Md2Orchestra [options] &lt;input-file&gt;...
   -?,--help              display usage
   -e,--eventlog &lt;arg&gt;    path of JSON event file
   -o,--output &lt;arg&gt;      path of output Orchestra file (required)
+     --paragraph &lt;arg&gt;   paragraph delimiter for tables
   -r,--reference &lt;arg&gt;   path of reference Orchestra file
    * </pre>
    *
    * @param args command line arguments
    */
   public static void main(String[] args) {
-    Md2Orchestra mdl2Orchestra = Md2Orchestra.parseArgs(args).build();
-    mdl2Orchestra.generate();
+    Md2Orchestra md2Orchestra;
+    try {
+      md2Orchestra = Md2Orchestra.parseArgs(args).build();
+      md2Orchestra.generate();
+    } catch (ParseException e) {
+      System.err.println(e.getMessage());
+    }
   }
 
-
-  static Builder parseArgs(String[] args) {
+  static Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of output Orchestra file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
     options.addOption(Option.builder("r").desc("path of reference Orchestra file")
         .longOpt("reference").numberOfArgs(1).build());
-    options.addOption(Option.builder("e").desc("path of JSON event file")
-        .longOpt("eventlog").numberOfArgs(1).build());
+    options.addOption(Option.builder("e").desc("path of JSON event file").longOpt("eventlog")
+        .numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
+    options.addOption(Option.builder().desc("paragraph delimiter for tables").longOpt("paragraph")
+        .numberOfArgs(1).build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -145,15 +165,19 @@ public class Md2Orchestra {
       if (cmd.hasOption("r")) {
         builder.referenceFile = cmd.getOptionValue("r");
       }
-      
+
       if (cmd.hasOption("e")) {
         builder.eventFilename = cmd.getOptionValue("e");
+      }
+
+      if (cmd.hasOption("paragraph")) {
+        builder.paragraphDelimiter(cmd.getOptionValue("paragraph"));
       }
 
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
-      throw new RuntimeException(e);
+      throw e;
     }
   }
 
@@ -162,17 +186,19 @@ public class Md2Orchestra {
     formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
   }
 
+  private final String eventFilename;
   private List<String> inputFilePatterns;
   private Logger logger = LogManager.getLogger(getClass());
   private String outputFilename;
+  private final String paragraphDelimiter;
   private String referenceFilename;
-  private final String eventFilename;
 
   private Md2Orchestra(Builder builder) {
     this.inputFilePatterns = builder.inputFilePatterns;
     this.outputFilename = builder.outputFilename;
     this.referenceFilename = builder.referenceFile;
     this.eventFilename = builder.eventFilename;
+    this.paragraphDelimiter = builder.paragraphDelimiter;
   }
 
   public void generate() {
@@ -183,8 +209,8 @@ public class Md2Orchestra {
     }
   }
 
-  void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename, String eventFilename)
-      throws Exception {
+  void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename,
+      String eventFilename) throws Exception {
     Objects.requireNonNull(inputFilePatterns, "Input file list is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
 
@@ -200,7 +226,7 @@ public class Md2Orchestra {
       if (referenceFilename != null) {
         referenceStream = new FileInputStream(referenceFilename);
       }
-      
+
       OutputStream jsonOutputStream = null;
       if (eventFilename != null) {
         jsonOutputStream = new FileOutputStream(eventFilename);
@@ -209,8 +235,9 @@ public class Md2Orchestra {
       final FileSystem fileSystem = FileSystems.getDefault();
       final String separator = fileSystem.getSeparator();
 
-      
-      final RepositoryBuilder outputRepositoryBuilder = RepositoryBuilder.instance(referenceStream, jsonOutputStream);
+
+      final RepositoryBuilder outputRepositoryBuilder =
+          RepositoryBuilder.instance(referenceStream, jsonOutputStream, paragraphDelimiter);
       for (final String inputFilePattern : inputFilePatterns) {
         final int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
         Path dirPath;
@@ -269,12 +296,12 @@ public class Md2Orchestra {
     }
   }
 
-  void generate(String inputFilePattern, String outputFilename, String referenceFilename, String eventFilename)
-      throws Exception {
+  void generate(String inputFilePattern, String outputFilename, String referenceFilename,
+      String eventFilename) throws Exception {
     generate(List.of(inputFilePattern), outputFilename, referenceFilename, eventFilename);
   }
 
-  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder) 
+  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
       throws FileNotFoundException, IOException {
     logger.info("Md2Orchestra opening file {}", filePath.toString());
     final InputStream inputStream = new FileInputStream(filePath.toFile());

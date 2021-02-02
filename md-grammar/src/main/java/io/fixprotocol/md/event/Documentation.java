@@ -29,7 +29,7 @@ public interface Documentation extends Contextual {
 
   /**
    * Return the contents
-   * 
+   *
    * @return documentation
    */
   String getDocumentation();
@@ -39,7 +39,7 @@ public interface Documentation extends Contextual {
    * as defined by the markdown specification. Originally, it was the name of a programming language
    * to support syntax-specific highlighting. However, it has been extended to support various
    * encodings, such as XML. In some cases, it may map to a media type.
-   * 
+   *
    * @return the format of documentation
    */
   String getFormat();

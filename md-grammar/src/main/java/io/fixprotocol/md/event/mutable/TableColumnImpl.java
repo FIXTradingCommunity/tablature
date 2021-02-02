@@ -14,6 +14,7 @@
  */
 package io.fixprotocol.md.event.mutable;
 
+import io.fixprotocol.md.event.StringUtil;
 import io.fixprotocol.md.event.TableColumn;
 
 class TableColumnImpl implements TableColumn {
@@ -44,16 +45,7 @@ class TableColumnImpl implements TableColumn {
   @Override
   public String getHeading() {
     if (display == null) {
-      final StringBuilder sb = new StringBuilder();
-      sb.append(Character.toUpperCase(key.charAt(0)));
-      for (int i = 1; i < key.length(); i++) {
-        if (Character.isWhitespace(key.charAt(i - 1))) {
-          sb.append(Character.toUpperCase(key.charAt(0)));
-        } else {
-          sb.append(key.charAt(i));
-        }
-      }
-      display = sb.toString();
+      display = StringUtil.convertToTitleCase(key);
     }
     return display;
   }

@@ -25,7 +25,7 @@ public class DocumentationImpl implements MutableDocumentation {
 
   /**
    * Create markdown documentation, that is ordinary paragraphs
-   * 
+   *
    * @param documentation contents
    */
   public DocumentationImpl(String documentation) {
@@ -34,7 +34,7 @@ public class DocumentationImpl implements MutableDocumentation {
 
   /**
    * Create documentation in a specified format
-   * 
+   *
    * @param documentation contents
    * @param format the format of the documentation. This corresponds to infostring of a fenced code
    *        block, as defined by the markdown specification. Originally, it was the name of a
@@ -58,6 +58,11 @@ public class DocumentationImpl implements MutableDocumentation {
   }
 
   @Override
+  public String getFormat() {
+    return format;
+  }
+
+  @Override
   public Context getParent() {
     return parent;
   }
@@ -65,11 +70,6 @@ public class DocumentationImpl implements MutableDocumentation {
   @Override
   public void setParent(Context parent) {
     this.parent = parent;
-  }
-
-  @Override
-  public String getFormat() {
-    return format;
   }
 
 }

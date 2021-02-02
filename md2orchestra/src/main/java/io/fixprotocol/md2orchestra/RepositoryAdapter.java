@@ -106,15 +106,19 @@ public class RepositoryAdapter {
     actors.getActorOrFlow().add(actor);
   }
 
-  void addAppinfo(String content, String purpose, Annotation annotation) {
+  void addAppinfo(String markdown, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final Appinfo appinfo = new Appinfo();
     List<Object> contents = appinfo.getContent();
-    contents.add(content);
+    contents.add(markdown);
     if (purpose != null) {
       appinfo.setPurpose(purpose);
     }
     elements.add(appinfo);
+  }
+  
+  void addAppinfo(String markdown, String paragraphDelmiter, String purpose, Annotation annotation) {
+    addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
   void addCodeset(final CodeSetType codeset) {
@@ -140,6 +144,14 @@ public class RepositoryAdapter {
       documentation.setPurpose(purpose);
     }
     elements.add(documentation);
+  }
+  
+  void addDocumentation(String markdown, String paragraphDelmiter, String purpose, Annotation annotation) {
+    addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
+  }
+  
+  static String substitute(String markdown, String token, String replacement) {
+    return markdown.replace(token, replacement);
   }
 
   void addField(FieldType field) {

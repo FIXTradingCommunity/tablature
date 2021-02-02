@@ -35,10 +35,10 @@ class Orchestra2mdTest {
         "src/test/resources/md2orchestra-proto.xml", });
   }
   
-  @Disabled
   @Test
-  void ep() throws Exception {
-    Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("FixRepository50SP2EP247.xml").outputFile("target/test/FixRepository50SP2EP247.md").build();
+  void FixLatest() throws Exception {
+    Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("src/test/resources/OrchestraFIXLatest.xml")
+        .outputFile("target/test/OrchestraFIXLatest.md").eventFile("target/test/OrchestraFIXLatest.json").build();
     orchestra2md.generate();
   }
   

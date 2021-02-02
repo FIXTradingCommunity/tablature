@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.DetailProperties;
+import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 
@@ -41,7 +42,7 @@ public class DetailTableImpl implements MutableDetailTable {
     @Override
     public void addProperty(String key, String value) {
       if (value != null) {
-        final String trimmed = StringUtil.stripCell(value);
+        final String trimmed = MarkdownUtil.stripCell(value);
         if (!trimmed.isEmpty()) {
           properties.put(Objects.requireNonNull(key, "Missing property key").toLowerCase(),
               trimmed);

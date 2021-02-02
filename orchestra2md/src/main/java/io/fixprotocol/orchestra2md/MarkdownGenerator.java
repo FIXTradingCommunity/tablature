@@ -5,9 +5,16 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
@@ -24,20 +31,24 @@ import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
+import io.fixprotocol._2020.orchestra.repository.Components;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
+import io.fixprotocol._2020.orchestra.repository.Datatypes;
 import io.fixprotocol._2020.orchestra.repository.Documentation;
 import io.fixprotocol._2020.orchestra.repository.FieldRefType;
 import io.fixprotocol._2020.orchestra.repository.FieldRuleType;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
+import io.fixprotocol._2020.orchestra.repository.Fields;
 import io.fixprotocol._2020.orchestra.repository.FlowType;
 import io.fixprotocol._2020.orchestra.repository.GroupRefType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
+import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.MessageType.Responses;
+import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
-import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
@@ -50,6 +61,7 @@ import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
+import io.fixprotocol.md.event.StringUtil;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
@@ -57,33 +69,28 @@ import io.fixprotocol.orchestra.event.TeeEventListener;
 public class MarkdownGenerator {
 
   public static final String ASSIGN_KEYWORD = "assign";
+  
+  /**
+   * Default token to represent a paragraph break in tables (not natively supported by markdown)
+   */
+  public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
 
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
-
   private static final String DEFAULT_SCENARIO = "base";
-  private static final String NOPURPOSE_KEYWORD = "documentation";
-
+ 
+  
   private final ContextFactory contextFactory = new ContextFactory();
-  private final Logger logger = LogManager.getLogger(getClass());
   private EventListener eventLogger;
-
-  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
-      OutputStream jsonOutputStream) throws Exception {
-    Objects.requireNonNull(inputStream, "Input stream is missing");
-    Objects.requireNonNull(outputWriter, "Output writer is missing");
-    final EventListenerFactory factory = new EventListenerFactory();
-    final TeeEventListener eventLogger = new TeeEventListener();
-    final EventListener logEventLogger = factory.getInstance("LOG4J");
-    logEventLogger.setResource(logger);
-    eventLogger.addEventListener(logEventLogger);
-    if (jsonOutputStream != null) {
-      final EventListener jsonEventLogger = factory.getInstance("JSON");
-      jsonEventLogger.setResource(jsonOutputStream);
-      eventLogger.addEventListener(jsonEventLogger);
-    }
-
-    generate(inputStream, outputWriter, eventLogger);
+  private final Logger logger = LogManager.getLogger(getClass());
+  private final String paragraphDelimiterInTables;
+  
+  public MarkdownGenerator() {
+    this.paragraphDelimiterInTables = DEFAULT_PARAGRAPH_DELIMITER;
+  }
+  
+  public MarkdownGenerator(String paragraphDelimiterInTables) {
+    this.paragraphDelimiterInTables = paragraphDelimiterInTables;
   }
 
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
@@ -110,7 +117,25 @@ public class MarkdownGenerator {
     }
   }
 
-  private void addComponentRef(Repository repository, ComponentRefType componentRef,
+  public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
+      OutputStream jsonOutputStream) throws Exception {
+    Objects.requireNonNull(inputStream, "Input stream is missing");
+    Objects.requireNonNull(outputWriter, "Output writer is missing");
+    final EventListenerFactory factory = new EventListenerFactory();
+    final TeeEventListener eventLogger = new TeeEventListener();
+    final EventListener logEventLogger = factory.getInstance("LOG4J");
+    logEventLogger.setResource(logger);
+    eventLogger.addEventListener(logEventLogger);
+    if (jsonOutputStream != null) {
+      final EventListener jsonEventLogger = factory.getInstance("JSON");
+      jsonEventLogger.setResource(jsonOutputStream);
+      eventLogger.addEventListener(jsonEventLogger);
+    }
+
+    generate(inputStream, outputWriter, eventLogger);
+  }
+
+  private void addComponentRefRow(Repository repository, ComponentRefType componentRef,
       MutableDetailProperties row) {
     final int tag = componentRef.getId().intValue();
     final String scenario = componentRef.getScenario();
@@ -126,39 +151,27 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = componentRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
+    addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
-  private void addDocumentationProperties(MutableDetailProperties properties,
-      Annotation annotation) {
-    if (annotation == null) {
-      return;
-    }
-    List<Object> objects = annotation.getDocumentationOrAppinfo();
-    for (Object obj : objects) {
-      if (obj instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        io.fixprotocol._2020.orchestra.repository.Documentation documentation = (Documentation) obj;
-        String purpose = documentation.getPurpose();
-        String markdown = null;
-        if (MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(documentation.getContentType())) {
-          markdown = documentation.getContent().stream().map(Object::toString)
-              .collect(Collectors.joining(" "));
-        } else {
-          markdown = documentation.getContent().stream()
-              .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
-              .collect(Collectors.joining(" "));
-        }
+  private void addDocumentationColumns(MutableDetailProperties properties, Annotation annotation,
+      String paragraphDelimiter) {
+    if (annotation != null) {
+      // Synopsis may explicit or implicit (null purpose)
+      // handle all 'purpose' values, including appinfo
 
-        properties.addProperty(Objects.requireNonNullElse(purpose, NOPURPOSE_KEYWORD), markdown);
-      } else if (obj instanceof Appinfo) {
-        Appinfo appinfo = (Appinfo) obj;
-        String contents =
-            appinfo.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
-        properties.addProperty(appinfo.getPurpose(), contents);
+      SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
+      Set<Entry<String, List<Object>>> entries = sorted.entrySet();
+      for (Entry<String, List<Object>> e : entries) {
+        String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
+        if (!text.isBlank()) {
+          properties.addProperty(e.getKey(), text);
+        }
       }
     }
   }
 
-  private void addFieldRef(Repository repository, FieldRefType fieldRef,
+  private void addFieldRefRow(Repository repository, FieldRefType fieldRef,
       MutableDetailProperties row) {
     final int tag = fieldRef.getId().intValue();
     final String scenario = fieldRef.getScenario();
@@ -215,9 +228,10 @@ public class MarkdownGenerator {
     if (implLength != null) {
       row.addIntProperty("implLength", implLength);
     }
+    addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
-  private void addGroupRef(Repository repository, GroupRefType groupRef,
+  private void addGroupRefRow(Repository repository, GroupRefType groupRef,
       MutableDetailProperties row) {
     final int tag = groupRef.getId().intValue();
     final String scenario = groupRef.getScenario();
@@ -233,42 +247,55 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = groupRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
+    addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
-  private void addMembers(MutableDetailTable table, Repository repository, List<Object> members) {
+  private void addMemberRows(MutableDetailTable table, Repository repository,
+      List<Object> members) {
     for (final Object member : members) {
       final MutableDetailProperties row = table.newRow();
       if (member instanceof FieldRefType) {
         final FieldRefType fieldRef = (FieldRefType) member;
-        addFieldRef(repository, fieldRef, row);
+        addFieldRefRow(repository, fieldRef, row);
       } else if (member instanceof GroupRefType) {
         final GroupRefType groupRef = (GroupRefType) member;
-        addGroupRef(repository, groupRef, row);
+        addGroupRefRow(repository, groupRef, row);
       } else if (member instanceof ComponentRefType) {
         final ComponentRefType componentRef = (ComponentRefType) member;
-        addComponentRef(repository, componentRef, row);
+        addComponentRefRow(repository, componentRef, row);
       }
     }
   }
 
-  private String concatenateDocumentation(Annotation annotation, List<String> purposes) {
-    if (annotation == null) {
-      return "";
+  private String concatenateDocumentation(List<Object> objects, String paragraphDelimiter) {
+    return objects.stream().map(o -> {
+      if (o instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
+        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation)o, paragraphDelimiter);
+      } else {
+        return appinfoToString(o, paragraphDelimiter);
+      }
+    }).collect(Collectors.joining(paragraphDelimiter));
+  }
+
+  public String appinfoToString(Object o, String paragraphDelimiter) {
+    io.fixprotocol._2020.orchestra.repository.Appinfo a =
+        (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
+    return a.getContent().stream()
+        .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
+        .map(s -> MarkdownUtil.plainTextToMarkdown(s))
+        .collect(Collectors.joining(paragraphDelimiter));
+  }
+
+  private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d, String paragraphDelimiter) {
+    if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
+      return d.getContent().stream()
+          .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))        
+          .collect(Collectors.joining(paragraphDelimiter));
     } else {
-      final List<Object> objects = annotation.getDocumentationOrAppinfo();
-      return objects.stream()
-          .filter(o -> o instanceof io.fixprotocol._2020.orchestra.repository.Documentation)
-          .map(o -> (io.fixprotocol._2020.orchestra.repository.Documentation) o)
-          .filter(
-              d -> purposes.contains(Objects.requireNonNullElse(d.getPurpose(), NOPURPOSE_KEYWORD)))
-          .map(d -> {
-            if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
-              return d.getContent().stream().map(Object::toString).collect(Collectors.joining(" "));
-            } else
-              return d.getContent().stream()
-                  .map(c -> MarkdownUtil.plainTextToMarkdown(c.toString()))
-                  .collect(Collectors.joining(" "));
-          }).collect(Collectors.joining(" "));
+      return d.getContent().stream()
+          .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
+          .map(s -> MarkdownUtil.plainTextToMarkdown(s))          
+          .collect(Collectors.joining(paragraphDelimiter));
     }
   }
 
@@ -292,7 +319,6 @@ public class MarkdownGenerator {
     return null;
   }
 
-
   private GroupType findGroupByTag(Repository repository, int tag, String scenario) {
     final List<GroupType> groups = repository.getGroups().getGroup();
     for (final GroupType group : groups) {
@@ -307,6 +333,9 @@ public class MarkdownGenerator {
       throws IOException {
     final MutableContext context = contextFactory.createContext(2);
     context.addPair("Actor", actor.getName());
+
+    final Annotation annotation = actor.getAnnotation();
+    generateDocumentationBlocks(annotation, documentWriter);
     documentWriter.write(context);
 
     final List<Object> elements = actor.getFieldOrFieldRefOrComponent();
@@ -318,7 +347,7 @@ public class MarkdownGenerator {
       documentWriter.write(variableContext);
 
       final MutableDetailTable table = contextFactory.createDetailTable();
-      addMembers(table, repository, members);
+      addMemberRows(table, repository, members);
       documentWriter.write(table);
     }
 
@@ -344,6 +373,7 @@ public class MarkdownGenerator {
     }
   }
 
+
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
     MutableContext context = contextFactory.createContext(3);
@@ -357,7 +387,7 @@ public class MarkdownGenerator {
     documentWriter.write(context);
 
     final Annotation annotation = codeset.getAnnotation();
-    generateDocumentation(annotation, documentWriter);
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
 
@@ -372,7 +402,7 @@ public class MarkdownGenerator {
       } else {
         eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
       }
-      addDocumentationProperties(row, code.getAnnotation());
+      addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
     }
     documentWriter.write(table);
   }
@@ -402,144 +432,163 @@ public class MarkdownGenerator {
     documentWriter.write(context);
 
     final Annotation annotation = component.getAnnotation();
-    generateDocumentation(annotation, documentWriter);
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
-    addMembers(table, repository, members);
+    addMemberRows(table, repository, members);
     documentWriter.write(table);
   }
 
   private void generateComponents(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final List<ComponentType> components = repository.getComponents().getComponent().stream()
-        .sorted(Comparator.comparing(ComponentType::getName)).collect(Collectors.toList());
-    if (!components.isEmpty()) {
-      final MutableContext context = contextFactory.createContext(new String[] {"Components"}, 2);
-      documentWriter.write(context);
-    }
-    for (final ComponentType component : components) {
-      generateComponent(repository, documentWriter, component);
+    final Components componentParent = repository.getComponents();
+    if (componentParent != null) {
+      final List<ComponentType> components = componentParent.getComponent().stream()
+          .sorted(Comparator.comparing(ComponentType::getName)).collect(Collectors.toList());
+      if (!components.isEmpty()) {
+        final MutableContext context = contextFactory.createContext(new String[] {"Components"}, 2);
+        documentWriter.write(context);
+      }
+      for (final ComponentType component : components) {
+        generateComponent(repository, documentWriter, component);
+      }
+    } else {
+      logger.warn("No components found");
     }
   }
 
   private void generateDatatypes(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(2);
-    context.addKey("Datatypes");
-    documentWriter.write(context);
-    final MutableDetailTable table = contextFactory.createDetailTable();
+    final Datatypes datatypeParent = repository.getDatatypes();
+    if (datatypeParent != null) {
+      final List<Datatype> datatypes = datatypeParent.getDatatype().stream()
+          .sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
+          .collect(Collectors.toList());
 
-    final List<Datatype> datatypes = repository.getDatatypes().getDatatype().stream()
-        .sorted((o1, o2) -> o1.getName().compareToIgnoreCase(o2.getName()))
-        .collect(Collectors.toList());
+      if (!datatypes.isEmpty()) {
+        MutableContext context = contextFactory.createContext(2);
+        context.addKey("Datatypes");
+        documentWriter.write(context);
+        final MutableDetailTable table = contextFactory.createDetailTable();
 
-    for (final Datatype datatype : datatypes) {
-      final List<MappedDatatype> mappings = datatype.getMappedDatatype();
-      MutableDetailProperties row = table.newRow();
-      row.addProperty("name", datatype.getName());
-      row.addProperty(NOPURPOSE_KEYWORD, concatenateDocumentation(datatype.getAnnotation(), List
-          .of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value(), PurposeEnum.ELABORATION.value())));
-      for (final MappedDatatype mapping : mappings) {
-        row = table.newRow();
-        row.addProperty("name", datatype.getName());
-        final String standard = mapping.getStandard();
-        row.addProperty("standard", standard);
-        final String base = mapping.getBase();
-        if (base != null) {
-          row.addProperty("base", base);
+        for (final Datatype datatype : datatypes) {
+          final List<MappedDatatype> mappings = datatype.getMappedDatatype();
+          Annotation annotation = datatype.getAnnotation();
+          MutableDetailProperties row = table.newRow();
+          row.addProperty("name", datatype.getName());
+          addDocumentationColumns(row, annotation, getParagraphDelimiterInTables());
+
+          for (final MappedDatatype mapping : mappings) {
+            row = table.newRow();
+            row.addProperty("name", datatype.getName());
+            final String standard = mapping.getStandard();
+            row.addProperty("standard", standard);
+            final String base = mapping.getBase();
+            if (base != null) {
+              row.addProperty("base", base);
+            }
+            final String element = mapping.getElement();
+            if (element != null) {
+              row.addProperty("element", element);
+            }
+            final String parameter = mapping.getParameter();
+            if (parameter != null) {
+              row.addProperty("parameter", parameter);
+            }
+            final String pattern = mapping.getPattern();
+            if (pattern != null) {
+              row.addProperty("pattern", pattern);
+            }
+            final String min = mapping.getMinInclusive();
+            if (min != null) {
+              row.addProperty("minInclusive", min);
+            }
+            final String max = mapping.getMaxInclusive();
+            if (max != null) {
+              row.addProperty("maxInclusive", max);
+            }
+            addDocumentationColumns(row, mapping.getAnnotation(), getParagraphDelimiterInTables());
+          }
         }
-        final String element = mapping.getElement();
-        if (element != null) {
-          row.addProperty("element", element);
-        }
-        final String parameter = mapping.getParameter();
-        if (parameter != null) {
-          row.addProperty("parameter", parameter);
-        }
-        final String pattern = mapping.getPattern();
-        if (pattern != null) {
-          row.addProperty("pattern", pattern);
-        }
-        final String min = mapping.getMinInclusive();
-        if (min != null) {
-          row.addProperty("minInclusive", min);
-        }
-        final String max = mapping.getMaxInclusive();
-        if (max != null) {
-          row.addProperty("maxInclusive", max);
-        }
-        addDocumentationProperties(row, mapping.getAnnotation());
+        documentWriter.write(table);
+      } else {
+        logger.warn("No datatypes found");
       }
     }
-    documentWriter.write(table);
   }
 
-  private void generateDocumentation(final Annotation annotation, DocumentWriter documentWriter)
-      throws IOException {
-    String synopsis = concatenateDocumentation(annotation,
-        List.of(NOPURPOSE_KEYWORD, PurposeEnum.SYNOPSIS.value()));
-    if (!synopsis.isBlank()) {
-      MutableContext documentationContext =
-          contextFactory.createContext(new String[] {"Synopsis"}, 4);
-      documentWriter.write(documentationContext);
-      MutableDocumentation documentation = contextFactory.createDocumentation(synopsis);
-      documentWriter.write(documentation);
-    }
-    String elaboration =
-        concatenateDocumentation(annotation, List.of(PurposeEnum.ELABORATION.value()));
-    if (!elaboration.isBlank()) {
-      MutableContext documentationContext =
-          contextFactory.createContext(new String[] {"Elaboration"}, 4);
-      documentWriter.write(documentationContext);
-      MutableDocumentation documentation = contextFactory.createDocumentation(elaboration);
-      documentWriter.write(documentation);
+  private void generateDocumentationBlocks(final Annotation annotation,
+      DocumentWriter documentWriter) throws IOException {
+    if (annotation != null) {
+      // Synopsis may explicit or implicit (null purpose)
+      // handle all 'purpose' values, including appinfo
+
+      SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
+      Set<Entry<String, List<Object>>> entries = sorted.entrySet();
+      for (Entry<String, List<Object>> e : entries) {
+        String text = concatenateDocumentation(e.getValue(), "\n");
+        if (!text.isBlank()) {
+          MutableContext documentationContext =
+              contextFactory.createContext(new String[] {StringUtil.convertToTitleCase(e.getKey())}, 4);
+          documentWriter.write(documentationContext);
+          MutableDocumentation documentation = contextFactory.createDocumentation(text);
+          documentWriter.write(documentation);
+        }
+      }
     }
   }
 
   private void generateFields(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(2);
-    context.addKey("Fields");
-    documentWriter.write(context);
-    final MutableDetailTable table = contextFactory.createDetailTable();
+    final Fields fieldParent = repository.getFields();
+    if (fieldParent != null) {
+      MutableContext context = contextFactory.createContext(2);
+      context.addKey("Fields");
+      documentWriter.write(context);
+      final MutableDetailTable table = contextFactory.createDetailTable();
 
-    final List<FieldType> fields = repository.getFields().getField().stream()
-        .sorted(Comparator.comparing(FieldType::getId)).collect(Collectors.toList());
+      final List<FieldType> fields = fieldParent.getField().stream()
+          .sorted(Comparator.comparing(FieldType::getId)).collect(Collectors.toList());
 
-    for (final FieldType field : fields) {
-      final MutableDetailProperties row = table.newRow();
-      row.addProperty("tag", field.getId().toString());
-      row.addProperty("name", field.getName());
-      final String scenario = field.getScenario();
-      if (!scenario.equals(DEFAULT_SCENARIO)) {
-        row.addProperty("scenario", scenario);
+      for (final FieldType field : fields) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("tag", field.getId().toString());
+        row.addProperty("name", field.getName());
+        final String scenario = field.getScenario();
+        if (!scenario.equals(DEFAULT_SCENARIO)) {
+          row.addProperty("scenario", scenario);
+        }
+        row.addProperty("type", field.getType());
+        addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
+
+        final Short implMinLength = field.getImplMinLength();
+        if (implMinLength != null) {
+          row.addIntProperty("implMinLength", implMinLength);
+        }
+
+        final Short implMaxLength = field.getImplMaxLength();
+        if (implMaxLength != null) {
+          row.addIntProperty("implMaxLength", implMaxLength);
+        }
+
+        final Short implLength = field.getImplLength();
+        if (implLength != null) {
+          row.addIntProperty("implLength", implLength);
+        }
       }
-      row.addProperty("type", field.getType());
-      addDocumentationProperties(row, field.getAnnotation());
-
-      final Short implMinLength = field.getImplMinLength();
-      if (implMinLength != null) {
-        row.addIntProperty("implMinLength", implMinLength);
-      }
-
-      final Short implMaxLength = field.getImplMaxLength();
-      if (implMaxLength != null) {
-        row.addIntProperty("implMaxLength", implMaxLength);
-      }
-
-      final Short implLength = field.getImplLength();
-      if (implLength != null) {
-        row.addIntProperty("implLength", implLength);
-      }
+      documentWriter.write(table);
+    } else {
+      logger.error("No fields found");
     }
-    documentWriter.write(table);
   }
 
   private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
       throws IOException {
     MutableContext context = contextFactory.createContext(2);
     context.addPair("Flow", flow.getName());
+    final Annotation annotation = flow.getAnnotation();
+    generateDocumentationBlocks(annotation, documentWriter);
     documentWriter.write(context);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
@@ -563,33 +612,38 @@ public class MarkdownGenerator {
     documentWriter.write(context);
 
     final Annotation annotation = group.getAnnotation();
-    generateDocumentation(annotation, documentWriter);
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
 
     final FieldRefType numInGroup = group.getNumInGroup();
     if (numInGroup != null) {
       final MutableDetailProperties row = table.newRow();
-      addFieldRef(repository, numInGroup, row);
+      addFieldRefRow(repository, numInGroup, row);
     } else {
       eventLogger.warn("Unknown numInGroup for group; name={0} scenario={1}", name, scenario);
     }
     final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
-    addMembers(table, repository, members);
+    addMemberRows(table, repository, members);
     documentWriter.write(table);
   }
 
   private void generateGroups(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final List<GroupType> groups = repository.getGroups().getGroup().stream()
-        .sorted(Comparator.comparing(GroupType::getName)).collect(Collectors.toList());
-    if (!groups.isEmpty()) {
+    final Groups groupParent = repository.getGroups();
+    if (groupParent != null) {
+      final List<GroupType> groups = groupParent.getGroup().stream()
+          .sorted(Comparator.comparing(GroupType::getName)).collect(Collectors.toList());
+      if (!groups.isEmpty()) {
 
-      final MutableContext context = contextFactory.createContext(new String[] {"Groups"}, 2);
-      documentWriter.write(context);
-    }
-    for (final GroupType group : groups) {
-      generateGroup(repository, documentWriter, group);
+        final MutableContext context = contextFactory.createContext(new String[] {"Groups"}, 2);
+        documentWriter.write(context);
+      }
+      for (final GroupType group : groups) {
+        generateGroup(repository, documentWriter, group);
+      }
+    } else {
+      logger.warn("No groups found");
     }
   }
 
@@ -621,7 +675,7 @@ public class MarkdownGenerator {
               row.addProperty("msgType", msgType);
             }
             row.addProperty("when", response.getWhen());
-            addDocumentationProperties(row, response.getAnnotation());
+            addDocumentationColumns(row, response.getAnnotation(), getParagraphDelimiterInTables());
           }
         }
       }
@@ -631,11 +685,16 @@ public class MarkdownGenerator {
 
   private void generateMessages(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final List<MessageType> messages = repository.getMessages().getMessage().stream()
-        .sorted(Comparator.comparing(MessageType::getName)).collect(Collectors.toList());
-    for (final MessageType message : messages) {
-      generateMessageStructure(repository, documentWriter, message);
-      generateMessageResponses(repository, documentWriter, message);
+    final Messages messageParent = repository.getMessages();
+    if (messageParent != null) {
+      final List<MessageType> messages = messageParent.getMessage().stream()
+          .sorted(Comparator.comparing(MessageType::getName)).collect(Collectors.toList());
+      for (final MessageType message : messages) {
+        generateMessageStructure(repository, documentWriter, message);
+        generateMessageResponses(repository, documentWriter, message);
+      }
+    } else {
+      logger.error("No message found");
     }
   }
 
@@ -660,12 +719,12 @@ public class MarkdownGenerator {
     documentWriter.write(context);
 
     final Annotation annotation = message.getAnnotation();
-    generateDocumentation(annotation, documentWriter);
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
 
     final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
-    addMembers(table, repository, members);
+    addMemberRows(table, repository, members);
     documentWriter.write(table);
   }
 
@@ -673,11 +732,17 @@ public class MarkdownGenerator {
       throws IOException {
     MutableContext context = contextFactory.createContext(1);
 
-    context.addKey(repository.getName());
-    if (!repository.getName().toLowerCase().contains("version")) {
-      context.addKey(repository.getVersion());
+    final String repositoryName = repository.getName();
+    if (repositoryName != null) {
+      context.addKey(repositoryName);
+      if (!repositoryName.toLowerCase().contains("version")) {
+        context.addKey(repository.getVersion());
+      }
+    } else {
+      context.addKey("Repository");
     }
     documentWriter.write(context);
+
 
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     if (!elements.isEmpty()) {
@@ -700,7 +765,7 @@ public class MarkdownGenerator {
     documentWriter.write(context);
 
     final Annotation annotation = stateMachine.getAnnotation();
-    generateDocumentation(annotation, documentWriter);
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
     final StateType initial = stateMachine.getInitial();
@@ -719,12 +784,71 @@ public class MarkdownGenerator {
       row.addProperty("state", state.getName());
       row.addProperty("transition", transition.getName());
       row.addProperty("target", transition.getTarget());
-      addDocumentationProperties(row, transition.getAnnotation());
+      addDocumentationColumns(row, transition.getAnnotation(), getParagraphDelimiterInTables());
       row.addProperty("when", transition.getWhen());
     }
   }
 
+  private String getParagraphDelimiterInTables() {
+    return paragraphDelimiterInTables;
+  }
 
+  private SortedMap<String, List<Object>> groupDocumentationByPurpose(Annotation annotation) {
+    if (annotation == null) {
+      return Collections.emptySortedMap();
+    } else {
+      final List<Object> annotations = annotation.getDocumentationOrAppinfo();
+      Function<Object, String> classifier = o -> {
+        if (o instanceof Documentation) {
+          final String purpose = ((Documentation) o).getPurpose();
+          if (purpose != null) {
+            return purpose.toString();
+          } else {
+            return "SYNOPSIS";
+          }
+        } else {
+          final String purpose = ((Appinfo) o).getPurpose();
+          if (purpose != null) {
+            return purpose.toString();
+          } else {
+            return "SYNOPSIS";
+          }
+        }
+      };
+      return sortDocumentationByPurpose(
+          annotations.stream().collect(Collectors.groupingBy(classifier)));
+    }
+  }
+
+  private int purposeRank(String purpose) {
+    switch (purpose.toLowerCase()) {
+      case "synopsis":
+        return 0;
+      case "elaboration":
+        return 1;
+      case "example":
+        return 2;
+      case "display":
+        return 3;
+      default:
+        return 4;
+    }
+  }
+
+  private SortedMap<String, List<Object>> sortDocumentationByPurpose(
+      Map<String, List<Object>> groups) {
+    SortedMap<String, List<Object>> sorted =
+        new TreeMap<String, List<Object>>(new Comparator<String>() {
+
+          @Override
+          public int compare(String o1, String o2) {
+            return purposeRank(o1) - purposeRank(o2);
+          }
+
+        });
+    sorted.putAll(groups);
+    return sorted;
+  }
 
   private Repository unmarshal(InputStream is) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);

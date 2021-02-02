@@ -37,6 +37,7 @@ public class Orchestra2md {
     private String inputFile;
     private String outputFile;
     public String eventFile;
+    public String paragraphDelimiter = MarkdownGenerator.DEFAULT_PARAGRAPH_DELIMITER;
 
     public Orchestra2md build() {
       return new Orchestra2md(this);
@@ -56,6 +57,17 @@ public class Orchestra2md {
       this.outputFile = outputFile;
       return this;
     }
+
+    /**
+     * Token to represent a paragraph break in tables (not natively supported by markdown)
+     * 
+     * @param paragraphDelimiter token
+     * @return this Builder
+     */
+    public Builder paragraphDelimiter(String paragraphDelimiter) {
+      this.paragraphDelimiter = paragraphDelimiter;
+      return this;
+    }
   }
 
 
@@ -64,30 +76,38 @@ public class Orchestra2md {
   }
 
   /**
-   * Construct and run Md2Orchestra with command line arguments
+   * Construct and run Orchestra2md with command line arguments
    *
    * <pre>
-  usage: Md2Orchestra [options] &lt;input-file&gt;"
-  -?,--help             display usage
-  -e,--eventlog &lt;arg&gt;   path of JSON event file
-  -o,--output &lt;arg&gt;     path of markdown output file
+  usage: Orchestra2md [options] <input-file>
+  -?,--help              display usage
+  -e,--eventlog &lt;arg&gt;    path of JSON event file
+  -o,--output &lt;arg&gt;      path of markdown output file (required)
+     --paragraph &lt;arg&gt;   paragraph delimiter for tables
    * </pre>
    *
    * @param args command line arguments
    */
   public static void main(String[] args) {
-    final Orchestra2md orchestra2md = parseArgs(args).build();
-    orchestra2md.generate();
+    Orchestra2md orchestra2md;
+    try {
+      orchestra2md = parseArgs(args).build();
+      orchestra2md.generate();
+    } catch (ParseException e) {
+      System.err.println(e.getMessage());
+    }
   }
 
-  private static Builder parseArgs(String[] args) {
+  private static Builder parseArgs(String[] args) throws ParseException {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of markdown output file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
-    options.addOption(Option.builder("e").desc("path of JSON event file")
-        .longOpt("eventlog").numberOfArgs(1).build());
+    options.addOption(Option.builder("e").desc("path of JSON event file").longOpt("eventlog")
+        .numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
+    options.addOption(Option.builder().desc("paragraph delimiter for tables").longOpt("paragraph")
+        .numberOfArgs(1).build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -104,18 +124,18 @@ public class Orchestra2md {
 
       builder.inputFile = !cmd.getArgList().isEmpty() ? cmd.getArgList().get(0) : null;
       builder.outputFile = cmd.getOptionValue("o");
-      
-      if (cmd.hasOption("e")) {
-        builder.eventFile = cmd.getOptionValue("e");
+
+      if (cmd.hasOption("paragraph")) {
+        builder.paragraphDelimiter(cmd.getOptionValue("paragraph"));
       }
 
       return builder;
     } catch (final ParseException e) {
       showHelp(options);
-      throw new RuntimeException(e);
+      throw e;
     }
   }
-  
+
   private static void showHelp(Options options) {
     final HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("Orchestra2md [options] <input-file>", options);
@@ -125,24 +145,26 @@ public class Orchestra2md {
   private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
   private final String eventFilename;
+  private final String paragraphDelimiter;
 
   private Orchestra2md(Builder builder) {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
     this.eventFilename = builder.eventFile;
+    this.paragraphDelimiter = builder.paragraphDelimiter;
   }
 
   public void generate() {
     try {
-      generate(inputFilename, outputFilename, eventFilename);
+      generate(inputFilename, outputFilename, eventFilename, paragraphDelimiter);
       logger.info("Orchestra2md complete");
     } catch (final Exception e) {
       logger.fatal("Orchestra2md failed", e);
     }
   }
 
-  void generate(String inputFilename, String outputFilename, String eventFilename)
-      throws Exception {
+  void generate(String inputFilename, String outputFilename, String eventFilename,
+      String paragraphDelimiter) throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
 
@@ -165,7 +187,8 @@ public class Orchestra2md {
         }
         eventStream = new FileOutputStream(eventFile);
       }
-      final MarkdownGenerator generator = new MarkdownGenerator();
+
+      final MarkdownGenerator generator = new MarkdownGenerator(paragraphDelimiter);
       generator.generate(inputStream, outputWriter, eventStream);
     }
   }

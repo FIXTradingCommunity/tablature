@@ -44,7 +44,7 @@ class RepositoryTextUtil {
       try {
         return Integer.parseInt(str2);
       } catch (final NumberFormatException e) {
-        logger.warn("RepositoryTextUtil numeric tag value expected, was {}", str);
+        logger.trace("RepositoryTextUtil numeric tag value expected, was {}", str);
         return -1;
       }
     }
