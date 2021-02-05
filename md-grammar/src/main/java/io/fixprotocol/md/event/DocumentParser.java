@@ -51,7 +51,14 @@ public final class DocumentParser {
     }
   }
 
-  public void parse(InputStream inputStream, Consumer<? super Contextual> contextConsumer)
+  /**
+   * Parse a markdown document
+   * @param inputStream input as markdown
+   * @param contextConsumer consumer of document events
+   * @return {@code true} if the document is fully parsed without errors
+   * @throws IOException if the document cannot be read
+   */
+  public boolean parse(InputStream inputStream, Consumer<? super Contextual> contextConsumer)
       throws IOException {
     final MarkdownLexer lexer = new MarkdownLexer(CharStreams.fromStream(inputStream));
     final MarkdownParser parser = new MarkdownParser(new CommonTokenStream(lexer));
@@ -63,9 +70,7 @@ public final class DocumentParser {
     walker.walk(listener, documentContext);
 
     final int errors = errorListener.getErrors();
-    if (errors > 0) {
-      throw new IOException("Markdown parser failed; " + errors);
-    }
+    return (errors == 0);
   }
 
 }

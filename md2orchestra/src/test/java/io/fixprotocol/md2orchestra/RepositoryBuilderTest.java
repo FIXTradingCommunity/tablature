@@ -83,6 +83,37 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("value=\"8\""));
   }
   
+  @Test // ODOC-63
+  void duplicateCodes() throws Exception {
+    String text =
+        "### Codeset SideCodeSet type char\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|-------|\n"
+        + "| Buy | 1 | |\n"
+        + "| Sell | 2 | |\n"
+        + "| Undisclosed | 7 | |\n"
+        + "\n"
+        + "### Codeset SideCodeSet scenario BuySell type char\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| Buy | 1 | |\n"
+        + "| Sell | 2 | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+   }
+  
   @Test // ODOC-30
   void extraComponentWithSynopsis() throws Exception {
     String text =
@@ -112,8 +143,7 @@ class RepositoryBuilderTest {
     assertEquals(1, count);
   }
   
-  @Test //ODOC-22
-  // TODO: currently "Active firm" with space is not valid in Orchestra, but consider changing that
+  @Test
   void inlineCode() throws Exception {
     String text =
         "## Component Instrument scenario test\n"
@@ -122,7 +152,7 @@ class RepositoryBuilderTest {
         + "|------------------|----:|-----------|--------|\n"
         + "| SecurityID | 48 | required | |\n"
         + "| SecurityIDSource | 22 | constant | |\n"
-        + "| SecurityStatus | 965 | | 1=\"Active firm\" |\n";   
+        + "| SecurityStatus | 965 | | 1=Active |\n";   
     
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
@@ -131,12 +161,12 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     String xml = xmlStream.toString();
-    //System.out.println(xml);
+    System.out.println(xml);
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(xml.contains("name=\"Active firm\""));
-    assertTrue(errors.contains("Missing value for constant"));
+    System.out.println(errors);
+    assertTrue(xml.contains("name=\"SecurityStatusCodeset\""));
+    assertTrue(xml.contains("type=\"SecurityStatusCodeSet\""));
     assertFalse(errors.contains("Malformed inline code"));
   }
   
@@ -161,6 +191,34 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(xml.contains("name=\"Market\""));
     assertTrue(xml.contains("name=\"Limit\""));
+  }
+  
+  @Test //ODOC-22
+  // TODO: currently "Active firm" with space is not valid in Orchestra, but consider changing that
+  void inlineCodeWithSpace() throws Exception {
+    String text =
+        "## Component Instrument scenario test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|--------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | constant | |\n"
+        + "| SecurityStatus | 965 | | 1=\"Active firm\" |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"Active firm\""));
+    assertTrue(errors.contains("Missing value for constant"));
+    assertFalse(errors.contains("Malformed inline code"));
   }
   
   @Test // ODOC-40
@@ -236,8 +294,17 @@ class RepositoryBuilderTest {
   
   @Test //ODOC-45
   void redundantField() throws Exception {
-    String text =
-        "## Component Instrument\n"
+    String text = "### Codeset SecIDSources type String (22)\n"
+        + "\n"
+        + "Domains for values of SecurityID(48)\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| CUSIP | 1 | Explaining CUSIP |\n"
+        + "| ISIN | 4 | ISINs *are* great |\n"
+        + "| Exchange symbol | 8 | **Good** as well |\n"
+        + "\n"
+        + "## Component Instrument\n"
         + "\n"
         + "| Name | Tag | Presence | Values | Scenario |\n"
         + "|------------------|----:|-----------|--------|--------------|\n"
@@ -252,14 +319,10 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     String xml = xmlStream.toString();
-    //System.out.println(xml);
-    Pattern fieldPattern = Pattern.compile("<fixr:field\\s.+?id=\"22\".*?>");
-    Matcher fieldMatcher = fieldPattern.matcher(xml);
-    long count = fieldMatcher.results().count();
-    assertEquals(1, count);
+    System.out.println(xml);
     builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
+    String errors = jsonOutputStream.toString();
+    System.out.println(errors);
   }
   
   @BeforeEach
@@ -343,13 +406,38 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-    System.out.println(xml);
+    //System.out.println(xml);
     builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
+    //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">yada yada"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">nonsense"));
+  }
+  
+  @Test // ODOC-32, ODOC-58
+  void parseError() throws Exception {
+    String text =
+        "## Component InstrumentParties\n"
+        + "\n"
+        + "|\n"
+        + "| Name | Value | Documentation | My Doc |\n"
+        + "|------------------|:-------:|---------------|-------|\n"
+        + "| Buy | 1 | | Xyz ABC\\|\n"
+        + "| Sell | 2 | | |\n"
+        + "| Undisclosed | 7 | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"InstrumentParties\""));
   }
 
 }
