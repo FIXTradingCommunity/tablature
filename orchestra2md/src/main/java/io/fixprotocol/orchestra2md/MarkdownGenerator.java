@@ -69,6 +69,7 @@ import io.fixprotocol.orchestra.event.TeeEventListener;
 public class MarkdownGenerator {
 
   public static final String ASSIGN_KEYWORD = "assign";
+  public static final String DOCUMENTATION_KEYWORD = "documentation";
   
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
@@ -96,7 +97,7 @@ public class MarkdownGenerator {
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
       EventListener eventLogger) throws Exception {
     this.eventLogger = eventLogger;
-    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
+    try (eventLogger; final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Repository repository = unmarshal(inputStream);
       generateRepositoryMetadata(repository, documentWriter);
       generateActorsAndFlows(repository, documentWriter);
@@ -112,8 +113,6 @@ public class MarkdownGenerator {
     } catch (final Exception e1) {
       logger.fatal("Orchestra2md error", e1);
       throw e1;
-    } finally {
-      eventLogger.close();
     }
   }
 
@@ -282,7 +281,7 @@ public class MarkdownGenerator {
         (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
     return a.getContent().stream()
         .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-        .map(s -> MarkdownUtil.plainTextToMarkdown(s))
+        .map(MarkdownUtil::plainTextToMarkdown)
         .collect(Collectors.joining(paragraphDelimiter));
   }
 
@@ -294,7 +293,7 @@ public class MarkdownGenerator {
     } else {
       return d.getContent().stream()
           .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-          .map(s -> MarkdownUtil.plainTextToMarkdown(s))          
+          .map(MarkdownUtil::plainTextToMarkdown)
           .collect(Collectors.joining(paragraphDelimiter));
     }
   }
@@ -428,6 +427,17 @@ public class MarkdownGenerator {
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
     }
+    
+    String abbrName = component.getAbbrName();
+    if (abbrName != null) {
+      context.addPair("abbrname", abbrName);
+    }
+    
+    String category = component.getCategory();
+    if (category != null) {
+      context.addPair("category", category);
+    }
+    
     context.addKey(String.format("(%d)", component.getId().intValue()));
     documentWriter.write(context);
 
@@ -576,6 +586,90 @@ public class MarkdownGenerator {
         if (implLength != null) {
           row.addIntProperty("implLength", implLength);
         }
+        
+        String minInclusive = field.getMinInclusive();
+        if (minInclusive != null) {
+          row.addProperty("minInclusive", minInclusive);
+        }
+        
+        String maxInclusive = field.getMaxInclusive();
+        if (maxInclusive != null) {
+          row.addProperty("maxInclusive", maxInclusive);
+        }
+        
+        String abbrName = field.getAbbrName();
+        if (abbrName != null) {
+          row.addProperty("abbrName", abbrName);
+        }
+        String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
+        if (baseCategoryAbbrName != null) {
+          row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
+        }
+        
+        String baseCategory = field.getBaseCategory();
+        if (baseCategory != null) {
+          row.addProperty("baseCategory", baseCategory);
+        }
+        
+        BigInteger dicriminatorId = field.getDiscriminatorId();
+        if (dicriminatorId != null) {
+          row.addIntProperty("dicriminatorId", dicriminatorId.intValue());
+        }
+        
+       /* String added = field.getAdded();
+        if (added != null) {
+          row.addProperty("added", added);
+        }
+        
+        BigInteger addedEp = field.getAddedEP();
+        if (addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+        
+        String deprecated = field.getDeprecated();
+        if (deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+        
+        BigInteger deprecatedEp = field.getDeprecatedEP();
+        if (deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+        
+        String issue = field.getIssue();
+        if (issue != null) {
+          row.addProperty("issue", issue);
+        }
+        
+        String lastModified = field.getLastModified();
+        if (lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+        
+        String replaced = field.getReplaced();
+        if (replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+        
+        BigInteger replacedByField = field.getReplacedByField();
+        if (replacedByField != null) {
+          row.addIntProperty("replacedByField", replacedByField.intValue());
+        }
+        
+        BigInteger replacedEp = field.getReplacedEP();
+        if (replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+        
+        String updated = field.getUpdated();
+        if (updated != null) {
+          row.addProperty("updated", updated);
+        }
+        
+        BigInteger updatedEp = field.getUpdatedEP();
+        if (updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }*/
       }
       documentWriter.write(table);
     } else {
@@ -608,6 +702,17 @@ public class MarkdownGenerator {
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
     }
+    
+    String abbrName = group.getAbbrName();
+    if (abbrName != null) {
+      context.addPair("abbrname", abbrName);
+    }
+    
+    String category = group.getCategory();
+    if (category != null) {
+      context.addPair("category", category);
+    }
+    
     context.addKey(String.format("(%d)", group.getId().intValue()));
     documentWriter.write(context);
 
@@ -714,6 +819,17 @@ public class MarkdownGenerator {
     if (flow != null) {
       context.addPair("flow", flow);
     }
+    
+    String abbrName = message.getAbbrName();
+    if (abbrName != null) {
+      context.addPair("abbrname", abbrName);
+    }
+    
+    String category = message.getCategory();
+    if (category != null) {
+      context.addPair("category", category);
+    }
+    
     context.addKey(String.format("(%d)", message.getId().intValue()));
 
     documentWriter.write(context);
@@ -802,16 +918,16 @@ public class MarkdownGenerator {
         if (o instanceof Documentation) {
           final String purpose = ((Documentation) o).getPurpose();
           if (purpose != null) {
-            return purpose.toString();
+            return purpose;
           } else {
-            return "SYNOPSIS";
+            return DOCUMENTATION_KEYWORD;
           }
         } else {
           final String purpose = ((Appinfo) o).getPurpose();
           if (purpose != null) {
-            return purpose.toString();
+            return purpose;
           } else {
-            return "SYNOPSIS";
+            return DOCUMENTATION_KEYWORD;
           }
         }
       };
@@ -820,25 +936,26 @@ public class MarkdownGenerator {
     }
   }
 
-  private int purposeRank(String purpose) {
-    switch (purpose.toLowerCase()) {
-      case "synopsis":
-        return 0;
-      case "elaboration":
-        return 1;
-      case "example":
-        return 2;
-      case "display":
-        return 3;
-      default:
-        return 4;
-    }
-  }
-
   private SortedMap<String, List<Object>> sortDocumentationByPurpose(
       Map<String, List<Object>> groups) {
     SortedMap<String, List<Object>> sorted =
-        new TreeMap<String, List<Object>>(new Comparator<String>() {
+        new TreeMap<String, List<Object>>(new Comparator<>() {
+
+          private int purposeRank(String purpose) {
+            switch (purpose.toLowerCase()) {
+              case "synopsis":
+              case DOCUMENTATION_KEYWORD:
+                return 0;
+              case "elaboration":
+                return 1;
+              case "example":
+                return 2;
+              case "display":
+                return 3;
+              default:
+                return 4;
+            }
+          }
 
           @Override
           public int compare(String o1, String o2) {

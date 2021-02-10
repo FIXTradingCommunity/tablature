@@ -129,11 +129,13 @@ public class RepositoryBuilder {
     private final String name;
     private final String scenario;
     private final int tag;
+    private final String type;
 
-    public FieldBuilder(int tag, String name, String scenario) {
+    public FieldBuilder(int tag, String name, String scenario, String type) {
       this.tag = tag;
       this.name = name;
       this.scenario = scenario;
+      this.type = type;
     }
 
     @Override
@@ -179,13 +181,18 @@ public class RepositoryBuilder {
       if (fieldType == null) {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
+        fieldType.setScenario(scenario);
         if (tag > 0) {
           fieldType.setId(BigInteger.valueOf(tag));
         } else {
           fieldType.setId(BigInteger.ZERO);
           eventLogger.error("Unknown field ID; name={0} scenario={1}", name, scenario);
         }
-        addFieldAndType(fieldType);
+        if (type == null) {
+          eventLogger.error("Unknown type for field; id={0, number, ###} name={1} scenario={2}",
+              fieldType.getId(), fieldType.getName(), scenario);
+        }
+        repositoryAdapter.addField(fieldType);
       }
     }
   }
@@ -321,6 +328,13 @@ public class RepositoryBuilder {
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
   public static final String DATATYPES_KEYWORD = "datatypes";
+  /**
+   * Default token to represent a paragraph break in tables (not natively supported by markdown)
+   */
+  public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
+  
+  public static final String ABBRNAME_KEYWORD = "abbrname";
+  public static final String CATEGORY_KEYWORD = "category";
   public static final String DESCRIPTION_KEYWORD = "description";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
   public static final String FIELDS_KEYWORD = "fields";
@@ -332,6 +346,9 @@ public class RepositoryBuilder {
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
   public static final String WHEN_KEYWORD = "when";
+  
+  // the form code=name with optional space before and after =
+  private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
 
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final String DEFAULT_SCENARIO = "base";
@@ -339,44 +356,34 @@ public class RepositoryBuilder {
   private static final int KEY_POSITION = 0;
   private static final int NAME_POSITION = 1;
 
-  // the form code=name with optional space before and after =
-  private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
-  
-  /**
-   * Default token to represent a paragraph break in tables (not natively supported by markdown)
-   */
-  public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
-
-  private final String paragraphDelimiterInTables;
-  
   /**
    * Create an instance of RepositoryBuilder
    *
    * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
    *        {@code null}.
-   * @param jsonOutputStream
+   * @param jsonOutputStream output stream with JSON errors or warnings
    * @return an instance of RepositoryBuilder
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
    */
   public static RepositoryBuilder instance(InputStream referenceStream,
       OutputStream jsonOutputStream) throws Exception {
-    return instance(referenceStream,
-        jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
+    return instance(referenceStream, jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
   }
-  
+
   /**
    * Create an instance of RepositoryBuilder
    *
    * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
    *        {@code null}.
-   * @param jsonOutputStream
+   * @param jsonOutputStream output stream with JSON errors or warnings
    * @param paragraphDelimiterInTables token to represent a paragraph break in markdown tables
    * @return an instance of RepositoryBuilder
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
    */
   public static RepositoryBuilder instance(InputStream referenceStream,
       OutputStream jsonOutputStream, String paragraphDelimiterInTables) throws Exception {
-    final RepositoryBuilder outputRepositoryBuilder = new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
+    final RepositoryBuilder outputRepositoryBuilder =
+        new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
 
     if (referenceStream != null) {
       final RepositoryAdapter referenceRepository = new RepositoryAdapter();
@@ -391,11 +398,11 @@ public class RepositoryBuilder {
   private final String[] contextKeys =
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
-  private final EventListenerFactory factory = new EventListenerFactory();
-  private TeeEventListener eventLogger;
-  private final Logger logger = LogManager.getLogger(getClass());
 
+  private TeeEventListener eventLogger;
+  private final EventListenerFactory factory = new EventListenerFactory();
   private int lastId = 10000;
+  private final Logger logger = LogManager.getLogger(getClass());
 
   private final Consumer<Contextual> markdownConsumer = contextual -> {
     final Context keyContext = getKeyContext(contextual);
@@ -450,6 +457,8 @@ public class RepositoryBuilder {
           }
       }
   };
+
+  private final String paragraphDelimiterInTables;
   private RepositoryAdapter referenceRepositoryAdapter = null;
   private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
@@ -457,8 +466,9 @@ public class RepositoryBuilder {
   RepositoryBuilder(OutputStream jsonOutputStream) throws Exception {
     this(jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
   }
-  
-  RepositoryBuilder(OutputStream jsonOutputStream, String paragraphDelimiterInTables) throws Exception {
+
+  RepositoryBuilder(OutputStream jsonOutputStream, String paragraphDelimiterInTables)
+      throws Exception {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.repositoryAdapter.createRepository();
     createLogger(jsonOutputStream);
@@ -491,108 +501,6 @@ public class RepositoryBuilder {
     closeEventLogger();
   }
 
-  void addCode(final DetailProperties detail, List<? super CodeType> codes, CodeSetType codeset) {
-    final CodeType codeType = new CodeType();
-
-    for (final Entry<String, String> p : detail.getProperties()) {
-
-      switch (p.getKey().toLowerCase()) {
-        case "name":
-          codeType.setName(textUtil.stripName(p.getValue()));
-          break;
-        case "value":
-          codeType.setValue(p.getValue());
-          break;
-        case "tag":
-        case "id":
-          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
-          break;
-        default:
-          final Annotation annotation = new Annotation();
-          if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
-            codeType.setAnnotation(annotation);
-          } else {
-            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
-            codeType.setAnnotation(annotation);
-          }
-      }
-    }
-
-    if (codeType.getId() == null) {
-      codeType.setId(BigInteger.valueOf(assignId()));
-    }
-
-    if (codeType.getName() == null) {
-      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(),
-          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
-    }
-
-    if (codeType.getValue() == null) {
-      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(),
-          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
-    }
-
-    codes.add(codeType);
-  }
-
-  void addCodeset(Contextual contextual, Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
-
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
-      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
-      final List<CodeType> codes = codeset.getCode();
-      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
-    } else if (contextual instanceof Documentation) {
-      final Documentation documentation = (Documentation) contextual;
-      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
-      if (codeset != null) {
-        Annotation annotation = codeset.getAnnotation();
-        if (annotation == null) {
-          annotation = new Annotation();
-          codeset.setAnnotation(annotation);
-        }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
-            annotation);
-      }
-    } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && CODESET_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
-      final CodeSetType codeset = new CodeSetType();
-      CodeSetType refCodeset = null;
-      if (referenceRepositoryAdapter != null) {
-        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
-      }
-      if (tag == -1 && refCodeset != null) {
-        tag = refCodeset.getId().intValue();
-      }
-      if (tag == -1) {
-        tag = assignId();
-      }
-      codeset.setId(BigInteger.valueOf(tag));
-      codeset.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenario)) {
-        codeset.setScenario(scenario);
-      }
-
-      String type = context.getKeyValue("type");
-      if (type == null && refCodeset != null) {
-        type = refCodeset.getType();
-      }
-      if (type != null) {
-        codeset.setType(type);
-      } else {
-        eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
-      }
-
-      repositoryAdapter.addCodeset(codeset);
-    }
-  }
-
   void closeEventLogger() throws Exception {
     eventLogger.close();
   }
@@ -609,8 +517,8 @@ public class RepositoryBuilder {
           if (field != null) {
             addFieldAndType(field);
           } else {
-            eventLogger.error("Unknown field; lastId={0, number, ###} scenario={1}", fieldRef.getId().intValue(),
-                fieldRef.getScenario());
+            eventLogger.error("Unknown field; lastId={0, number, ###} scenario={1}",
+                fieldRef.getId().intValue(), fieldRef.getScenario());
           }
         }
       } else if (member instanceof GroupRefType) {
@@ -738,18 +646,19 @@ public class RepositoryBuilder {
                     break;
                   default:
                     if (isDocumentationKey(p.getKey())) {
-                      repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()),
-                          annotation);
+                      repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                          getPurpose(p.getKey()), annotation);
                       transition.setAnnotation(annotation);
                     } else {
-                      repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+                      repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables,
+                          p.getKey(), annotation);
                       transition.setAnnotation(annotation);
                     }
                 }
               }
 
               StateType sourceState = null;
-              if (sourceStateName.equals(initialStateName)) {
+              if (Objects.requireNonNull(sourceStateName).equals(initialStateName)) {
                 sourceState = statemachine.getInitial();
               } else {
                 for (final StateType state : statemachine.getState()) {
@@ -782,6 +691,153 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown actor for variables; name={0}", name);
       }
+    }
+  }
+
+  private void addCode(final DetailProperties detail, List<? super CodeType> codes,
+      CodeSetType codeset) {
+    final CodeType codeType = new CodeType();
+
+    for (final Entry<String, String> p : detail.getProperties()) {
+
+      switch (p.getKey().toLowerCase()) {
+        case "name":
+          codeType.setName(textUtil.stripName(p.getValue()));
+          break;
+        case "value":
+          codeType.setValue(p.getValue());
+          break;
+        case "tag":
+        case "id":
+          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
+          break;
+        case "sort":
+          codeType.setSort(p.getValue());
+          break;
+        case "group":
+          codeType.setGroup(p.getValue());
+          break;
+        case "abbrname":
+          codeType.setAbbrName(p.getValue());
+          break;
+        case "added":
+          codeType.setAdded(p.getValue());
+          break;
+        case "addedep":
+          codeType.setAddedEP(new BigInteger(p.getValue()));
+          break;
+        case "deprecated":
+          codeType.setDeprecated(p.getValue());
+          break;
+        case "deprecatedep":
+          codeType.setDeprecatedEP(new BigInteger(p.getValue()));
+          break;
+        case "issue":
+          codeType.setIssue(p.getValue());
+          break;
+        case "lastmodified":
+          codeType.setLastModified(p.getValue());
+          break;
+        case "replaced":
+          codeType.setReplaced(p.getValue());
+          break;
+        case "replacedbyfield":
+          codeType.setReplacedByField(new BigInteger(p.getValue()));
+          break;
+        case "replacedep":
+          codeType.setReplacedEP(new BigInteger(p.getValue()));
+          break;
+        case "updated":
+          codeType.setUpdated(p.getValue());
+          break;
+        case "updatedep":
+          codeType.setUpdatedEP(new BigInteger(p.getValue()));
+          break;
+        default:
+          final Annotation annotation = new Annotation();
+          if (isDocumentationKey(p.getKey())) {
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                getPurpose(p.getKey()), annotation);
+            codeType.setAnnotation(annotation);
+          } else {
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                annotation);
+            codeType.setAnnotation(annotation);
+          }
+      }
+    }
+
+    if (codeType.getId() == null) {
+      codeType.setId(BigInteger.valueOf(assignId()));
+    }
+
+    if (codeType.getName() == null) {
+      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(),
+          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
+    }
+
+    if (codeType.getValue() == null) {
+      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(),
+          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
+    }
+
+    codes.add(codeType);
+  }
+
+  private void addCodeset(Contextual contextual, Context context) {
+    final String name = context.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+
+    if (contextual instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) contextual;
+      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      final List<CodeType> codes = codeset.getCode();
+      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
+    } else if (contextual instanceof Documentation) {
+      final Documentation documentation = (Documentation) contextual;
+      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      if (codeset != null) {
+        Annotation annotation = codeset.getAnnotation();
+        if (annotation == null) {
+          annotation = new Annotation();
+          codeset.setAnnotation(annotation);
+        }
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+            annotation);
+      }
+    } // make sure it's not a lower level heading
+    else if (contextual instanceof Context
+        && CODESET_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
+      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+      final CodeSetType codeset = new CodeSetType();
+      CodeSetType refCodeset = null;
+      if (referenceRepositoryAdapter != null) {
+        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
+      }
+      if (tag == -1 && refCodeset != null) {
+        tag = refCodeset.getId().intValue();
+      }
+      if (tag == -1) {
+        tag = assignId();
+      }
+      codeset.setId(BigInteger.valueOf(tag));
+      codeset.setName(name);
+      if (!DEFAULT_SCENARIO.equals(scenario)) {
+        codeset.setScenario(scenario);
+      }
+
+      String type = context.getKeyValue("type");
+      if (type == null && refCodeset != null) {
+        type = refCodeset.getType();
+      }
+      if (type != null) {
+        codeset.setType(type);
+      } else {
+        eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
+      }
+
+      repositoryAdapter.addCodeset(codeset);
     }
   }
 
@@ -828,6 +884,17 @@ public class RepositoryBuilder {
       if (!DEFAULT_SCENARIO.equals(scenario)) {
         component.setScenario(scenario);
       }
+      
+      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      if (abbrName != null) {
+        component.setAbbrName(abbrName);
+      }
+      
+      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      if (category != null) {
+        component.setCategory(category);
+      }
+      
       repositoryAdapter.addComponent(component);
     }
   }
@@ -901,10 +968,12 @@ public class RepositoryBuilder {
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                getPurpose(p.getKey()), annotation);
             mapping.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                annotation);
             mapping.setAnnotation(annotation);
           }
       }
@@ -954,12 +1023,65 @@ public class RepositoryBuilder {
           case "impllength":
             field.setImplLength(Short.parseShort(p.getValue()));
             break;
+          case ABBRNAME_KEYWORD:
+            field.setAbbrName(p.getValue());
+            break;
+          case "basecategory":
+            field.setBaseCategory(p.getValue());
+            break;
+          case "basecategoryabbrname":
+            field.setBaseCategoryAbbrName(p.getValue());
+            break;
+          case "discriminatorid":
+            field.setDiscriminatorId(new BigInteger(p.getValue()));
+            break;
+          case "maxinclusive":
+            field.setMaxInclusive(p.getValue());
+            break;
+          case "mininclusive":
+            field.setMinInclusive(p.getValue());
+            break;
+          case "added":
+            field.setAdded(p.getValue());
+            break;
+          case "addedep":
+            field.setAddedEP(new BigInteger(p.getValue()));
+            break;
+          case "deprecated":
+            field.setDeprecated(p.getValue());
+            break;
+          case "deprecatedep":
+            field.setDeprecatedEP(new BigInteger(p.getValue()));
+            break;
+          case "issue":
+            field.setIssue(p.getValue());
+            break;
+          case "lastmodified":
+            field.setLastModified(p.getValue());
+            break;
+          case "replaced":
+            field.setReplaced(p.getValue());
+            break;
+          case "replacedbyfield":
+            field.setReplacedByField(new BigInteger(p.getValue()));
+            break;
+          case "replacedep":
+            field.setReplacedEP(new BigInteger(p.getValue()));
+            break;
+          case "updated":
+            field.setUpdated(p.getValue());
+            break;
+          case "updatedep":
+            field.setUpdatedEP(new BigInteger(p.getValue()));
+            break;
           default:
             if (isDocumentationKey(p.getKey())) {
-              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
+              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                  getPurpose(p.getKey()), annotation);
               field.setAnnotation(annotation);
             } else {
-              repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+              repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                  annotation);
               field.setAnnotation(annotation);
             }
         }
@@ -975,17 +1097,12 @@ public class RepositoryBuilder {
     final String scenario = field.getScenario();
 
     if (id == null) {
-      buildSteps.add(new FieldBuilder(0, name, scenario));
-    } else if (name == null) {
-      buildSteps.add(new FieldBuilder(id.intValue(), null, scenario));
+      buildSteps.add(new FieldBuilder(0, name, scenario, type));
+    } else if (name == null || type == null) {
+      buildSteps.add(new FieldBuilder(id.intValue(), null, scenario, type));
     } else {
-      repositoryAdapter.addField(field);
-    }
-
-    if (type != null) {
       buildSteps.add(new TypeBuilder(type, scenario));
-    } else {
-      eventLogger.error("Unknown type for field; id={0, number, ###} name={1}", field.getId(), field.getName());
+      repositoryAdapter.addField(field);
     }
   }
 
@@ -1075,6 +1192,17 @@ public class RepositoryBuilder {
       if (!DEFAULT_SCENARIO.equals(scenario)) {
         group.setScenario(scenario);
       }
+      
+      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      if (abbrName != null) {
+        group.setAbbrName(abbrName);
+      }
+      
+      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      if (category != null) {
+        group.setCategory(category);
+      }
+      
       repositoryAdapter.addGroup(group);
     }
   }
@@ -1141,6 +1269,16 @@ public class RepositoryBuilder {
       final String flow = context.getKeyValue(FLOW_KEYWORD);
       if (flow != null) {
         message.setFlow(flow);
+      }
+      
+      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      if (abbrName != null) {
+        message.setAbbrName(abbrName);
+      }
+      
+      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      if (category != null) {
+        message.setCategory(category);
       }
     }
   }
@@ -1374,13 +1512,45 @@ public class RepositoryBuilder {
             componentRefType.setId(BigInteger.valueOf(id));
           }
           break;
+        case "added":
+          componentRefType.setAdded(p.getValue());
+          break;
+        case "addedep":
+          componentRefType.setAddedEP(new BigInteger(p.getValue()));
+          break;
+        case "deprecated":
+          componentRefType.setDeprecated(p.getValue());
+          break;
+        case "deprecatedep":
+          componentRefType.setDeprecatedEP(new BigInteger(p.getValue()));
+          break;
+        case "issue":
+          componentRefType.setIssue(p.getValue());
+          break;
+        case "lastmodified":
+          componentRefType.setLastModified(p.getValue());
+          break;
+        case "replaced":
+          componentRefType.setReplaced(p.getValue());
+          break;
+        case "replacedep":
+          componentRefType.setReplacedEP(new BigInteger(p.getValue()));
+          break;
+        case "updated":
+          componentRefType.setUpdated(p.getValue());
+          break;
+        case "updatedep":
+          componentRefType.setUpdatedEP(new BigInteger(p.getValue()));
+          break;
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                getPurpose(p.getKey()), annotation);
             componentRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                annotation);
             componentRefType.setAnnotation(annotation);
           }
       }
@@ -1484,13 +1654,54 @@ public class RepositoryBuilder {
         case "impllength":
           fieldRefType.setImplLength(Short.parseShort(p.getValue()));
           break;
+        case "maxinclusive":
+          fieldRefType.setMaxInclusive(p.getValue());
+          break;
+        case "mininclusive":
+          fieldRefType.setMinInclusive(p.getValue());
+          break;
+        case "added":
+          fieldRefType.setAdded(p.getValue());
+          break;
+        case "addedep":
+          fieldRefType.setAddedEP(new BigInteger(p.getValue()));
+          break;
+        case "deprecated":
+          fieldRefType.setDeprecated(p.getValue());
+          break;
+        case "deprecatedep":
+          fieldRefType.setDeprecatedEP(new BigInteger(p.getValue()));
+          break;
+        case "issue":
+          fieldRefType.setIssue(p.getValue());
+          break;
+        case "lastmodified":
+          fieldRefType.setLastModified(p.getValue());
+          break;
+        case "replaced":
+          fieldRefType.setReplaced(p.getValue());
+          break;
+        case "replacedbyfield":
+          fieldRefType.setReplacedByField(new BigInteger(p.getValue()));
+          break;
+        case "replacedep":
+          fieldRefType.setReplacedEP(new BigInteger(p.getValue()));
+          break;
+        case "updated":
+          fieldRefType.setUpdated(p.getValue());
+          break;
+        case "updatedep":
+          fieldRefType.setUpdatedEP(new BigInteger(p.getValue()));
+          break;
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                getPurpose(p.getKey()), annotation);
             fieldRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                annotation);
             fieldRefType.setAnnotation(annotation);
           }
       }
@@ -1501,7 +1712,7 @@ public class RepositoryBuilder {
       final FieldType fieldType =
           repositoryAdapter.findFieldByTag(fieldRefType.getId().intValue(), scenario);
       if (fieldType == null) {
-        buildSteps.add(new FieldBuilder(fieldRefType.getId().intValue(), name, scenario));
+        buildSteps.add(new FieldBuilder(fieldRefType.getId().intValue(), name, scenario, null));
       }
     } else {
       final FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
@@ -1509,7 +1720,7 @@ public class RepositoryBuilder {
         fieldRefType.setId(fieldType.getId());
       } else {
         fieldRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new FieldBuilder(0, name, scenario));
+        buildSteps.add(new FieldBuilder(0, name, scenario, null));
         buildSteps.add(new FieldRefBuilder(name, fieldRefType));
       }
     }
@@ -1572,7 +1783,8 @@ public class RepositoryBuilder {
       }
 
     } else if (presence == PresenceT.CONSTANT) {
-      eventLogger.error("Missing value for constant presence field; id={0, number, ###}", fieldRefType.getId());
+      eventLogger.error("Missing value for constant presence field; id={0, number, ###}",
+          fieldRefType.getId());
     }
     return fieldRefType;
   }
@@ -1601,13 +1813,45 @@ public class RepositoryBuilder {
             groupRefType.setId(BigInteger.valueOf(id));
           }
           break;
+        case "added":
+          groupRefType.setAdded(p.getValue());
+          break;
+        case "addedep":
+          groupRefType.setAddedEP(new BigInteger(p.getValue()));
+          break;
+        case "deprecated":
+          groupRefType.setDeprecated(p.getValue());
+          break;
+        case "deprecatedep":
+          groupRefType.setDeprecatedEP(new BigInteger(p.getValue()));
+          break;
+        case "issue":
+          groupRefType.setIssue(p.getValue());
+          break;
+        case "lastmodified":
+          groupRefType.setLastModified(p.getValue());
+          break;
+        case "replaced":
+          groupRefType.setReplaced(p.getValue());
+          break;
+        case "replacedep":
+          groupRefType.setReplacedEP(new BigInteger(p.getValue()));
+          break;
+        case "updated":
+          groupRefType.setUpdated(p.getValue());
+          break;
+        case "updatedep":
+          groupRefType.setUpdatedEP(new BigInteger(p.getValue()));
+          break;
         default:
           final Annotation annotation = new Annotation();
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables, getPurpose(p.getKey()), annotation);
+            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                getPurpose(p.getKey()), annotation);
             groupRefType.setAnnotation(annotation);
           } else {
-            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(), annotation);
+            repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                annotation);
             groupRefType.setAnnotation(annotation);
           }
       }

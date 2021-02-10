@@ -187,11 +187,11 @@ public class Md2Orchestra {
   }
 
   private final String eventFilename;
-  private List<String> inputFilePatterns;
-  private Logger logger = LogManager.getLogger(getClass());
-  private String outputFilename;
+  private final List<String> inputFilePatterns;
+  private final Logger logger = LogManager.getLogger(getClass());
+  private final String outputFilename;
   private final String paragraphDelimiter;
-  private String referenceFilename;
+  private final String referenceFilename;
 
   private Md2Orchestra(Builder builder) {
     this.inputFilePatterns = builder.inputFilePatterns;
@@ -285,6 +285,12 @@ public class Md2Orchestra {
                 return FileVisitResult.SKIP_SUBTREE;
               }
 
+              private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
+                  throws FileNotFoundException, IOException {
+                logger.info("Md2Orchestra opening file {}", filePath.toString());
+                final InputStream inputStream = new FileInputStream(filePath.toFile());
+                outputRepositoryBuilder.appendInput(inputStream);
+              }
             });
       }
 
@@ -299,13 +305,6 @@ public class Md2Orchestra {
   void generate(String inputFilePattern, String outputFilename, String referenceFilename,
       String eventFilename) throws Exception {
     generate(List.of(inputFilePattern), outputFilename, referenceFilename, eventFilename);
-  }
-
-  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
-      throws FileNotFoundException, IOException {
-    logger.info("Md2Orchestra opening file {}", filePath.toString());
-    final InputStream inputStream = new FileInputStream(filePath.toFile());
-    outputRepositoryBuilder.appendInput(inputStream);
   }
 
 }

@@ -184,7 +184,7 @@ public class Md2Interfaces {
   }
 
   private void appendInput(String filePath, InterfacesBuilder interfacesBuilder)
-      throws FileNotFoundException, IOException {
+      throws IOException {
     logger.info("Md2Interfaces opening file {}", filePath);
     final InputStream inputStream = new FileInputStream(filePath);
     interfacesBuilder.appendInput(inputStream);

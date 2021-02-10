@@ -35,7 +35,7 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing name"));
   }
 
-  @Test //ODOC-23
+  @Test // ODOC-23, ODOC-43
   void badConstant() throws Exception {
     String text =
         "## Component Instrument scenario test\n"
@@ -107,11 +107,43 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     builder.closeEventLogger();
-    //String xml = xmlStream.toString();
-    //System.out.println(xml);
+    String xml = xmlStream.toString();
+    System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+   }
+  
+  @Test // ODOC-66
+  void duplicateCodesets() throws Exception {
+    String text =
+        "## Component Instrument\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|----------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | | |\n"
+        + "| SecurityStatus | 965 | | 1=Active |\n"
+        + "\n"
+        + "## Component Instrument scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|------------------|----:|-----------|----------|\n"
+        + "| SecurityID | 48 | required | |\n"
+        + "| SecurityIDSource | 22 | | |\n"
+        + "| SecurityStatus | 965 | | 1=Active |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    System.out.println(errors);
    }
   
   @Test // ODOC-30
@@ -292,6 +324,32 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test
+  void missingFieldType() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name | Tag | Type | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| Account | 1 | String | |\n"
+        + "| ClOrdID | | String | |\n"
+        + "| NoParties | 453 | NumInGroup | |\n"
+        + "| OrderQty | 38 |  | |\n";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    assertTrue(xml.contains("type=\"Qty\""));
+    // System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test //ODOC-45
   void redundantField() throws Exception {
     String text = "### Codeset SecIDSources type String (22)\n"
@@ -319,10 +377,14 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     String xml = xmlStream.toString();
-    System.out.println(xml);
+    //System.out.println(xml);
+    Pattern pattern = Pattern.compile("name=\"SecurityIDSource\"");
+    Matcher matcher = pattern.matcher(xml);
+    long count = matcher.results().count();
+    assertEquals(1, count);
     builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    System.out.println(errors);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
   }
   
   @BeforeEach
@@ -420,7 +482,7 @@ class RepositoryBuilderTest {
     String text =
         "## Component InstrumentParties\n"
         + "\n"
-        + "|\n"
+        + "|\n" // deliberate error
         + "| Name | Value | Documentation | My Doc |\n"
         + "|------------------|:-------:|---------------|-------|\n"
         + "| Buy | 1 | | Xyz ABC\\|\n"

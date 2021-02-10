@@ -306,6 +306,34 @@ class MarkdownGeneratorTest {
     generator.generate(inputStream, outputWriter, jsonOutputStream);
     outputWriter.close();
     String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-64
+  void noFields() throws Exception {
+    String text ="<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\r\n"
+        + "    <fixr:metadata/>\r\n"
+        + "    <fixr:datatypes/>\r\n"
+        + "    <fixr:codeSets>\r\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SecurityStatusCodeset\">\r\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Active\"/>\r\n"
+        + "        </fixr:codeSet>\r\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10004\" name=\"SecurityStatusCodeset\">\r\n"
+        + "            <fixr:code value=\"1\" id=\"10005\" name=\"Active\"/>\r\n"
+        + "        </fixr:codeSet>\r\n"
+        + "    </fixr:codeSets>\r\n"
+        + "    <fixr:groups/>\r\n"
+        + "    <fixr:messages/>\r\n"
+        + "</fixr:repository>";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
     System.out.println(md);
     String errors = jsonOutputStream.toString();
     System.out.println(errors);

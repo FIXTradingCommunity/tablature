@@ -58,7 +58,7 @@ public class MarkdownGenerator {
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
       EventListener eventLogger) throws Exception {
     this.eventLogger = eventLogger;
-    try (final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
+    try (eventLogger; final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
       final Interfaces interfaces = unmarshal(inputStream);
       generateMetadata(interfaces, documentWriter);
       final List<InterfaceType> interfaceList = interfaces.getInterface();
@@ -72,8 +72,6 @@ public class MarkdownGenerator {
     } catch (final Exception e1) {
       logger.fatal("Interfaces2md error", e1);
       throw e1;
-    } finally {
-      eventLogger.close();
     }
   }
 
