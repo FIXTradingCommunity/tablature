@@ -288,7 +288,7 @@ public class MarkdownGenerator {
   private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d, String paragraphDelimiter) {
     if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
       return d.getContent().stream()
-          .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))        
+          .map(c -> c.toString().strip().replace("\n\n", paragraphDelimiter))        
           .collect(Collectors.joining(paragraphDelimiter));
     } else {
       return d.getContent().stream()

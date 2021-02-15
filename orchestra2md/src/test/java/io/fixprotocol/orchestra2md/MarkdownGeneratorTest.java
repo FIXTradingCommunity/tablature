@@ -1,5 +1,6 @@
 package io.fixprotocol.orchestra2md;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -16,7 +17,7 @@ class MarkdownGeneratorTest {
   @BeforeEach
   void setUp() throws Exception {
     jsonOutputStream = new ByteArrayOutputStream(8096);
-    generator = new MarkdownGenerator("@");
+    generator = new MarkdownGenerator("/P/");
   }
 
   @Test
@@ -313,19 +314,19 @@ class MarkdownGeneratorTest {
   
   @Test // ODOC-64
   void noFields() throws Exception {
-    String text ="<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\r\n"
-        + "    <fixr:metadata/>\r\n"
-        + "    <fixr:datatypes/>\r\n"
-        + "    <fixr:codeSets>\r\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SecurityStatusCodeset\">\r\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Active\"/>\r\n"
-        + "        </fixr:codeSet>\r\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10004\" name=\"SecurityStatusCodeset\">\r\n"
-        + "            <fixr:code value=\"1\" id=\"10005\" name=\"Active\"/>\r\n"
-        + "        </fixr:codeSet>\r\n"
-        + "    </fixr:codeSets>\r\n"
-        + "    <fixr:groups/>\r\n"
-        + "    <fixr:messages/>\r\n"
+    String text ="<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SecurityStatusCodeset\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Active\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10004\" name=\"SecurityStatusCodeset\">\n"
+        + "            <fixr:code value=\"1\" id=\"10005\" name=\"Active\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
         + "</fixr:repository>";
     
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
@@ -337,6 +338,41 @@ class MarkdownGeneratorTest {
     System.out.println(md);
     String errors = jsonOutputStream.toString();
     System.out.println(errors);
+  }
+  
+  @Test // ODOC-74
+  void paragraphBreak() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes>\n"
+        + "        <fixr:datatype name=\"String\"/>\n"
+        + "    </fixr:datatypes>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields>\n"
+        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\">\n"
+        + "            <fixr:annotation>\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\" contentType=\"text/markdown\">Line 1\n"
+        + "\n"
+        + "Line 2</fixr:documentation>\n"
+        + "            </fixr:annotation>\n"
+        + "        </fixr:field>\n"
+        + "    </fixr:fields>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    assertTrue(md.contains("Line 1/P/Line 2"));
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
   }
 
 }

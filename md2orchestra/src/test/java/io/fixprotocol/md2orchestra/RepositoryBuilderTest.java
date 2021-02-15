@@ -107,8 +107,8 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     builder.closeEventLogger();
-    String xml = xmlStream.toString();
-    System.out.println(xml);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
@@ -139,11 +139,11 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     builder.closeEventLogger();
-    String xml = xmlStream.toString();
-    System.out.println(xml);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
     builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    System.out.println(errors);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
    }
   
   @Test // ODOC-30
@@ -193,10 +193,10 @@ class RepositoryBuilderTest {
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
     String xml = xmlStream.toString();
-    System.out.println(xml);
+    //System.out.println(xml);
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
-    System.out.println(errors);
+    //System.out.println(errors);
     assertTrue(xml.contains("name=\"SecurityStatusCodeset\""));
     assertTrue(xml.contains("type=\"SecurityStatusCodeSet\""));
     assertFalse(errors.contains("Malformed inline code"));
@@ -350,6 +350,52 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // ODOC-74
+  void paragraphBreak() throws Exception {
+    String text =
+        "## Fields\n\n"
+        + "| Name | Tag | Type | Synopsis | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|--------|\n"
+        + "| SecurityID | 48 | String | Line 1/P/Line 2 |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    assertTrue(xml.contains("\n\n"));
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-32, ODOC-58
+  void parseError() throws Exception {
+    String text =
+        "## Component InstrumentParties\n"
+        + "\n"
+        + "|\n" // deliberate error
+        + "| Name | Value | Documentation | My Doc |\n"
+        + "|------------------|:-------:|---------------|-------|\n"
+        + "| Buy | 1 | | Xyz ABC\\ |\n"
+        + "| Sell | 2 | | |\n"
+        + "| Undisclosed | 7 | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    // String errors = jsonOutputStream.toString();
+    // System.out.println(errors);
+    assertTrue(xml.contains("name=\"InstrumentParties\""));
+  }
+  
   @Test //ODOC-45
   void redundantField() throws Exception {
     String text = "### Codeset SecIDSources type String (22)\n"
@@ -475,31 +521,6 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">yada yada"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">nonsense"));
-  }
-  
-  @Test // ODOC-32, ODOC-58
-  void parseError() throws Exception {
-    String text =
-        "## Component InstrumentParties\n"
-        + "\n"
-        + "|\n" // deliberate error
-        + "| Name | Value | Documentation | My Doc |\n"
-        + "|------------------|:-------:|---------------|-------|\n"
-        + "| Buy | 1 | | Xyz ABC\\|\n"
-        + "| Sell | 2 | | |\n"
-        + "| Undisclosed | 7 | |";
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    RepositoryBuilder builder = new RepositoryBuilder(jsonOutputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.appendInput(inputStream);
-    builder.write(xmlStream);
-    builder.closeEventLogger();
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(xml.contains("name=\"InstrumentParties\""));
   }
 
 }
