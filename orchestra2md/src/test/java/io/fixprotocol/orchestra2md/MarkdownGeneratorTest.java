@@ -375,4 +375,36 @@ class MarkdownGeneratorTest {
     //System.out.println(errors);
   }
 
+  
+  @Test // ODOC-33
+  void missingNumInGroup() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes>\n"
+        + "        <fixr:datatype name=\"String\"/>\n"
+        + "    </fixr:datatypes>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields>\n"
+        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\"/>\n"
+        + "    </fixr:fields>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups>\n"
+        + "        <fixr:group id=\"1012\" name=\"Parties\"/>"
+        + "    </fixr:groups>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Unknown numInGroup for group"));
+    assertTrue(errors.contains("Group has no members"));
+  }
 }

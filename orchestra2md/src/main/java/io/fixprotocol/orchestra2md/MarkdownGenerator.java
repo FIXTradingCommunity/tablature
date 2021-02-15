@@ -388,9 +388,12 @@ public class MarkdownGenerator {
     final Annotation annotation = codeset.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
+    final List<CodeType> codes = codeset.getCode();
+    if (!codes.isEmpty()) {
     final MutableDetailTable table = contextFactory.createDetailTable();
 
-    for (final CodeType code : codeset.getCode()) {
+    
+    for (final CodeType code : codes) {
       final MutableDetailProperties row = table.newRow();
       final String name = code.getName();
       row.addProperty("name", name);
@@ -404,6 +407,9 @@ public class MarkdownGenerator {
       addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
     }
     documentWriter.write(table);
+    } else {
+      eventLogger.warn("Codeset has no codes; name={0} scenario={1}", codeset.getName(), scenario);
+    }
   }
 
   private void generateCodesets(Repository repository, DocumentWriter documentWriter)
@@ -422,7 +428,8 @@ public class MarkdownGenerator {
   private void generateComponent(Repository repository, DocumentWriter documentWriter,
       final ComponentType component) throws IOException {
     MutableContext context = contextFactory.createContext(3);
-    context.addPair("Component", component.getName());
+    final String name = component.getName();
+    context.addPair("Component", name);
     final String scenario = component.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
@@ -446,7 +453,11 @@ public class MarkdownGenerator {
 
     final MutableDetailTable table = contextFactory.createDetailTable();
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
-    addMemberRows(table, repository, members);
+    if (!members.isEmpty()) {
+      addMemberRows(table, repository, members);
+    } else {
+      eventLogger.warn("Component has no members; name={0} scenario={1}", name, scenario);
+    }
     documentWriter.write(table);
   }
 
@@ -729,7 +740,11 @@ public class MarkdownGenerator {
       eventLogger.warn("Unknown numInGroup for group; name={0} scenario={1}", name, scenario);
     }
     final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
-    addMemberRows(table, repository, members);
+    if (!members.isEmpty()) {
+      addMemberRows(table, repository, members);
+    } else {
+      eventLogger.warn("Group has no members; name={0} scenario={1}", name, scenario);
+    }
     documentWriter.write(table);
   }
 
@@ -806,7 +821,8 @@ public class MarkdownGenerator {
   private void generateMessageStructure(Repository repository, DocumentWriter documentWriter,
       final MessageType message) throws IOException {
     MutableContext context = contextFactory.createContext(2);
-    context.addPair("Message", message.getName());
+    final String name = message.getName();
+    context.addPair("Message", name);
     final String scenario = message.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
@@ -840,7 +856,11 @@ public class MarkdownGenerator {
     final MutableDetailTable table = contextFactory.createDetailTable();
 
     final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
-    addMemberRows(table, repository, members);
+    if (!members.isEmpty()) {
+      addMemberRows(table, repository, members);
+    } else {
+      eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
+    }
     documentWriter.write(table);
   }
 
