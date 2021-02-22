@@ -83,6 +83,30 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("value=\"8\""));
   }
   
+  @Test // ODOC-77
+  void documentationColumns() throws Exception {
+    String text =
+        "### Codeset SecurityIDSourceCodeSet\n"
+        + "\n"
+        + "| Name | Value | Synopsis | Elaboration |\n"
+        + "|------------------|:-------:|-----------------|-------------|\n"
+        + "| IndexName | W | Index name | Standard name of the index or rate index, e.g. \"LIBOR\" or \"iTraxx Australia. |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("SYNOPSIS"));
+    assertTrue(xml.contains("ELABORATION"));
+  }
+  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =

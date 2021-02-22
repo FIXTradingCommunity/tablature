@@ -36,6 +36,12 @@ class Orchestra2mdTest {
   }
   
   @Test
+  void badOrchestra() throws Exception {
+    Orchestra2md.main(new String[] {"-o", "target/test/badOrchestra.md", "-e", "target/test/badOrchestra.json", 
+        "src/test/resources/badOrchestra.xml", });
+  }
+  
+  @Test
   void FixLatest() throws Exception {
     Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("src/test/resources/OrchestraFIXLatest.xml")
         .outputFile("target/test/OrchestraFIXLatest.md").eventFile("target/test/OrchestraFIXLatest.json").build();

@@ -754,7 +754,11 @@ public class RepositoryBuilder {
           codeType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
         default:
-          final Annotation annotation = new Annotation();
+          Annotation annotation = codeType.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+          }
+          
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
@@ -1543,7 +1547,10 @@ public class RepositoryBuilder {
           componentRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
         default:
-          final Annotation annotation = new Annotation();
+          Annotation annotation = componentRefType.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+          }
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
@@ -1694,7 +1701,10 @@ public class RepositoryBuilder {
           fieldRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
         default:
-          final Annotation annotation = new Annotation();
+          Annotation annotation = fieldRefType.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+          }
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
@@ -1844,7 +1854,10 @@ public class RepositoryBuilder {
           groupRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
         default:
-          final Annotation annotation = new Annotation();
+          Annotation annotation = groupRefType.getAnnotation();
+          if (annotation == null) {
+            annotation = new Annotation();
+          }
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);

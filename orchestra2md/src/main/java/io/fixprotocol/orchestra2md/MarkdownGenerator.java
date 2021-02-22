@@ -16,10 +16,8 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
@@ -98,7 +96,7 @@ public class MarkdownGenerator {
       EventListener eventLogger) throws Exception {
     this.eventLogger = eventLogger;
     try (eventLogger; final DocumentWriter documentWriter = new DocumentWriter(outputWriter)) {
-      final Repository repository = unmarshal(inputStream);
+      final Repository repository = XmlParser.unmarshal(inputStream, eventLogger);
       generateRepositoryMetadata(repository, documentWriter);
       generateActorsAndFlows(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
@@ -987,10 +985,5 @@ public class MarkdownGenerator {
     return sorted;
   }
 
-  private Repository unmarshal(InputStream is) throws JAXBException {
-    final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
-    final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-    return (Repository) jaxbUnmarshaller.unmarshal(is);
-  }
 
 }
