@@ -14,6 +14,8 @@
  */
 package io.fixprotocol.md.event;
 
+import java.util.Collection;
+
 /**
  * A Context with a table of values
  *
@@ -24,14 +26,14 @@ public interface DetailTable extends Contextual {
 
   /**
    *
-   * @return a collection of TableColumn that describes this table
+   * @return a Collection of TableColumn that describes this table
    */
-  Iterable<? extends TableColumn> getTableColumns();
+  Collection<? extends TableColumn> getTableColumns();
 
   /**
-   * Supplies a Stream of row values
+   * Supplies a Collection of row values
    *
    * @return a Stream of DetailProperties
    */
-  Iterable<? extends DetailProperties> rows();
+  Collection<? extends DetailProperties> rows();
 }

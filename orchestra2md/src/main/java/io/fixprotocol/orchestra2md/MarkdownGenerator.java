@@ -68,7 +68,7 @@ public class MarkdownGenerator {
 
   public static final String ASSIGN_KEYWORD = "assign";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
-  
+
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
@@ -77,19 +77,26 @@ public class MarkdownGenerator {
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
   private static final String DEFAULT_SCENARIO = "base";
- 
-  
+
+
   private final ContextFactory contextFactory = new ContextFactory();
   private EventListener eventLogger;
   private final Logger logger = LogManager.getLogger(getClass());
   private final String paragraphDelimiterInTables;
-  
+
   public MarkdownGenerator() {
     this.paragraphDelimiterInTables = DEFAULT_PARAGRAPH_DELIMITER;
   }
-  
+
   public MarkdownGenerator(String paragraphDelimiterInTables) {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
+  }
+
+  public String appinfoToString(Object o, String paragraphDelimiter) {
+    final io.fixprotocol._2020.orchestra.repository.Appinfo a =
+        (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
+    return a.getContent().stream().map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
+        .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
   }
 
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
@@ -157,10 +164,10 @@ public class MarkdownGenerator {
       // Synopsis may explicit or implicit (null purpose)
       // handle all 'purpose' values, including appinfo
 
-      SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
-      Set<Entry<String, List<Object>>> entries = sorted.entrySet();
-      for (Entry<String, List<Object>> e : entries) {
-        String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
+      final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
+      final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
+      for (final Entry<String, List<Object>> e : entries) {
+        final String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
         if (!text.isBlank()) {
           properties.addProperty(e.getKey(), text);
         }
@@ -267,32 +274,24 @@ public class MarkdownGenerator {
   private String concatenateDocumentation(List<Object> objects, String paragraphDelimiter) {
     return objects.stream().map(o -> {
       if (o instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation)o, paragraphDelimiter);
+        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation) o,
+            paragraphDelimiter);
       } else {
         return appinfoToString(o, paragraphDelimiter);
       }
     }).collect(Collectors.joining(paragraphDelimiter));
   }
 
-  public String appinfoToString(Object o, String paragraphDelimiter) {
-    io.fixprotocol._2020.orchestra.repository.Appinfo a =
-        (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
-    return a.getContent().stream()
-        .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-        .map(MarkdownUtil::plainTextToMarkdown)
-        .collect(Collectors.joining(paragraphDelimiter));
-  }
-
-  private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d, String paragraphDelimiter) {
+  private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
+      String paragraphDelimiter) {
     if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
       return d.getContent().stream()
-          .map(c -> c.toString().strip().replace("\n\n", paragraphDelimiter))        
+          .map(c -> c.toString().strip().replace("\n\n", paragraphDelimiter))
           .collect(Collectors.joining(paragraphDelimiter));
     } else {
       return d.getContent().stream()
           .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-          .map(MarkdownUtil::plainTextToMarkdown)
-          .collect(Collectors.joining(paragraphDelimiter));
+          .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
     }
   }
 
@@ -339,7 +338,7 @@ public class MarkdownGenerator {
     final List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType))
         .collect(Collectors.toList());
     if (!members.isEmpty()) {
-      MutableContext variableContext = contextFactory.createContext(3);
+      final MutableContext variableContext = contextFactory.createContext(3);
       variableContext.addKey("Variables");
       documentWriter.write(variableContext);
 
@@ -373,7 +372,7 @@ public class MarkdownGenerator {
 
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
-    MutableContext context = contextFactory.createContext(3);
+    final MutableContext context = contextFactory.createContext(3);
     context.addPair("Codeset", codeset.getName());
     final String scenario = codeset.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -388,23 +387,66 @@ public class MarkdownGenerator {
 
     final List<CodeType> codes = codeset.getCode();
     if (!codes.isEmpty()) {
-    final MutableDetailTable table = contextFactory.createDetailTable();
+      final MutableDetailTable table = contextFactory.createDetailTable();
 
-    
-    for (final CodeType code : codes) {
-      final MutableDetailProperties row = table.newRow();
-      final String name = code.getName();
-      row.addProperty("name", name);
-      row.addProperty("value", code.getValue());
-      final BigInteger id = code.getId();
-      if (id != null) {
-        row.addProperty("id", id.toString());
-      } else {
-        eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
+      final Comparator<CodeType> groupComparator = (o1, o2) -> {
+        final String g1 = o1.getGroup();
+        final String g2 = o2.getGroup();
+        if (g1 == null) {
+          if (g2 == null) {
+            return 0;
+          } else {
+            return -1;
+          }
+        } else if (g2 == null) {
+          return 1;
+        } else {
+          return g1.compareTo(g2);
+        }
+      };
+      final Comparator<CodeType> sortComparator = (o1, o2) -> {
+        final String s1 = o1.getSort();
+        final String s2 = o2.getSort();
+        if (s1 == null) {
+          if (s2 == null) {
+            return 0;
+          } else {
+            return -1;
+          }
+        } else if (s2 == null) {
+          return 1;
+        } else {
+          // sort should be an integer attribute
+          return Integer.parseInt(s1.strip()) - Integer.parseInt(s2.strip());
+        }
+      };
+      final Comparator<? super CodeType> codeComparator =
+          groupComparator.thenComparing(sortComparator);
+      final List<CodeType> sortedCodes =
+          codes.stream().sorted(codeComparator).collect(Collectors.toList());
+
+      for (final CodeType code : sortedCodes) {
+        final MutableDetailProperties row = table.newRow();
+        final String name = code.getName();
+        row.addProperty("name", name);
+        row.addProperty("value", code.getValue());
+        final BigInteger id = code.getId();
+        if (id != null) {
+          row.addProperty("id", id.toString());
+        } else {
+          eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
+        }
+        final String group = code.getGroup();
+        if (group != null) {
+          row.addProperty("group", group);
+        }
+        final String sort = code.getSort();
+        if (sort != null) {
+          row.addProperty("sort", sort);
+        }
+        addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
       }
-      addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
-    }
-    documentWriter.write(table);
+      documentWriter.write(table);
     } else {
       eventLogger.warn("Codeset has no codes; name={0} scenario={1}", codeset.getName(), scenario);
     }
@@ -425,24 +467,24 @@ public class MarkdownGenerator {
 
   private void generateComponent(Repository repository, DocumentWriter documentWriter,
       final ComponentType component) throws IOException {
-    MutableContext context = contextFactory.createContext(3);
+    final MutableContext context = contextFactory.createContext(3);
     final String name = component.getName();
     context.addPair("Component", name);
     final String scenario = component.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
     }
-    
-    String abbrName = component.getAbbrName();
+
+    final String abbrName = component.getAbbrName();
     if (abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
-    
-    String category = component.getCategory();
+
+    final String category = component.getCategory();
     if (category != null) {
       context.addPair("category", category);
     }
-    
+
     context.addKey(String.format("(%d)", component.getId().intValue()));
     documentWriter.write(context);
 
@@ -486,14 +528,14 @@ public class MarkdownGenerator {
           .collect(Collectors.toList());
 
       if (!datatypes.isEmpty()) {
-        MutableContext context = contextFactory.createContext(2);
+        final MutableContext context = contextFactory.createContext(2);
         context.addKey("Datatypes");
         documentWriter.write(context);
         final MutableDetailTable table = contextFactory.createDetailTable();
 
         for (final Datatype datatype : datatypes) {
           final List<MappedDatatype> mappings = datatype.getMappedDatatype();
-          Annotation annotation = datatype.getAnnotation();
+          final Annotation annotation = datatype.getAnnotation();
           MutableDetailProperties row = table.newRow();
           row.addProperty("name", datatype.getName());
           addDocumentationColumns(row, annotation, getParagraphDelimiterInTables());
@@ -543,15 +585,15 @@ public class MarkdownGenerator {
       // Synopsis may explicit or implicit (null purpose)
       // handle all 'purpose' values, including appinfo
 
-      SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
-      Set<Entry<String, List<Object>>> entries = sorted.entrySet();
-      for (Entry<String, List<Object>> e : entries) {
-        String text = concatenateDocumentation(e.getValue(), "\n");
+      final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
+      final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
+      for (final Entry<String, List<Object>> e : entries) {
+        final String text = concatenateDocumentation(e.getValue(), "\n");
         if (!text.isBlank()) {
-          MutableContext documentationContext =
-              contextFactory.createContext(new String[] {StringUtil.convertToTitleCase(e.getKey())}, 4);
+          final MutableContext documentationContext = contextFactory
+              .createContext(new String[] {StringUtil.convertToTitleCase(e.getKey())}, 4);
           documentWriter.write(documentationContext);
-          MutableDocumentation documentation = contextFactory.createDocumentation(text);
+          final MutableDocumentation documentation = contextFactory.createDocumentation(text);
           documentWriter.write(documentation);
         }
       }
@@ -562,7 +604,7 @@ public class MarkdownGenerator {
       throws IOException {
     final Fields fieldParent = repository.getFields();
     if (fieldParent != null) {
-      MutableContext context = contextFactory.createContext(2);
+      final MutableContext context = contextFactory.createContext(2);
       context.addKey("Fields");
       documentWriter.write(context);
       final MutableDetailTable table = contextFactory.createDetailTable();
@@ -595,90 +637,68 @@ public class MarkdownGenerator {
         if (implLength != null) {
           row.addIntProperty("implLength", implLength);
         }
-        
-        String minInclusive = field.getMinInclusive();
+
+        final String minInclusive = field.getMinInclusive();
         if (minInclusive != null) {
           row.addProperty("minInclusive", minInclusive);
         }
-        
-        String maxInclusive = field.getMaxInclusive();
+
+        final String maxInclusive = field.getMaxInclusive();
         if (maxInclusive != null) {
           row.addProperty("maxInclusive", maxInclusive);
         }
-        
-        String abbrName = field.getAbbrName();
+
+        final String abbrName = field.getAbbrName();
         if (abbrName != null) {
           row.addProperty("abbrName", abbrName);
         }
-        String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
+        final String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
         if (baseCategoryAbbrName != null) {
           row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
         }
-        
-        String baseCategory = field.getBaseCategory();
+
+        final String baseCategory = field.getBaseCategory();
         if (baseCategory != null) {
           row.addProperty("baseCategory", baseCategory);
         }
-        
-        BigInteger dicriminatorId = field.getDiscriminatorId();
+
+        final BigInteger dicriminatorId = field.getDiscriminatorId();
         if (dicriminatorId != null) {
           row.addIntProperty("dicriminatorId", dicriminatorId.intValue());
         }
-        
-       /* String added = field.getAdded();
-        if (added != null) {
-          row.addProperty("added", added);
-        }
-        
-        BigInteger addedEp = field.getAddedEP();
-        if (addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
-        }
-        
-        String deprecated = field.getDeprecated();
-        if (deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-        
-        BigInteger deprecatedEp = field.getDeprecatedEP();
-        if (deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-        
-        String issue = field.getIssue();
-        if (issue != null) {
-          row.addProperty("issue", issue);
-        }
-        
-        String lastModified = field.getLastModified();
-        if (lastModified != null) {
-          row.addProperty("lastModified", lastModified);
-        }
-        
-        String replaced = field.getReplaced();
-        if (replaced != null) {
-          row.addProperty("replaced", replaced);
-        }
-        
-        BigInteger replacedByField = field.getReplacedByField();
-        if (replacedByField != null) {
-          row.addIntProperty("replacedByField", replacedByField.intValue());
-        }
-        
-        BigInteger replacedEp = field.getReplacedEP();
-        if (replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
-        }
-        
-        String updated = field.getUpdated();
-        if (updated != null) {
-          row.addProperty("updated", updated);
-        }
-        
-        BigInteger updatedEp = field.getUpdatedEP();
-        if (updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
-        }*/
+
+        /*
+         * String added = field.getAdded(); if (added != null) { row.addProperty("added", added); }
+         *
+         * BigInteger addedEp = field.getAddedEP(); if (addedEp != null) {
+         * row.addIntProperty("addedEp", addedEp.intValue()); }
+         *
+         * String deprecated = field.getDeprecated(); if (deprecated != null) {
+         * row.addProperty("deprecated", deprecated); }
+         *
+         * BigInteger deprecatedEp = field.getDeprecatedEP(); if (deprecatedEp != null) {
+         * row.addIntProperty("deprecatedEp", deprecatedEp.intValue()); }
+         *
+         * String issue = field.getIssue(); if (issue != null) { row.addProperty("issue", issue); }
+         *
+         * String lastModified = field.getLastModified(); if (lastModified != null) {
+         * row.addProperty("lastModified", lastModified); }
+         *
+         * String replaced = field.getReplaced(); if (replaced != null) {
+         * row.addProperty("replaced", replaced); }
+         *
+         * BigInteger replacedByField = field.getReplacedByField(); if (replacedByField != null) {
+         * row.addIntProperty("replacedByField", replacedByField.intValue()); }
+         *
+         * BigInteger replacedEp = field.getReplacedEP(); if (replacedEp != null) {
+         * row.addIntProperty("replacedEp", replacedEp.intValue()); }
+         *
+         * String updated = field.getUpdated(); if (updated != null) { row.addProperty("updated",
+         * updated); }
+         *
+         * BigInteger updatedEp = field.getUpdatedEP(); if (updatedEp != null) {
+         * row.addIntProperty("updatedEp", updatedEp.intValue()); }
+         */
       }
       documentWriter.write(table);
     } else {
@@ -688,7 +708,7 @@ public class MarkdownGenerator {
 
   private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(2);
     context.addPair("Flow", flow.getName());
     final Annotation annotation = flow.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
@@ -703,7 +723,7 @@ public class MarkdownGenerator {
 
   private void generateGroup(Repository repository, DocumentWriter documentWriter,
       final GroupType group) throws IOException {
-    MutableContext context = contextFactory.createContext(3);
+    final MutableContext context = contextFactory.createContext(3);
 
     final String name = group.getName();
     context.addPair("Group", name);
@@ -711,17 +731,17 @@ public class MarkdownGenerator {
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
     }
-    
-    String abbrName = group.getAbbrName();
+
+    final String abbrName = group.getAbbrName();
     if (abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
-    
-    String category = group.getCategory();
+
+    final String category = group.getCategory();
     if (category != null) {
       context.addPair("category", category);
     }
-    
+
     context.addKey(String.format("(%d)", group.getId().intValue()));
     documentWriter.write(context);
 
@@ -769,7 +789,7 @@ public class MarkdownGenerator {
       MessageType message) throws IOException {
     final Responses responses = message.getResponses();
     if (responses != null) {
-      MutableContext context = contextFactory.createContext(3);
+      final MutableContext context = contextFactory.createContext(3);
       context.addKey("Responses");
       documentWriter.write(context);
       final MutableDetailTable table = contextFactory.createDetailTable();
@@ -818,7 +838,7 @@ public class MarkdownGenerator {
 
   private void generateMessageStructure(Repository repository, DocumentWriter documentWriter,
       final MessageType message) throws IOException {
-    MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(2);
     final String name = message.getName();
     context.addPair("Message", name);
     final String scenario = message.getScenario();
@@ -829,21 +849,21 @@ public class MarkdownGenerator {
     if (msgType != null) {
       context.addPair("type", msgType);
     }
-    String flow = message.getFlow();
+    final String flow = message.getFlow();
     if (flow != null) {
       context.addPair("flow", flow);
     }
-    
-    String abbrName = message.getAbbrName();
+
+    final String abbrName = message.getAbbrName();
     if (abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
-    
-    String category = message.getCategory();
+
+    final String category = message.getCategory();
     if (category != null) {
       context.addPair("category", category);
     }
-    
+
     context.addKey(String.format("(%d)", message.getId().intValue()));
 
     documentWriter.write(context);
@@ -864,7 +884,7 @@ public class MarkdownGenerator {
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(1);
+    final MutableContext context = contextFactory.createContext(1);
 
     final String repositoryName = repository.getName();
     if (repositoryName != null) {
@@ -894,7 +914,7 @@ public class MarkdownGenerator {
 
   private void generateStateMachine(StateMachineType stateMachine, DocumentWriter documentWriter)
       throws IOException {
-    MutableContext context = contextFactory.createContext(3);
+    final MutableContext context = contextFactory.createContext(3);
     context.addPair("StateMachine", stateMachine.getName());
     documentWriter.write(context);
 
@@ -932,7 +952,7 @@ public class MarkdownGenerator {
       return Collections.emptySortedMap();
     } else {
       final List<Object> annotations = annotation.getDocumentationOrAppinfo();
-      Function<Object, String> classifier = o -> {
+      final Function<Object, String> classifier = o -> {
         if (o instanceof Documentation) {
           final String purpose = ((Documentation) o).getPurpose();
           if (purpose != null) {
@@ -956,8 +976,13 @@ public class MarkdownGenerator {
 
   private SortedMap<String, List<Object>> sortDocumentationByPurpose(
       Map<String, List<Object>> groups) {
-    SortedMap<String, List<Object>> sorted =
+    final SortedMap<String, List<Object>> sorted =
         new TreeMap<String, List<Object>>(new Comparator<>() {
+
+          @Override
+          public int compare(String o1, String o2) {
+            return purposeRank(o1) - purposeRank(o2);
+          }
 
           private int purposeRank(String purpose) {
             switch (purpose.toLowerCase()) {
@@ -973,11 +998,6 @@ public class MarkdownGenerator {
               default:
                 return 4;
             }
-          }
-
-          @Override
-          public int compare(String o1, String o2) {
-            return purposeRank(o1) - purposeRank(o2);
           }
 
         });

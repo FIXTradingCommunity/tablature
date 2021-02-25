@@ -119,7 +119,7 @@ public class DetailTableImpl implements MutableDetailTable {
   }
 
   @Override
-  public Iterable<? extends DetailProperties> rows() {
+  public Collection<? extends DetailProperties> rows() {
     return Collections.unmodifiableList(propertiesList);
 
   }
