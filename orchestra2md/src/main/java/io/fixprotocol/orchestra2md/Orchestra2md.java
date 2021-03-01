@@ -60,7 +60,7 @@ public class Orchestra2md {
 
     /**
      * Token to represent a paragraph break in tables (not natively supported by markdown)
-     * 
+     *
      * @param paragraphDelimiter token
      * @return this Builder
      */
@@ -93,7 +93,7 @@ public class Orchestra2md {
     try {
       orchestra2md = parseArgs(args).build();
       orchestra2md.generate();
-    } catch (ParseException e) {
+    } catch (final ParseException e) {
       System.err.println(e.getMessage());
     }
   }

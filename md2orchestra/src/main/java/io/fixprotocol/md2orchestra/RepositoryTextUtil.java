@@ -5,7 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 /**
  * Text formatting for repository elements
- * 
+ *
  * @author Don Mendelson
  *
  */
@@ -14,8 +14,8 @@ class RepositoryTextUtil {
 
   /* String brackets from code names as it was sometimes written */
   String stripName(String str) {
-    int beginIndex = str.indexOf('[');
-    int endIndex = str.lastIndexOf(']');
+    final int beginIndex = str.indexOf('[');
+    final int endIndex = str.lastIndexOf(']');
     return str.substring(beginIndex >= 0 ? beginIndex + 1 : 0,
         endIndex >= 0 ? endIndex : str.length());
   }

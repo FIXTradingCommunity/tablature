@@ -597,9 +597,9 @@ public class RepositoryBuilder {
 
           final DetailTable detailTable = (DetailTable) contextual;
 
-          final List<String> sources = StreamSupport.stream(detailTable.rows().spliterator(), false)
+          final List<String> sources = detailTable.rows().stream()
               .map(r -> r.getProperty("state")).distinct().collect(Collectors.toList());
-          final List<String> targets = StreamSupport.stream(detailTable.rows().spliterator(), false)
+          final List<String> targets = detailTable.rows().stream()
               .map(r -> r.getProperty("target")).distinct().collect(Collectors.toList());
           // preserves insertion order
           final Set<String> allStates = new LinkedHashSet<>(sources);
@@ -1158,7 +1158,7 @@ public class RepositoryBuilder {
         eventLogger.error("Unknown NumInGroup for group; name={0}", group.getName());
       }
       final Stream<? extends DetailProperties> stream =
-          StreamSupport.stream(detailTable.rows().spliterator(), false);
+              detailTable.rows().stream();
       final List<? extends DetailProperties> remainingRows =
           stream.skip(1).collect(Collectors.toList());
       addMembers(remainingRows, members);

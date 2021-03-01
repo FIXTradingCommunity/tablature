@@ -286,11 +286,11 @@ public class MarkdownGenerator {
       String paragraphDelimiter) {
     if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
       return d.getContent().stream()
-          .map(c -> c.toString().strip().replace("\n\n", paragraphDelimiter))
+          .map(c -> c.toString().strip().replaceAll(" +", " ").replaceAll("\n\n", paragraphDelimiter))
           .collect(Collectors.joining(paragraphDelimiter));
     } else {
       return d.getContent().stream()
-          .map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
+          .map(c -> c.toString().strip().replaceAll(" +", " ").replaceAll("\n", paragraphDelimiter))
           .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
     }
   }
@@ -955,18 +955,10 @@ public class MarkdownGenerator {
       final Function<Object, String> classifier = o -> {
         if (o instanceof Documentation) {
           final String purpose = ((Documentation) o).getPurpose();
-          if (purpose != null) {
-            return purpose;
-          } else {
-            return DOCUMENTATION_KEYWORD;
-          }
+          return Objects.requireNonNullElse(purpose, DOCUMENTATION_KEYWORD);
         } else {
           final String purpose = ((Appinfo) o).getPurpose();
-          if (purpose != null) {
-            return purpose;
-          } else {
-            return DOCUMENTATION_KEYWORD;
-          }
+          return Objects.requireNonNullElse(purpose, DOCUMENTATION_KEYWORD);
         }
       };
       return sortDocumentationByPurpose(
@@ -975,7 +967,7 @@ public class MarkdownGenerator {
   }
 
   private SortedMap<String, List<Object>> sortDocumentationByPurpose(
-      Map<String, List<Object>> groups) {
+          Map<String, ? extends List<Object>> groups) {
     final SortedMap<String, List<Object>> sorted =
         new TreeMap<String, List<Object>>(new Comparator<>() {
 

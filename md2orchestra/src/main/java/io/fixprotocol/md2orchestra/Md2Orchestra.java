@@ -86,7 +86,7 @@ public class Md2Orchestra {
 
     /**
      * Token to represent a paragraph break in tables (not natively supported by markdown)
-     * 
+     *
      * @param paragraphDelimiter token
      * @return this Builder
      */
@@ -128,7 +128,7 @@ public class Md2Orchestra {
     try {
       md2Orchestra = Md2Orchestra.parseArgs(args).build();
       md2Orchestra.generate();
-    } catch (ParseException e) {
+    } catch (final ParseException e) {
       System.err.println(e.getMessage());
     }
   }
@@ -204,7 +204,7 @@ public class Md2Orchestra {
   public void generate() {
     try {
       generate(inputFilePatterns, outputFilename, referenceFilename, eventFilename);
-    } catch (Exception e) {
+    } catch (final Exception e) {
       logger.fatal("Md2Orchestra failed", e);
     }
   }
@@ -286,7 +286,7 @@ public class Md2Orchestra {
               }
 
               private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
-                  throws FileNotFoundException, IOException {
+                  throws IOException {
                 logger.info("Md2Orchestra opening file {}", filePath.toString());
                 final InputStream inputStream = new FileInputStream(filePath.toFile());
                 outputRepositoryBuilder.appendInput(inputStream);

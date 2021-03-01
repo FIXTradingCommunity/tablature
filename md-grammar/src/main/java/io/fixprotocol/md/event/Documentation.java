@@ -25,7 +25,7 @@ public interface Documentation extends Contextual {
   /**
    * Default documentation format
    */
-  static final String MARKDOWN = "markdown";
+  String MARKDOWN = "markdown";
 
   /**
    * Return the contents
