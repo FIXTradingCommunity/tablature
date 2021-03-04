@@ -16,6 +16,7 @@ package io.fixprotocol.md2orchestra;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
@@ -42,6 +43,16 @@ class Md2OrchestraTest {
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
         .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
     md2Orchestra1.generate();
+  }
+  
+  @Test
+  void noInput() throws Exception {
+    final String outputFilename = "target/test/mit_2016.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder()
+        .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
+    assertThrows(IllegalArgumentException.class, () -> {
+      md2Orchestra1.generate();
+    });
   }
 
   @Test

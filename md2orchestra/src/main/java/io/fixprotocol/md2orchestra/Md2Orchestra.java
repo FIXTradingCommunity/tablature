@@ -15,7 +15,6 @@ package io.fixprotocol.md2orchestra;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -128,8 +127,9 @@ public class Md2Orchestra {
     try {
       md2Orchestra = Md2Orchestra.parseArgs(args).build();
       md2Orchestra.generate();
-    } catch (final ParseException e) {
+    } catch (final Exception e) {
       System.err.println(e.getMessage());
+      System.exit(1);
     }
   }
 
@@ -156,7 +156,7 @@ public class Md2Orchestra {
 
       if (cmd.hasOption("?")) {
         showHelp(options);
-        System.exit(0);
+        System.exit(1);
       }
 
       builder.inputFilePatterns = cmd.getArgList();
@@ -201,18 +201,38 @@ public class Md2Orchestra {
     this.paragraphDelimiter = builder.paragraphDelimiter;
   }
 
-  public void generate() {
+  /**
+   * Generate an Orchestra repository file from markdown files
+   *
+   * @throws Exception IllegalArgumentException if inputFilePatterns is empty NullPointerException
+   *         if inputFilePatterns or outputFilename is {@code null}
+   */
+  public void generate() throws Exception {
     try {
       generate(inputFilePatterns, outputFilename, referenceFilename, eventFilename);
     } catch (final Exception e) {
-      logger.fatal("Md2Orchestra failed", e);
+      logger.fatal("Md2Orchestra generate failed", e);
+      throw e;
     }
   }
 
+  /**
+   * Generate an Orchestra repository file from markdown files
+   *
+   * @param inputFilePatterns file names or glob patterns for markdown files
+   * @param outputFilename name of Orchestra file to create
+   * @param referenceFilename optional Orchestra reference file
+   * @param eventFilename optional JSON event file suitable for rendering
+   * @throws Exception IllegalArgumentException if inputFilePatterns is empty NullPointerException
+   *         if inputFilePatterns or outputFilename is {@code null}
+   */
   void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename,
       String eventFilename) throws Exception {
     Objects.requireNonNull(inputFilePatterns, "Input file list is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
+    if (inputFilePatterns.isEmpty()) {
+      throw new IllegalArgumentException("No input file specified");
+    }
 
     final File outputFile = new File(outputFilename);
     final File outputDir = outputFile.getParentFile();
@@ -235,22 +255,27 @@ public class Md2Orchestra {
       final FileSystem fileSystem = FileSystems.getDefault();
       final String separator = fileSystem.getSeparator();
 
-
       final RepositoryBuilder outputRepositoryBuilder =
           RepositoryBuilder.instance(referenceStream, jsonOutputStream, paragraphDelimiter);
       for (final String inputFilePattern : inputFilePatterns) {
-        final int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
+        int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
+        // Handle Windows case for portability of '/' separator 
+        if (lastSeparatorPos == -1 && !separator.equals("/")) {
+          lastSeparatorPos = inputFilePattern.lastIndexOf("/");
+        }
         Path dirPath;
         String glob;
         if (lastSeparatorPos != -1) {
-          dirPath = fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos));
+          dirPath = fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos)).toAbsolutePath();
           glob = "**" + separator + inputFilePattern.substring(lastSeparatorPos + 1);
         } else {
           // current working directory
-          dirPath = fileSystem.getPath("");
+          dirPath = fileSystem.getPath("").toAbsolutePath();
           glob = inputFilePattern;
         }
 
+        logger.info("Md2Orchestra searching for input at path {} glob {}", dirPath, glob);
+        
         final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
         Files.walkFileTree(dirPath, EnumSet.noneOf(FileVisitOption.class), 1,
             new FileVisitor<Path>() {

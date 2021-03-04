@@ -66,9 +66,9 @@ public class RepositoryAdapter {
 
   /**
    * Provide deterministic XML namespace prefixes
-   * 
+   *
    * NamespacePrefixMapper class is declared in the XML processor implementation -- not portable!!!
-   * 
+   *
    * The implementation makes no guarantee that it will actually use the preferred prefix.
    */
   private static class RepositoryNamespacePrefixMapper extends NamespacePrefixMapper {
@@ -94,7 +94,12 @@ public class RepositoryAdapter {
       new String[] {"contributor", "coverage", "creator", "date", "description", "format",
           "identifier", "language", "publisher", "relation", "rights", "source", "subject", "type"};
 
+  static String substitute(String markdown, String token, String replacement) {
+    return markdown.replace(token, replacement);
+  }
+
   private final Logger logger = LogManager.getLogger(getClass());
+
   private Repository repository;
 
   void addActor(final ActorType actor) {
@@ -109,22 +114,23 @@ public class RepositoryAdapter {
   void addAppinfo(String markdown, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final Appinfo appinfo = new Appinfo();
-    List<Object> contents = appinfo.getContent();
+    final List<Object> contents = appinfo.getContent();
     contents.add(markdown);
     if (purpose != null) {
       appinfo.setPurpose(purpose);
     }
     elements.add(appinfo);
   }
-  
-  void addAppinfo(String markdown, String paragraphDelmiter, String purpose, Annotation annotation) {
+
+  void addAppinfo(String markdown, String paragraphDelmiter, String purpose,
+      Annotation annotation) {
     addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
+
 
   void addCodeset(final CodeSetType codeset) {
     repository.getCodeSets().getCodeSet().add(codeset);
   }
-
 
   void addComponent(final ComponentType component) {
     repository.getComponents().getComponent().add(component);
@@ -145,13 +151,10 @@ public class RepositoryAdapter {
     }
     elements.add(documentation);
   }
-  
-  void addDocumentation(String markdown, String paragraphDelmiter, String purpose, Annotation annotation) {
+
+  void addDocumentation(String markdown, String paragraphDelmiter, String purpose,
+      Annotation annotation) {
     addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
-  }
-  
-  static String substitute(String markdown, String token, String replacement) {
-    return markdown.replace(token, replacement);
   }
 
   void addField(FieldType field) {
@@ -342,10 +345,10 @@ public class RepositoryAdapter {
   }
 
   StateMachineType findStatemachineByName(ActorType actor, String name) {
-    List<Object> objects = actor.getFieldOrFieldRefOrComponent();
-    for (Object object : objects) {
+    final List<Object> objects = actor.getFieldOrFieldRefOrComponent();
+    for (final Object object : objects) {
       if (object instanceof StateMachineType) {
-        StateMachineType statemachine = (StateMachineType) object;
+        final StateMachineType statemachine = (StateMachineType) object;
         if (statemachine.getName().equals(name)) {
           return statemachine;
         }
@@ -362,7 +365,7 @@ public class RepositoryAdapter {
     try {
       jaxbMarshaller.setProperty("com.sun.xml.bind.namespacePrefixMapper",
           new RepositoryNamespacePrefixMapper());
-    } catch (PropertyException e) {
+    } catch (final PropertyException e) {
       logger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
     }
     jaxbMarshaller.marshal(repository, os);
@@ -395,8 +398,8 @@ public class RepositoryAdapter {
   void unmarshal(InputStream is) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
-    //this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);
-    Object obj = jaxbUnmarshaller.unmarshal(is);
+    // this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);
+    final Object obj = jaxbUnmarshaller.unmarshal(is);
     if (obj instanceof Repository) {
       this.repository = (Repository) obj;
     }

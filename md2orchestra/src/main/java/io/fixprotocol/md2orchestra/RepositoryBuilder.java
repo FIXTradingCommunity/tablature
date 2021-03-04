@@ -33,7 +33,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
@@ -332,7 +331,7 @@ public class RepositoryBuilder {
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
   public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
-  
+
   public static final String ABBRNAME_KEYWORD = "abbrname";
   public static final String CATEGORY_KEYWORD = "category";
   public static final String DESCRIPTION_KEYWORD = "description";
@@ -346,7 +345,7 @@ public class RepositoryBuilder {
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
   public static final String WHEN_KEYWORD = "when";
-  
+
   // the form code=name with optional space before and after =
   private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
 
@@ -597,10 +596,10 @@ public class RepositoryBuilder {
 
           final DetailTable detailTable = (DetailTable) contextual;
 
-          final List<String> sources = detailTable.rows().stream()
-              .map(r -> r.getProperty("state")).distinct().collect(Collectors.toList());
-          final List<String> targets = detailTable.rows().stream()
-              .map(r -> r.getProperty("target")).distinct().collect(Collectors.toList());
+          final List<String> sources = detailTable.rows().stream().map(r -> r.getProperty("state"))
+              .distinct().collect(Collectors.toList());
+          final List<String> targets = detailTable.rows().stream().map(r -> r.getProperty("target"))
+              .distinct().collect(Collectors.toList());
           // preserves insertion order
           final Set<String> allStates = new LinkedHashSet<>(sources);
           allStates.addAll(targets);
@@ -758,7 +757,7 @@ public class RepositoryBuilder {
           if (annotation == null) {
             annotation = new Annotation();
           }
-          
+
           if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
@@ -888,17 +887,17 @@ public class RepositoryBuilder {
       if (!DEFAULT_SCENARIO.equals(scenario)) {
         component.setScenario(scenario);
       }
-      
+
       final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         component.setAbbrName(abbrName);
       }
-      
+
       final String category = context.getKeyValue(CATEGORY_KEYWORD);
       if (category != null) {
         component.setCategory(category);
       }
-      
+
       repositoryAdapter.addComponent(component);
     }
   }
@@ -1157,8 +1156,7 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown NumInGroup for group; name={0}", group.getName());
       }
-      final Stream<? extends DetailProperties> stream =
-              detailTable.rows().stream();
+      final Stream<? extends DetailProperties> stream = detailTable.rows().stream();
       final List<? extends DetailProperties> remainingRows =
           stream.skip(1).collect(Collectors.toList());
       addMembers(remainingRows, members);
@@ -1196,17 +1194,17 @@ public class RepositoryBuilder {
       if (!DEFAULT_SCENARIO.equals(scenario)) {
         group.setScenario(scenario);
       }
-      
+
       final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         group.setAbbrName(abbrName);
       }
-      
+
       final String category = context.getKeyValue(CATEGORY_KEYWORD);
       if (category != null) {
         group.setCategory(category);
       }
-      
+
       repositoryAdapter.addGroup(group);
     }
   }
@@ -1274,12 +1272,12 @@ public class RepositoryBuilder {
       if (flow != null) {
         message.setFlow(flow);
       }
-      
+
       final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         message.setAbbrName(abbrName);
       }
-      
+
       final String category = context.getKeyValue(CATEGORY_KEYWORD);
       if (category != null) {
         message.setCategory(category);
