@@ -35,6 +35,7 @@ class Orchestra2mdTest {
         "src/test/resources/md2orchestra-proto.xml", });
   }
   
+  @Disabled
   @Test
   void badOrchestra() throws Exception {
     Orchestra2md.main(new String[] {"-o", "target/test/badOrchestra.md", "-e", "target/test/badOrchestra.json", 

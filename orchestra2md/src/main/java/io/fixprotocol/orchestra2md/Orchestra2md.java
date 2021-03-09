@@ -38,6 +38,8 @@ public class Orchestra2md {
     private String outputFile;
     public String eventFile;
     public String paragraphDelimiter = MarkdownGenerator.DEFAULT_PARAGRAPH_DELIMITER;
+    private boolean shouldOutputPedigree;
+    private boolean shouldOutputFixml;
 
     public Orchestra2md build() {
       return new Orchestra2md(this);
@@ -68,6 +70,16 @@ public class Orchestra2md {
       this.paragraphDelimiter = paragraphDelimiter;
       return this;
     }
+
+    public Builder pedigree(boolean shouldOutputPedigree) {
+      this.shouldOutputPedigree = shouldOutputPedigree;
+      return this;
+    }
+    
+    public Builder fixml(boolean shouldOutputFixml) {
+      this.shouldOutputFixml = shouldOutputFixml;
+      return this;
+    }
   }
 
 
@@ -79,11 +91,13 @@ public class Orchestra2md {
    * Construct and run Orchestra2md with command line arguments
    *
    * <pre>
-  usage: Orchestra2md [options] <input-file>
+  usage: Orchestra2md [options] &lt;input-file&gt;
   -?,--help              display usage
   -e,--eventlog &lt;arg&gt;    path of JSON event file
+     --fixml             output fixml attributes
   -o,--output &lt;arg&gt;      path of markdown output file (required)
      --paragraph &lt;arg&gt;   paragraph delimiter for tables
+     --pedigree          output pedigree attributes
    * </pre>
    *
    * @param args command line arguments
@@ -108,6 +122,8 @@ public class Orchestra2md {
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
     options.addOption(Option.builder().desc("paragraph delimiter for tables").longOpt("paragraph")
         .numberOfArgs(1).build());
+    options.addOption(Option.builder().desc("output pedigree attributes").longOpt("pedigree").build());
+    options.addOption(Option.builder().desc("output fixml attributes").longOpt("fixml").build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -128,6 +144,14 @@ public class Orchestra2md {
       if (cmd.hasOption("paragraph")) {
         builder.paragraphDelimiter(cmd.getOptionValue("paragraph"));
       }
+      
+      if (cmd.hasOption("pedigree")) {
+        builder.pedigree(true);
+      }
+      
+      if (cmd.hasOption("fixml")) {
+        builder.fixml(true);
+      }
 
       return builder;
     } catch (final ParseException e) {
@@ -146,17 +170,21 @@ public class Orchestra2md {
   private final String outputFilename;
   private final String eventFilename;
   private final String paragraphDelimiter;
+  private final boolean shouldOutputPedigree;
+  private final boolean shouldOutputFixml;
 
   private Orchestra2md(Builder builder) {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
     this.eventFilename = builder.eventFile;
     this.paragraphDelimiter = builder.paragraphDelimiter;
+    this.shouldOutputPedigree = builder.shouldOutputPedigree;
+    this.shouldOutputFixml = builder.shouldOutputFixml;
   }
 
   public void generate() {
     try {
-      generate(inputFilename, outputFilename, eventFilename, paragraphDelimiter);
+      generate(inputFilename, outputFilename, eventFilename, paragraphDelimiter, shouldOutputPedigree, shouldOutputFixml);
       logger.info("Orchestra2md complete");
     } catch (final Exception e) {
       logger.fatal("Orchestra2md failed", e);
@@ -164,7 +192,7 @@ public class Orchestra2md {
   }
 
   void generate(String inputFilename, String outputFilename, String eventFilename,
-      String paragraphDelimiter) throws Exception {
+      String paragraphDelimiter, boolean shouldOutputPedigree, boolean shouldOutputFixml) throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
 
@@ -188,7 +216,7 @@ public class Orchestra2md {
         eventStream = new FileOutputStream(eventFile);
       }
 
-      final MarkdownGenerator generator = new MarkdownGenerator(paragraphDelimiter);
+      final MarkdownGenerator generator = new MarkdownGenerator(paragraphDelimiter, shouldOutputPedigree, shouldOutputFixml);
       generator.generate(inputStream, outputWriter, eventStream);
     }
   }

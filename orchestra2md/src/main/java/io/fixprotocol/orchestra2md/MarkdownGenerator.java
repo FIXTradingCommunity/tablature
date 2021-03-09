@@ -83,13 +83,28 @@ public class MarkdownGenerator {
   private EventListener eventLogger;
   private final Logger logger = LogManager.getLogger(getClass());
   private final String paragraphDelimiterInTables;
+  private final boolean shouldOutputPedigree;
+  private final boolean shouldOutputFixml;
 
+  /**
+   * Contructor
+   * 
+   * Suppresses output of pedigree attributes and FIXML attributes
+   */
   public MarkdownGenerator() {
-    this.paragraphDelimiterInTables = DEFAULT_PARAGRAPH_DELIMITER;
+    this(DEFAULT_PARAGRAPH_DELIMITER, false, false);
   }
 
-  public MarkdownGenerator(String paragraphDelimiterInTables) {
+  /**
+   * Contructor
+   * @param paragraphDelimiterInTables token to for a paragraph break in a markdown table, not natively supported
+   * @param shouldOutputPedigree output pedigree attributes -- when an element was added or changed
+   * @param shouldOutputFixml output FIXML attributes -- abbreviated name, etc.
+   */
+  public MarkdownGenerator(String paragraphDelimiterInTables, boolean shouldOutputPedigree, boolean shouldOutputFixml) {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
+    this.shouldOutputPedigree = shouldOutputPedigree;
+    this.shouldOutputFixml = shouldOutputFixml;
   }
 
   public String appinfoToString(Object o, String paragraphDelimiter) {
@@ -155,6 +170,61 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = componentRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
+    
+    String added = componentRef.getAdded();
+    if (shouldOutputPedigree && added != null) {
+      row.addProperty("added", added);
+    }
+
+    BigInteger addedEp = componentRef.getAddedEP();
+    if (shouldOutputPedigree && addedEp != null) {
+      row.addIntProperty("addedEp", addedEp.intValue());
+    }
+
+    String deprecated = componentRef.getDeprecated();
+    if (shouldOutputPedigree && deprecated != null) {
+      row.addProperty("deprecated", deprecated);
+    }
+
+    BigInteger deprecatedEp = componentRef.getDeprecatedEP();
+    if (shouldOutputPedigree && deprecatedEp != null) {
+      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+    }
+
+    String issue = componentRef.getIssue();
+    if (shouldOutputPedigree && issue != null) {
+      row.addProperty("issue", issue);
+    }
+
+    String lastModified = componentRef.getLastModified();
+    if (shouldOutputPedigree && lastModified != null) {
+      row.addProperty("lastModified", lastModified);
+    }
+
+    String replaced = componentRef.getReplaced();
+    if (shouldOutputPedigree && replaced != null) {
+      row.addProperty("replaced", replaced);
+    }
+
+    BigInteger replacedBycomponentRef = componentRef.getReplacedByField();
+    if (shouldOutputPedigree && replacedBycomponentRef != null) {
+      row.addIntProperty("replacedByField", replacedBycomponentRef.intValue());
+    }
+
+    BigInteger replacedEp = componentRef.getReplacedEP();
+    if (shouldOutputPedigree && replacedEp != null) {
+      row.addIntProperty("replacedEp", replacedEp.intValue());
+    }
+
+    String updated = componentRef.getUpdated();
+    if (shouldOutputPedigree && updated != null) {
+      row.addProperty("updated", updated);
+    }
+
+    BigInteger updatedEp = componentRef.getUpdatedEP();
+    if (shouldOutputPedigree && updatedEp != null) {
+      row.addIntProperty("updatedEp", updatedEp.intValue());
+    }
     addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
@@ -232,6 +302,61 @@ public class MarkdownGenerator {
     if (implLength != null) {
       row.addIntProperty("implLength", implLength);
     }
+    
+    String added = fieldRef.getAdded();
+    if (shouldOutputPedigree && added != null) {
+      row.addProperty("added", added);
+    }
+
+    BigInteger addedEp = fieldRef.getAddedEP();
+    if (shouldOutputPedigree && addedEp != null) {
+      row.addIntProperty("addedEp", addedEp.intValue());
+    }
+
+    String deprecated = fieldRef.getDeprecated();
+    if (shouldOutputPedigree && deprecated != null) {
+      row.addProperty("deprecated", deprecated);
+    }
+
+    BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
+    if (shouldOutputPedigree && deprecatedEp != null) {
+      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+    }
+
+    String issue = fieldRef.getIssue();
+    if (shouldOutputPedigree && issue != null) {
+      row.addProperty("issue", issue);
+    }
+
+    String lastModified = fieldRef.getLastModified();
+    if (shouldOutputPedigree && lastModified != null) {
+      row.addProperty("lastModified", lastModified);
+    }
+
+    String replaced = fieldRef.getReplaced();
+    if (shouldOutputPedigree && replaced != null) {
+      row.addProperty("replaced", replaced);
+    }
+
+    BigInteger replacedByfieldRef = fieldRef.getReplacedByField();
+    if (shouldOutputPedigree && replacedByfieldRef != null) {
+      row.addIntProperty("replacedByField", replacedByfieldRef.intValue());
+    }
+
+    BigInteger replacedEp = fieldRef.getReplacedEP();
+    if (shouldOutputPedigree && replacedEp != null) {
+      row.addIntProperty("replacedEp", replacedEp.intValue());
+    }
+
+    String updated = fieldRef.getUpdated();
+    if (shouldOutputPedigree && updated != null) {
+      row.addProperty("updated", updated);
+    }
+
+    BigInteger updatedEp = fieldRef.getUpdatedEP();
+    if (shouldOutputPedigree && updatedEp != null) {
+      row.addIntProperty("updatedEp", updatedEp.intValue());
+    }
     addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
@@ -251,6 +376,62 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = groupRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
+    
+    String added = groupRef.getAdded();
+    if (shouldOutputPedigree && added != null) {
+      row.addProperty("added", added);
+    }
+
+    BigInteger addedEp = groupRef.getAddedEP();
+    if (shouldOutputPedigree && addedEp != null) {
+      row.addIntProperty("addedEp", addedEp.intValue());
+    }
+
+    String deprecated = groupRef.getDeprecated();
+    if (shouldOutputPedigree && deprecated != null) {
+      row.addProperty("deprecated", deprecated);
+    }
+
+    BigInteger deprecatedEp = groupRef.getDeprecatedEP();
+    if (shouldOutputPedigree && deprecatedEp != null) {
+      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+    }
+
+    String issue = groupRef.getIssue();
+    if (shouldOutputPedigree && issue != null) {
+      row.addProperty("issue", issue);
+    }
+
+    String lastModified = groupRef.getLastModified();
+    if (shouldOutputPedigree && lastModified != null) {
+      row.addProperty("lastModified", lastModified);
+    }
+
+    String replaced = groupRef.getReplaced();
+    if (shouldOutputPedigree && replaced != null) {
+      row.addProperty("replaced", replaced);
+    }
+
+    BigInteger replacedBygroupRef = groupRef.getReplacedByField();
+    if (shouldOutputPedigree && replacedBygroupRef != null) {
+      row.addIntProperty("replacedByField", replacedBygroupRef.intValue());
+    }
+
+    BigInteger replacedEp = groupRef.getReplacedEP();
+    if (shouldOutputPedigree && replacedEp != null) {
+      row.addIntProperty("replacedEp", replacedEp.intValue());
+    }
+
+    String updated = groupRef.getUpdated();
+    if (shouldOutputPedigree && updated != null) {
+      row.addProperty("updated", updated);
+    }
+
+    BigInteger updatedEp = groupRef.getUpdatedEP();
+    if (shouldOutputPedigree && updatedEp != null) {
+      row.addIntProperty("updatedEp", updatedEp.intValue());
+    }
+
     addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
@@ -476,12 +657,12 @@ public class MarkdownGenerator {
     }
 
     final String abbrName = component.getAbbrName();
-    if (abbrName != null) {
+    if (shouldOutputFixml && abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
 
     final String category = component.getCategory();
-    if (category != null) {
+    if (shouldOutputFixml && category != null) {
       context.addPair("category", category);
     }
 
@@ -646,59 +827,81 @@ public class MarkdownGenerator {
         final String maxInclusive = field.getMaxInclusive();
         if (maxInclusive != null) {
           row.addProperty("maxInclusive", maxInclusive);
-        }
-
-        final String abbrName = field.getAbbrName();
-        if (abbrName != null) {
-          row.addProperty("abbrName", abbrName);
-        }
-        final String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
-        if (baseCategoryAbbrName != null) {
-          row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
-        }
-
-        final String baseCategory = field.getBaseCategory();
-        if (baseCategory != null) {
-          row.addProperty("baseCategory", baseCategory);
-        }
+        }       
 
         final BigInteger dicriminatorId = field.getDiscriminatorId();
         if (dicriminatorId != null) {
           row.addIntProperty("dicriminatorId", dicriminatorId.intValue());
         }
 
-        /*
-         * String added = field.getAdded(); if (added != null) { row.addProperty("added", added); }
-         *
-         * BigInteger addedEp = field.getAddedEP(); if (addedEp != null) {
-         * row.addIntProperty("addedEp", addedEp.intValue()); }
-         *
-         * String deprecated = field.getDeprecated(); if (deprecated != null) {
-         * row.addProperty("deprecated", deprecated); }
-         *
-         * BigInteger deprecatedEp = field.getDeprecatedEP(); if (deprecatedEp != null) {
-         * row.addIntProperty("deprecatedEp", deprecatedEp.intValue()); }
-         *
-         * String issue = field.getIssue(); if (issue != null) { row.addProperty("issue", issue); }
-         *
-         * String lastModified = field.getLastModified(); if (lastModified != null) {
-         * row.addProperty("lastModified", lastModified); }
-         *
-         * String replaced = field.getReplaced(); if (replaced != null) {
-         * row.addProperty("replaced", replaced); }
-         *
-         * BigInteger replacedByField = field.getReplacedByField(); if (replacedByField != null) {
-         * row.addIntProperty("replacedByField", replacedByField.intValue()); }
-         *
-         * BigInteger replacedEp = field.getReplacedEP(); if (replacedEp != null) {
-         * row.addIntProperty("replacedEp", replacedEp.intValue()); }
-         *
-         * String updated = field.getUpdated(); if (updated != null) { row.addProperty("updated",
-         * updated); }
-         *
-         * BigInteger updatedEp = field.getUpdatedEP(); if (updatedEp != null) {
-         * row.addIntProperty("updatedEp", updatedEp.intValue()); }
-         */
+        final String abbrName = field.getAbbrName();
+        if (shouldOutputFixml && abbrName != null) {
+          row.addProperty("abbrName", abbrName);
+        }
+        final String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
+        if (shouldOutputFixml && baseCategoryAbbrName != null) {
+          row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
+        }
+
+        final String baseCategory = field.getBaseCategory();
+        if (shouldOutputFixml && baseCategory != null) {
+          row.addProperty("baseCategory", baseCategory);
+        }
+
+        String added = field.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+
+        BigInteger addedEp = field.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+
+        String deprecated = field.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        BigInteger deprecatedEp = field.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+
+        String issue = field.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+
+        String lastModified = field.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+
+        String replaced = field.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+
+        BigInteger replacedByField = field.getReplacedByField();
+        if (shouldOutputPedigree && replacedByField != null) {
+          row.addIntProperty("replacedByField", replacedByField.intValue());
+        }
+
+        BigInteger replacedEp = field.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+
+        String updated = field.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+
+        BigInteger updatedEp = field.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
       }
       documentWriter.write(table);
     } else {
@@ -733,12 +936,12 @@ public class MarkdownGenerator {
     }
 
     final String abbrName = group.getAbbrName();
-    if (abbrName != null) {
+    if (shouldOutputFixml && abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
 
     final String category = group.getCategory();
-    if (category != null) {
+    if (shouldOutputFixml && category != null) {
       context.addPair("category", category);
     }
 
@@ -855,12 +1058,12 @@ public class MarkdownGenerator {
     }
 
     final String abbrName = message.getAbbrName();
-    if (abbrName != null) {
+    if (shouldOutputFixml && abbrName != null) {
       context.addPair("abbrname", abbrName);
     }
 
     final String category = message.getCategory();
-    if (category != null) {
+    if (shouldOutputFixml && category != null) {
       context.addPair("category", category);
     }
 
