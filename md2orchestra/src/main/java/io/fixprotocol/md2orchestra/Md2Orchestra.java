@@ -274,7 +274,7 @@ public class Md2Orchestra {
           glob = inputFilePattern;
         }
 
-        logger.info("Md2Orchestra searching for input at path {} glob {}", dirPath, glob);
+        logger.info("Md2Orchestra searching for input at path {} file name pattern {}", dirPath, glob);
         
         final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
         Files.walkFileTree(dirPath, EnumSet.noneOf(FileVisitOption.class), 1,

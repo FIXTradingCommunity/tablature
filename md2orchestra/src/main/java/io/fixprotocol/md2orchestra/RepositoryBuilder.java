@@ -322,18 +322,18 @@ public class RepositoryBuilder {
     }
   }
 
+  public static final String ABBRNAME_KEYWORD = "abbrname";
   public static final String ACTOR_KEYWORD = "actor";
   public static final String ASSIGN_KEYWORD = "assign";
+  public static final String CATEGORY_KEYWORD = "category";
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
+
   public static final String DATATYPES_KEYWORD = "datatypes";
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
   public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
-
-  public static final String ABBRNAME_KEYWORD = "abbrname";
-  public static final String CATEGORY_KEYWORD = "category";
   public static final String DESCRIPTION_KEYWORD = "description";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
   public static final String FIELDS_KEYWORD = "fields";
@@ -385,11 +385,27 @@ public class RepositoryBuilder {
         new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
 
     if (referenceStream != null) {
-      final RepositoryAdapter referenceRepository = new RepositoryAdapter();
+      final RepositoryAdapter referenceRepository =
+          new RepositoryAdapter(outputRepositoryBuilder.eventLogger);
       referenceRepository.unmarshal(referenceStream);
       outputRepositoryBuilder.setReference(referenceRepository);
     }
     return outputRepositoryBuilder;
+  }
+
+  static TeeEventListener createEventListener(Logger logger, OutputStream jsonOutputStream)
+      throws Exception {
+    final EventListenerFactory factory = new EventListenerFactory();
+    final TeeEventListener eventLogger = new TeeEventListener();
+    final EventListener logEventLogger = factory.getInstance("LOG4J");
+    logEventLogger.setResource(logger);
+    eventLogger.addEventListener(logEventLogger);
+    if (jsonOutputStream != null) {
+      final EventListener jsonEventLogger = factory.getInstance("JSON");
+      jsonEventLogger.setResource(jsonOutputStream);
+      eventLogger.addEventListener(jsonEventLogger);
+    }
+    return eventLogger;
   }
 
   private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
@@ -397,16 +413,15 @@ public class RepositoryBuilder {
   private final String[] contextKeys =
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
-
   private TeeEventListener eventLogger;
-  private final EventListenerFactory factory = new EventListenerFactory();
   private int lastId = 10000;
+
   private final Logger logger = LogManager.getLogger(getClass());
 
   private final Consumer<Contextual> markdownConsumer = contextual -> {
     final Context keyContext = getKeyContext(contextual);
     if (keyContext == null) {
-      eventLogger.warn("Element with unknown context");
+      eventLogger.warn("Element with unknown context; perhaps missing heading");
       return;
     }
     final String type = keyContext.getKey(KEY_POSITION);
@@ -456,10 +471,10 @@ public class RepositoryBuilder {
           }
       }
   };
-
   private final String paragraphDelimiterInTables;
   private RepositoryAdapter referenceRepositoryAdapter = null;
-  private final RepositoryAdapter repositoryAdapter = new RepositoryAdapter();
+  private RepositoryAdapter repositoryAdapter = null;
+
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
 
   RepositoryBuilder(OutputStream jsonOutputStream) throws Exception {
@@ -469,8 +484,9 @@ public class RepositoryBuilder {
   RepositoryBuilder(OutputStream jsonOutputStream, String paragraphDelimiterInTables)
       throws Exception {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
+    this.eventLogger = createEventListener(this.logger, jsonOutputStream);
+    this.repositoryAdapter = new RepositoryAdapter(this.eventLogger);
     this.repositoryAdapter.createRepository();
-    createLogger(jsonOutputStream);
   }
 
   /**
@@ -482,10 +498,6 @@ public class RepositoryBuilder {
   public void appendInput(InputStream inputStream) throws IOException {
     final DocumentParser parser = new DocumentParser();
     parser.parse(inputStream, markdownConsumer);
-  }
-
-  public void setReference(RepositoryAdapter reference) {
-    this.referenceRepositoryAdapter = reference;
   }
 
   /**
@@ -554,6 +566,10 @@ public class RepositoryBuilder {
         }
       }
     }
+  }
+
+  void setReference(RepositoryAdapter reference) {
+    this.referenceRepositoryAdapter = reference;
   }
 
   private void addActor(Contextual contextual, Context context) {
@@ -1388,18 +1404,6 @@ public class RepositoryBuilder {
     }
 
     repositoryAdapter.addCodeset(codeset);
-  }
-
-  private void createLogger(OutputStream jsonOutputStream) throws Exception {
-    eventLogger = new TeeEventListener();
-    final EventListener logEventLogger = factory.getInstance("LOG4J");
-    logEventLogger.setResource(logger);
-    eventLogger.addEventListener(logEventLogger);
-    if (jsonOutputStream != null) {
-      final EventListener jsonEventLogger = factory.getInstance("JSON");
-      jsonEventLogger.setResource(jsonOutputStream);
-      eventLogger.addEventListener(jsonEventLogger);
-    }
   }
 
   private void executeDefferedBuildSteps() {

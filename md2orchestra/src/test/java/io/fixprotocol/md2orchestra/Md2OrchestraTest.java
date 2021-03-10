@@ -20,6 +20,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
@@ -36,15 +38,8 @@ class Md2OrchestraTest {
     new File(("target/test")).mkdirs();
   }
 
-  @Test
-  void roundtrip() throws Exception {
-    final String inputPath = getResourcePath("mit_2016.md");
-    final String outputFilename = "target/test/mit_2016.xml";
-    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
-        .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
-    md2Orchestra1.generate();
-  }
-  
+  private final Logger logger = LogManager.getLogger(getClass());
+
   @Test
   void noInput() throws Exception {
     final String outputFilename = "target/test/mit_2016.xml";
@@ -54,16 +49,26 @@ class Md2OrchestraTest {
       md2Orchestra1.generate();
     });
   }
+  
+  @Test
+  void roundtrip() throws Exception {
+    final String inputPath = getResourcePath("mit_2016.md");
+    final String outputFilename = "target/test/mit_2016.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+        .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
+    md2Orchestra1.generate();
+  }
 
   @Test
-  void withoutReference() throws Exception {
-    String inputPath = getResourcePath("md2orchestra-proto.md");
-    final String outputFilename = "target/test/md2orchestra-proto.xml";
-    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+  void twoInputs() throws Exception {
+    // glob should match 2 files
+    String inputGlob = getResourcePath("md2orchestra-proto-p?.md");
+    final String outputFilename = "target/test/md2orchestra-proto2.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputGlob)
         .outputFile(outputFilename).build();
     md2Orchestra1.generate();
-
-    RepositoryAdapter outfile = new RepositoryAdapter();
+ 
+    RepositoryAdapter outfile = new RepositoryAdapter(RepositoryBuilder.createEventListener(logger, null));
     outfile.unmarshal(new FileInputStream(outputFilename));
     MessageType message = outfile.findMessageByName("NewOrderSingle", "base");
     assertNotNull(message);
@@ -92,15 +97,14 @@ class Md2OrchestraTest {
   }
 
   @Test
-  void twoInputs() throws Exception {
-    // glob should match 2 files
-    String inputGlob = getResourcePath("md2orchestra-proto-p?.md");
-    final String outputFilename = "target/test/md2orchestra-proto2.xml";
-    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputGlob)
+  void withoutReference() throws Exception {
+    String inputPath = getResourcePath("md2orchestra-proto.md");
+    final String outputFilename = "target/test/md2orchestra-proto.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
         .outputFile(outputFilename).build();
     md2Orchestra1.generate();
- 
-    RepositoryAdapter outfile = new RepositoryAdapter();
+
+    RepositoryAdapter outfile = new RepositoryAdapter(RepositoryBuilder.createEventListener(logger, null));
     outfile.unmarshal(new FileInputStream(outputFilename));
     MessageType message = outfile.findMessageByName("NewOrderSingle", "base");
     assertNotNull(message);

@@ -24,8 +24,6 @@ import javax.xml.bind.Marshaller;
 import javax.xml.bind.PropertyException;
 import javax.xml.bind.Unmarshaller;
 import javax.xml.namespace.QName;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.purl.dc.elements._1.SimpleLiteral;
 import org.purl.dc.terms.ElementOrRefinementContainer;
 import com.sun.xml.bind.marshaller.NamespacePrefixMapper;
@@ -49,21 +47,21 @@ import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol.md.event.MarkdownUtil;
-
+import io.fixprotocol.orchestra.event.EventListener;
 
 /**
  * Access methods for Repository
  * 
- * Preferred XML namespace prefixes:
- * fixr = http://fixprotocol.io/2020/orchestra/repository
- * dcterms = http://purl.org/dc/terms/
- * dc = http://purl.org/dc/elements/1.1/
+ * Preferred XML namespace prefixes: fixr = http://fixprotocol.io/2020/orchestra/repository dcterms
+ * = http://purl.org/dc/terms/ dc = http://purl.org/dc/elements/1.1/
  * 
  * @author Don Mendelson
  *
  */
-public class RepositoryAdapter {
+class RepositoryAdapter {
 
+  private final EventListener eventLogger;
+  
   /**
    * Provide deterministic XML namespace prefixes
    *
@@ -90,15 +88,19 @@ public class RepositoryAdapter {
   }
 
   // sorted array of valid Dublin Core Terms
-  private static final String[] DC_TERMS =
-      new String[] {"contributor", "coverage", "creator", "date", "description", "format",
-          "identifier", "language", "publisher", "relation", "rights", "source", "subject", "type"};
+  private static final String[] DC_TERMS = new String[] {"accessRights", "accrualMethod",
+      "accrualPeriodicity", "accrualPolicy", "abstract", "alternative", "audience", "avaliable",
+      "bibliographicCitation", "conformsTo", "contributor", "coverage", "created", "creator",
+      "date", "dateAccepted", "dateCopyrighted", "dateSubmitted", "description", "educationLevel",
+      "extent", "format", "hasFormat", "hasPart", "hasVersion", "identifier", "instructionalMethod",
+      "issued", "isFormatOf", "isPartOf", "isReferencedBy", "isReplacedBy", "isRequiredBy",
+      "isVersionOf", "language", "license", "mediator", "medium", "modified", "provenance",
+      "publisher", "references", "relation", "replaces", "requires", "rights", "rightsHolder",
+      "source", "spatial", "subject", "tableOfContents", "temporal", "title", "type", "valid"};
 
   static String substitute(String markdown, String token, String replacement) {
     return markdown.replace(token, replacement);
   }
-
-  private final Logger logger = LogManager.getLogger(getClass());
 
   private Repository repository;
 
@@ -365,8 +367,8 @@ public class RepositoryAdapter {
     try {
       jaxbMarshaller.setProperty("com.sun.xml.bind.namespacePrefixMapper",
           new RepositoryNamespacePrefixMapper());
-    } catch (final PropertyException e) {
-      logger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
+    } catch (final PropertyException e) {     
+      eventLogger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
     }
     jaxbMarshaller.marshal(repository, os);
   }
@@ -374,13 +376,13 @@ public class RepositoryAdapter {
   void setMetadata(String term, String value) {
     final ElementOrRefinementContainer container = repository.getMetadata();
     final List<JAXBElement<SimpleLiteral>> literals = container.getAny();
-    if (Arrays.binarySearch(DC_TERMS, term) == -1) {
-      logger.error("RepositoryBuilder invalid metadata term {}", term);
+    if (Arrays.binarySearch(DC_TERMS, term) < 0) {
+      eventLogger.error("RepositoryBuilder invalid metadata term {0}", term);
     } else {
       final SimpleLiteral literal = new SimpleLiteral();
       literal.getContent().add(value);
 
-      final QName qname = new QName("http://purl.org/dc/elements/1.1/", term);
+      final QName qname = new QName("http://purl.org/dc/terms/", term);
       final JAXBElement<SimpleLiteral> element =
           new JAXBElement<>(qname, SimpleLiteral.class, null, literal);
       literals.add(element);
@@ -393,6 +395,10 @@ public class RepositoryAdapter {
 
   void setVersion(final String version) {
     repository.setVersion(version);
+  }
+
+  RepositoryAdapter(EventListener eventLogger) {
+    this.eventLogger = eventLogger;
   }
 
   void unmarshal(InputStream is) throws JAXBException {

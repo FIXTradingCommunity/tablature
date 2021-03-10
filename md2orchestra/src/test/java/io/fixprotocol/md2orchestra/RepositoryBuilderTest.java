@@ -60,6 +60,33 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing value for constant"));
   }
   
+  @Test // ODOC-26
+  void badMetadata() throws Exception {
+    String text =
+        "# FIX.5.0SP2 FIX.5.0SP2_EP216\n"
+        + "\n"
+        + "| Term       | Value                                 |\n"
+        + "|------------|---------------------------------------|\n"
+        + "| title      | Orchestra Example                     |\n"
+        + "| creator    | Millennium IT                         |\n"
+        + "| publisher  | FIX Trading Community                 |\n"
+        + "| rights     | Copyright 2019, FIX Protocol, Limited |\n"
+        + "| date       | 2019-01-09T16:09:16.904-06:00         |\n"
+        + "| version    | 2.1.3                |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("invalid metadata term version"));
+  }
+  
   @Test //ODOC-20
   void constant() throws Exception {
     String text =
