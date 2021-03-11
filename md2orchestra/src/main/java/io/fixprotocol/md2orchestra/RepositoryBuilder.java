@@ -809,9 +809,22 @@ public class RepositoryBuilder {
 
     if (contextual instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) contextual;
-      final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+
+      if (codeset != null && !codeset.getCode().isEmpty()) {
+        eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", name, scenario);
+        String codesetScenario = scenario + "Dup";
+        CodeSetType dupCodeset = new CodeSetType();
+        dupCodeset.setName(name);
+        dupCodeset.setScenario(codesetScenario);
+        dupCodeset.setType(codeset.getType());
+        repositoryAdapter.addCodeset(dupCodeset);
+        codeset = dupCodeset;
+      }
       final List<CodeType> codes = codeset.getCode();
-      detailTable.rows().forEach(detail -> addCode(detail, codes, codeset));
+      for (DetailProperties detail : detailTable.rows()) {
+        addCode(detail, codes, codeset);
+      }
     } else if (contextual instanceof Documentation) {
       final Documentation documentation = (Documentation) contextual;
       final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
@@ -828,35 +841,38 @@ public class RepositoryBuilder {
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
         && CODESET_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
-      final CodeSetType codeset = new CodeSetType();
-      CodeSetType refCodeset = null;
-      if (referenceRepositoryAdapter != null) {
-        refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
+      CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+      if (codeset != null) {
+        eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", name, scenario);
+      } else if (referenceRepositoryAdapter != null) {
+        CodeSetType refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
+        if (refCodeset != null) {
+          // Copy all codeset attributes but without codes
+          codeset = repositoryAdapter.copyCodeset(refCodeset);
+          codeset.getCode().clear();
+        }
       }
-      if (tag == -1 && refCodeset != null) {
-        tag = refCodeset.getId().intValue();
-      }
-      if (tag == -1) {
-        tag = assignId();
-      }
-      codeset.setId(BigInteger.valueOf(tag));
-      codeset.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenario)) {
-        codeset.setScenario(scenario);
-      }
+      if (codeset == null) {
+        codeset = new CodeSetType();
+        int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+        
+        if (tag == -1) {
+          codeset.setId(BigInteger.valueOf(assignId()));
+        }
 
-      String type = context.getKeyValue("type");
-      if (type == null && refCodeset != null) {
-        type = refCodeset.getType();
-      }
-      if (type != null) {
-        codeset.setType(type);
-      } else {
-        eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
-      }
+        codeset.setName(name);
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
+          codeset.setScenario(scenario);
+        }
 
-      repositoryAdapter.addCodeset(codeset);
+        String type = context.getKeyValue("type");
+        if (type != null) {
+          codeset.setType(type);
+        } else {
+          eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
+        }
+        repositoryAdapter.addCodeset(codeset);
+      }
     }
   }
 
@@ -1024,8 +1040,14 @@ public class RepositoryBuilder {
           case "values":
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
-              final String codesetName = detail.getProperty("name") + "Codeset";
-              createCodesetFromString(codesetName, detail.getProperty(SCENARIO_KEYWORD),
+              final String codesetName = detail.getProperty("name") + "Codeset";           
+              String codesetScenario = field.getScenario();
+              CodeSetType existingCodeset = repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+              if (existingCodeset != null) {
+                eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName, codesetScenario);
+                codesetScenario = codesetScenario + "Dup";
+              }
+              createCodesetFromString(codesetName, codesetScenario,
                   detail.getProperty("type"), values);
               field.setType(codesetName);
             }
@@ -1781,8 +1803,13 @@ public class RepositoryBuilder {
         final Matcher codeMatcher = codePattern.matcher(valueString);
         if (codeMatcher.find()) {
           final String codesetName = name + "Codeset";
-          // use the scenario of the parent element
-          createCodesetFromString(codesetName, scenario, DEFAULT_CODE_TYPE, valueString);
+          String codesetScenario = scenario;
+          CodeSetType existingCodeset = repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+          if (existingCodeset != null) {
+            eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName, codesetScenario);
+            codesetScenario = codesetScenario + "Dup";
+          }
+          createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
         } else if (presence == PresenceT.CONSTANT) {
           fieldRefType.setValue(valueString);
           if (!DEFAULT_SCENARIO.equals(scenario)) {

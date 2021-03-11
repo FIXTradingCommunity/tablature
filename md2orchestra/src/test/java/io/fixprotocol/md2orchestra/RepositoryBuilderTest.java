@@ -137,15 +137,14 @@ class RepositoryBuilderTest {
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =
-        "### Codeset SideCodeSet type char\n"
+        "### Codeset SideCodeSet scenario BuySell type char\n"
         + "\n"
         + "| Name | Value | Documentation |\n"
-        + "|------------------|:-------:|---------------|-------|\n"
+        + "|------------------|:-------:|---------------|\n"
         + "| Buy | 1 | |\n"
         + "| Sell | 2 | |\n"
-        + "| Undisclosed | 7 | |\n"
         + "\n"
-        + "### Codeset SideCodeSet scenario BuySell type char\n"
+        + "### Codeset SideCodeSet type char scenario BuySell\n"
         + "\n"
         + "| Name | Value | Documentation |\n"
         + "|------------------|:-------:|---------------|\n"
@@ -161,8 +160,9 @@ class RepositoryBuilderTest {
     //String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
+    String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+    assertTrue(errors.contains("Duplicate definitions of codeset"));
    }
   
   @Test // ODOC-66
@@ -193,8 +193,9 @@ class RepositoryBuilderTest {
     //String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
-    //String errors = jsonOutputStream.toString();
+    String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+    assertTrue(errors.contains("Duplicate definitions of codeset"));
    }
   
   @Test // ODOC-30
