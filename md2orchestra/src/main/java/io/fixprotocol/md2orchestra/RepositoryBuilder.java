@@ -1406,7 +1406,9 @@ public class RepositoryBuilder {
     final List<CodeType> codes = codeset.getCode();
 
     final Matcher codeMatcher = codePattern.matcher(valueString);
+    int matchOffset = 0;
     while (codeMatcher.find()) {
+      matchOffset = codeMatcher.end();
       final CodeType code = new CodeType();
       code.setValue(codeMatcher.group(1));
       code.setName(codeMatcher.group(2).replaceAll("\"", ""));
@@ -1414,15 +1416,9 @@ public class RepositoryBuilder {
       codes.add(code);
     }
 
-    if (!codeMatcher.hitEnd()) {
-      String unmatched = valueString;
-      try {
-        unmatched = valueString.substring(codeMatcher.end());
-      } catch (final IllegalStateException e) {
-      }
-      if (!unmatched.isBlank()) {
-        eventLogger.error("Malformed inline code in codeset {0}; {1}", codesetName, unmatched);
-      }
+    String unmatched = valueString.substring(matchOffset);
+    if (!unmatched.isBlank()) {
+      eventLogger.error("Malformed inline code in codeset {0}; {1}", codesetName, unmatched);
     }
 
     repositoryAdapter.addCodeset(codeset);
