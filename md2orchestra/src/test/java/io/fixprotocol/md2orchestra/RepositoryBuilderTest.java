@@ -223,6 +223,25 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Duplicate definitions of codeset"));
    }
   
+  @Test // ODOC-31
+  void emptyComponent() throws Exception {
+    String text =
+        "## Component InstrumentParties\n"
+        + "\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-30
   void extraComponentWithSynopsis() throws Exception {
     String text =

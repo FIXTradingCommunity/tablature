@@ -673,14 +673,15 @@ public class MarkdownGenerator {
     final Annotation annotation = component.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
-    final MutableDetailTable table = contextFactory.createDetailTable();
+    
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
     if (!members.isEmpty()) {
+      final MutableDetailTable table = contextFactory.createDetailTable();
       addMemberRows(table, repository, members);
+      documentWriter.write(table);
     } else {
       eventLogger.warn("Component has no members; name={0} scenario={1}", name, scenario);
     }
-    documentWriter.write(table);
   }
 
   private void generateComponents(Repository repository, DocumentWriter documentWriter)
@@ -785,7 +786,8 @@ public class MarkdownGenerator {
   private void generateFields(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     final Fields fieldParent = repository.getFields();
-    if (fieldParent != null) {
+    if (fieldParent != null && !fieldParent.getField().isEmpty()) {
+      
       final MutableContext context = contextFactory.createContext(2);
       context.addKey("Fields");
       documentWriter.write(context);
@@ -1080,15 +1082,15 @@ public class MarkdownGenerator {
     final Annotation annotation = message.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
-    final MutableDetailTable table = contextFactory.createDetailTable();
-
     final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
     if (!members.isEmpty()) {
+      final MutableDetailTable table = contextFactory.createDetailTable();
       addMemberRows(table, repository, members);
+      documentWriter.write(table);
     } else {
       eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
     }
-    documentWriter.write(table);
+    
   }
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
