@@ -1638,7 +1638,7 @@ public class RepositoryBuilder {
         rule.setWhen(String.join(" ", whenWords));
         rules.add(rule);
       }
-    } else {
+    } else if (presence != PresenceT.OPTIONAL) {
       componentRefType.setPresence(presence);
     }
 
@@ -1949,7 +1949,7 @@ public class RepositoryBuilder {
         rule.setWhen(String.join(" ", whenWords));
         rules.add(rule);
       }
-    } else {
+    } else if(presence != PresenceT.OPTIONAL) {
       groupRefType.setPresence(presence);
     }
 

@@ -34,7 +34,7 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing value"));
     assertTrue(errors.contains("Missing name"));
   }
-
+  
   @Test // ODOC-43
   void badConstant() throws Exception {
     String text =
@@ -59,7 +59,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Missing value for constant"));
   }
-  
+
   @Test // ODOC-23
   void badInlineCodes() throws Exception {
     String text =
@@ -441,6 +441,31 @@ class RepositoryBuilderTest {
     String xml = xmlStream.toString();
     assertTrue(xml.contains("type=\"Qty\""));
     // System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-78
+  void optionalPresence() throws Exception {
+    String text =
+        "## Message NewOrderSingle\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|-------------------------|\n"
+        + "| ClOrdID | | required |\n"
+        + "| Account | | |\n"
+        + "| Instrument | c | |\n"
+        + "| Parties | g | |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
