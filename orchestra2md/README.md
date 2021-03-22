@@ -7,13 +7,13 @@ The orchestra2md utilty documents an Orchestra repository as a markdown document
 ### Command line arguments
 
 ```
-usage: Orchestra2md [options] 
+usage: Orchestra2md [options] <input-file>
  -?,--help              display usage
- -e,--eventlog <arg>    path of log file
- -i,--input <arg>       path of markdown input file (required)
- -o,--output <arg>      path of output Orchestra file (required)
- -r,--reference <arg>   path of reference Orchestra file
- -v,--verbose           verbose event log
+ -e,--eventlog <arg>    path of JSON event file
+    --fixml             output fixml attributes
+ -o,--output <arg>      path of markdown output file (required)
+    --paragraph <arg>   paragraph delimiter for tables
+    --pedigree          output pedigree attributes
  ```
 
 ### Invoked from an application
