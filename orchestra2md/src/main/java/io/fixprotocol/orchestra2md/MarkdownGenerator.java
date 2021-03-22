@@ -122,13 +122,13 @@ public class MarkdownGenerator {
       final Repository repository = XmlParser.unmarshal(inputStream, eventLogger);
       generateRepositoryMetadata(repository, documentWriter);
       generateActorsAndFlows(repository, documentWriter);
-      generateDatatypes(repository, documentWriter);
-      generateCodesets(repository, documentWriter);
-      generateFields(repository, documentWriter);
+      generateMessages(repository, documentWriter);
       generateComponents(repository, documentWriter);
       generateGroups(repository, documentWriter);
-      generateMessages(repository, documentWriter);
-    } catch (final JAXBException e) {
+      generateFields(repository, documentWriter);     
+      generateCodesets(repository, documentWriter);
+      generateDatatypes(repository, documentWriter);
+     } catch (final JAXBException e) {
       logger.fatal("Orchestra2md failed to parse XML", e);
       throw new IOException(e);
     } catch (final Exception e1) {
