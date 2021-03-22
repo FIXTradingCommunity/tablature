@@ -57,6 +57,7 @@ import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
+import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.Contextual;
 import io.fixprotocol.md.event.Detail;
@@ -1063,6 +1064,9 @@ public class RepositoryBuilder {
             break;
           case "impllength":
             field.setImplLength(Short.parseShort(p.getValue()));
+            break;
+          case "uniondatatype":
+            field.setUnionDataType(UnionDataTypeT.fromValue(p.getValue()));
             break;
           case ABBRNAME_KEYWORD:
             field.setAbbrName(p.getValue());

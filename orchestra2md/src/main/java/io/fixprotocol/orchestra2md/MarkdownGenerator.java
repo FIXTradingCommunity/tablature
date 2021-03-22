@@ -52,6 +52,7 @@ import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
+import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.ContextFactory;
 import io.fixprotocol.md.event.DocumentWriter;
 import io.fixprotocol.md.event.MarkdownUtil;
@@ -834,6 +835,11 @@ public class MarkdownGenerator {
           row.addIntProperty("dicriminatorId", dicriminatorId.intValue());
         }
 
+        UnionDataTypeT unionDataType = field.getUnionDataType();
+        if (unionDataType != null) {
+          row.addProperty("unionDataType", unionDataType.value());
+        }
+        
         final String abbrName = field.getAbbrName();
         if (shouldOutputFixml && abbrName != null) {
           row.addProperty("abbrName", abbrName);
