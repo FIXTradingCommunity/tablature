@@ -845,7 +845,7 @@ public class MarkdownGenerator {
 
         final BigInteger dicriminatorId = field.getDiscriminatorId();
         if (dicriminatorId != null) {
-          row.addIntProperty("dicriminatorId", dicriminatorId.intValue());
+          row.addIntProperty("discriminatorId", dicriminatorId.intValue());
         }
 
         UnionDataTypeT unionDataType = field.getUnionDataType();
