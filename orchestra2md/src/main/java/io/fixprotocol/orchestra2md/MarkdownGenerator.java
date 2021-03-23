@@ -966,10 +966,11 @@ public class MarkdownGenerator {
     final Annotation annotation = group.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
-    final MutableDetailTable table = contextFactory.createDetailTable();
+    MutableDetailTable table = null;
 
     final FieldRefType numInGroup = group.getNumInGroup();
     if (numInGroup != null) {
+      table = contextFactory.createDetailTable();
       final MutableDetailProperties row = table.newRow();
       addFieldRefRow(repository, numInGroup, row);
     } else {
@@ -977,11 +978,17 @@ public class MarkdownGenerator {
     }
     final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
     if (!members.isEmpty()) {
+      if (table == null) {
+        table = contextFactory.createDetailTable();
+      }
       addMemberRows(table, repository, members);
     } else {
       eventLogger.warn("Group has no members; name={0} scenario={1}", name, scenario);
     }
-    documentWriter.write(table);
+    
+    if (table != null) {
+      documentWriter.write(table);
+    }
   }
 
   private void generateGroups(Repository repository, DocumentWriter documentWriter)
