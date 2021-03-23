@@ -466,6 +466,6 @@ class MarkdownGeneratorTest {
     //System.out.println(md);
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(errors.contains("Component has no members"));
+    assertTrue(errors.contains("Unknown codeset id"));
   }
 }
