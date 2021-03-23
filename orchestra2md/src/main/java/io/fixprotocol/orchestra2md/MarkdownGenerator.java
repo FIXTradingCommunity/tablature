@@ -670,7 +670,7 @@ public class MarkdownGenerator {
     }
 
     final String category = component.getCategory();
-    if (shouldOutputFixml && category != null) {
+    if (category != null) {
       context.addPair("category", category);
     }
 
@@ -956,7 +956,7 @@ public class MarkdownGenerator {
     }
 
     final String category = group.getCategory();
-    if (shouldOutputFixml && category != null) {
+    if (category != null) {
       context.addPair("category", category);
     }
 
@@ -1078,7 +1078,7 @@ public class MarkdownGenerator {
     }
 
     final String category = message.getCategory();
-    if (shouldOutputFixml && category != null) {
+    if (category != null) {
       context.addPair("category", category);
     }
 
