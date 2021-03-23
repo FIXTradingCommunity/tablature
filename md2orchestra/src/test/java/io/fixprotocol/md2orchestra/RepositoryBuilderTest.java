@@ -583,6 +583,29 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // ODOC-21
+  void unknownId() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name | Tag | Type | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| MyUserDefined1 | 6234| UTCTimestamp | |\n"
+        + "| MyUserDefined2 | 6235| | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Unknown type for field"));
+  }
+  
   @Test //ODOC-42
   void unknownTagForFieldScenario() throws Exception {
     String text =

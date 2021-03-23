@@ -189,7 +189,7 @@ public class RepositoryBuilder {
           eventLogger.error("Unknown field ID; name={0} scenario={1}", name, scenario);
         }
         if (type == null) {
-          eventLogger.error("Unknown type for field; id={0, number, ###} name={1} scenario={2}",
+          eventLogger.error("Unknown type for field; id={0, number, #0} name={1} scenario={2}",
               fieldType.getId(), fieldType.getName(), scenario);
         }
         repositoryAdapter.addField(fieldType);
@@ -529,7 +529,7 @@ public class RepositoryBuilder {
           if (field != null) {
             addFieldAndType(field);
           } else {
-            eventLogger.error("Unknown field; lastId={0, number, ###} scenario={1}",
+            eventLogger.error("Unknown field; lastId={0, number, ##0} scenario={1}",
                 fieldRef.getId().intValue(), fieldRef.getScenario());
           }
         }
