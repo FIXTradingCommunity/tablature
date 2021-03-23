@@ -561,7 +561,14 @@ public class MarkdownGenerator {
       context.addPair("scenario", scenario);
     }
     context.addPair("type", codeset.getType());
-    context.addKey(String.format("(%d)", codeset.getId().intValue()));
+    
+    final BigInteger id = codeset.getId();
+    if (id != null) {
+      context.addKey(String.format("(%d)", id.intValue()));
+    } else {
+      eventLogger.warn("Unknown codeset id; name={0} scenario={1}", codeset.getName(), scenario);
+    }
+    
     documentWriter.write(context);
 
     final Annotation annotation = codeset.getAnnotation();
@@ -612,9 +619,9 @@ public class MarkdownGenerator {
         final String name = code.getName();
         row.addProperty("name", name);
         row.addProperty("value", code.getValue());
-        final BigInteger id = code.getId();
-        if (id != null) {
-          row.addProperty("id", id.toString());
+        final BigInteger codeId = code.getId();
+        if (codeId != null) {
+          row.addProperty("id", codeId.toString());
         } else {
           eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
         }

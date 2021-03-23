@@ -434,4 +434,38 @@ class MarkdownGeneratorTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Component has no members"));
   }
+  
+  @Test // ODOC-63
+  void duplicateCodes() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "        <fixr:codeSet type=\"char\" name=\"SideCodeSet\" scenario=\"BuySellDup\">\n"
+        + "            <fixr:code value=\"1\" id=\"10004\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10005\" name=\"Sell\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Component has no members"));
+  }
 }

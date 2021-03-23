@@ -819,6 +819,7 @@ public class RepositoryBuilder {
         dupCodeset.setName(name);
         dupCodeset.setScenario(codesetScenario);
         dupCodeset.setType(codeset.getType());
+        dupCodeset.setId(BigInteger.valueOf(assignId()));
         repositoryAdapter.addCodeset(dupCodeset);
         codeset = dupCodeset;
       }
