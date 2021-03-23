@@ -249,7 +249,7 @@ class MarkdownGeneratorTest {
     OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
     generator.generate(inputStream, outputWriter, jsonOutputStream);
     outputWriter.close();
-    String md = mdStream.toString();
+    //String md = mdStream.toString();
     //System.out.println(md);
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);

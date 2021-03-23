@@ -123,8 +123,8 @@ public class MarkdownGenerator {
       generateRepositoryMetadata(repository, documentWriter);
       generateActorsAndFlows(repository, documentWriter);
       generateMessages(repository, documentWriter);
-      generateComponents(repository, documentWriter);
       generateGroups(repository, documentWriter);
+      generateComponents(repository, documentWriter);
       generateFields(repository, documentWriter);     
       generateCodesets(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
@@ -509,7 +509,7 @@ public class MarkdownGenerator {
 
   private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(3);
     context.addPair("Actor", actor.getName());
 
     final Annotation annotation = actor.getAnnotation();
@@ -541,6 +541,10 @@ public class MarkdownGenerator {
     final Actors actors = repository.getActors();
     if (actors != null) {
       final List<Object> actorsOrFlows = actors.getActorOrFlow();
+      if (!actorsOrFlows.isEmpty()) {
+        final MutableContext context = contextFactory.createContext(new String[] {"Actors and Flows"}, 2);
+        documentWriter.write(context);
+      }
       for (final Object actorOrFlow : actorsOrFlows) {
         if (actorOrFlow instanceof ActorType) {
           generateActor((ActorType) actorOrFlow, repository, documentWriter);
@@ -926,7 +930,7 @@ public class MarkdownGenerator {
 
   private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(3);
     context.addPair("Flow", flow.getName());
     final Annotation annotation = flow.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
@@ -1052,6 +1056,10 @@ public class MarkdownGenerator {
     if (messageParent != null) {
       final List<MessageType> messages = messageParent.getMessage().stream()
           .sorted(Comparator.comparing(MessageType::getName)).collect(Collectors.toList());
+      if (!messages.isEmpty()) {
+        final MutableContext context = contextFactory.createContext(new String[] {"Messages"}, 2);
+        documentWriter.write(context);
+      }
       for (final MessageType message : messages) {
         generateMessageStructure(repository, documentWriter, message);
         generateMessageResponses(repository, documentWriter, message);
@@ -1063,7 +1071,7 @@ public class MarkdownGenerator {
 
   private void generateMessageStructure(Repository repository, DocumentWriter documentWriter,
       final MessageType message) throws IOException {
-    final MutableContext context = contextFactory.createContext(2);
+    final MutableContext context = contextFactory.createContext(3);
     final String name = message.getName();
     context.addPair("Message", name);
     final String scenario = message.getScenario();
