@@ -1,7 +1,9 @@
 module md2orchestra {
   exports io.fixprotocol.md2orchestra;
+  exports io.fixprotocol.md2orchestra.util;
 
   opens io.fixprotocol.md2orchestra;
+  opens io.fixprotocol.md2orchestra.util;
 
   requires java.xml.bind;
   requires jaxb2.basics.runtime;
