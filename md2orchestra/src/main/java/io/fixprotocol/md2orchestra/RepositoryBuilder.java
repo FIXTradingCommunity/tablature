@@ -68,6 +68,7 @@ import io.fixprotocol.md.event.Documentation;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
+import io.fixprotocol.md2orchestra.util.IdGenerator;
 
 public class RepositoryBuilder {
   private class ComponentBuilder implements ElementBuilder {
@@ -415,9 +416,8 @@ public class RepositoryBuilder {
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
   private TeeEventListener eventLogger;
-  private int lastId = 10000;
-
   private final Logger logger = LogManager.getLogger(getClass());
+  private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
 
   private final Consumer<Contextual> markdownConsumer = contextual -> {
     final Context keyContext = getKeyContext(contextual);
@@ -714,11 +714,13 @@ public class RepositoryBuilder {
       CodeSetType codeset) {
     final CodeType codeType = new CodeType();
 
+    String name = "Unknown";
     for (final Entry<String, String> p : detail.getProperties()) {
-
+      
       switch (p.getKey().toLowerCase()) {
         case "name":
-          codeType.setName(textUtil.stripName(p.getValue()));
+          name = textUtil.stripName(p.getValue());
+          codeType.setName(name);
           break;
         case "value":
           codeType.setValue(p.getValue());
@@ -788,7 +790,7 @@ public class RepositoryBuilder {
     }
 
     if (codeType.getId() == null) {
-      codeType.setId(BigInteger.valueOf(assignId()));
+      codeType.setId(BigInteger.valueOf(assignId(codeset.getName(), name)));
     }
 
     if (codeType.getName() == null) {
@@ -819,7 +821,7 @@ public class RepositoryBuilder {
         dupCodeset.setName(name);
         dupCodeset.setScenario(codesetScenario);
         dupCodeset.setType(codeset.getType());
-        dupCodeset.setId(BigInteger.valueOf(assignId()));
+        dupCodeset.setId(BigInteger.valueOf(assignId(name, codesetScenario)));
         repositoryAdapter.addCodeset(dupCodeset);
         codeset = dupCodeset;
       }
@@ -914,7 +916,7 @@ public class RepositoryBuilder {
         tag = refComponent.getId().intValue();
       }
       if (tag == -1) {
-        tag = assignId();
+        tag = assignId(name, scenario);
       }
       component.setId(BigInteger.valueOf(tag));
       component.setName(name);
@@ -1230,7 +1232,7 @@ public class RepositoryBuilder {
         tag = refComponent.getId().intValue();
       }
       if (tag == -1) {
-        tag = assignId();
+        tag = assignId(name, scenario);
       }
       group.setId(BigInteger.valueOf(tag));
       group.setName(name);
@@ -1390,15 +1392,14 @@ public class RepositoryBuilder {
     }
   }
 
-  private int assignId() {
-    lastId++;
-    return lastId;
+  private int assignId(String... seeds) {
+    return idGenerator.generate(seeds);
   }
 
   private void createCodesetFromString(String codesetName, String scenario, String type,
       String valueString) {
     final CodeSetType codeset = new CodeSetType();
-    codeset.setId(BigInteger.valueOf(assignId()));
+    codeset.setId(BigInteger.valueOf(assignId(codesetName, scenario)));
     codeset.setName(codesetName);
     if (!DEFAULT_SCENARIO.equals(scenario)) {
       codeset.setScenario(scenario);
@@ -1416,8 +1417,9 @@ public class RepositoryBuilder {
       matchOffset = codeMatcher.end();
       final CodeType code = new CodeType();
       code.setValue(codeMatcher.group(1));
-      code.setName(codeMatcher.group(2).replaceAll("\"", ""));
-      code.setId(BigInteger.valueOf(assignId()));
+      final String name = codeMatcher.group(2).replaceAll("\"", "");
+      code.setName(name);
+      code.setId(BigInteger.valueOf(assignId(codesetName, name, scenario)));
       codes.add(code);
     }
 
@@ -1468,7 +1470,7 @@ public class RepositoryBuilder {
         tag = refMessage.getId().intValue();
       }
       if (tag == -1) {
-        tag = assignId();
+        tag = assignId(name, scenario);
       }
       message.setId(BigInteger.valueOf(tag));
       message.setName(name);

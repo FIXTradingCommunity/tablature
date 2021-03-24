@@ -159,6 +159,32 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("ELABORATION"));
   }
   
+  @Test // ODOC-98
+  void documentationParagraph() throws Exception {
+    String text =
+        "### Codeset PartyRoleCodeSet\n"
+        + "\n"
+        + "Identifies the type or role of the PartyID (448) specified.\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| ExecutingFirm | 1 | |\n"
+        + "| ClearingFirm | 4 | |\n"
+        + "| ExecutingTrader | 7 | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =
@@ -313,7 +339,7 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-   // System.out.println(xml);
+    System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
