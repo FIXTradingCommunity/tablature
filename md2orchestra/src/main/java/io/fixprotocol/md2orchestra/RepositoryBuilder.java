@@ -174,7 +174,9 @@ public class RepositoryBuilder {
           fieldType.setId(baseFieldType.getId());
           fieldType.setName(baseFieldType.getName());
           fieldType.setType(baseFieldType.getType());
-          fieldType.setScenario(scenario);
+          if (!DEFAULT_SCENARIO.equals(scenario)) {
+            fieldType.setScenario(scenario);
+          }
           repositoryAdapter.addField(fieldType);
         }
       }
@@ -182,7 +184,9 @@ public class RepositoryBuilder {
       if (fieldType == null) {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
-        fieldType.setScenario(scenario);
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
+          fieldType.setScenario(scenario);
+        }
         if (tag > 0) {
           fieldType.setId(BigInteger.valueOf(tag));
         } else {
@@ -1147,7 +1151,7 @@ public class RepositoryBuilder {
     if (id == null) {
       buildSteps.add(new FieldBuilder(0, name, scenario, type));
     } else if (name == null || type == null) {
-      buildSteps.add(new FieldBuilder(id.intValue(), null, scenario, type));
+      buildSteps.add(new FieldBuilder(id.intValue(), name, scenario, type));
     } else {
       buildSteps.add(new TypeBuilder(type, scenario));
       repositoryAdapter.addField(field);

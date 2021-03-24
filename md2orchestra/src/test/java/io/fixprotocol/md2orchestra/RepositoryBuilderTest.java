@@ -490,8 +490,8 @@ class RepositoryBuilderTest {
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
-    String xml = xmlStream.toString();
-    System.out.println(xml);
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
@@ -691,6 +691,29 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("appinfo purpose=\"notes\">blabla"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">yada yada"));
     assertTrue(xml.contains("appinfo purpose=\"notes\">nonsense"));
+  }
+  
+  @Test // ODOC-97
+  void userDefinedFields() throws Exception {
+    String text =
+        "## Fields\n"
+        + "\n"
+        + "| Name | Tag | Type | Values |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| MyUserDefined1 | 6234| UTCTimestamp | |\n"
+        + "| MyUserDefined2 | 6235| | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Unknown type for field"));
   }
 
 }
