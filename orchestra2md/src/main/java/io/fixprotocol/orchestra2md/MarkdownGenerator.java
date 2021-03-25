@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -16,6 +18,7 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import org.apache.logging.log4j.LogManager;
@@ -111,11 +114,12 @@ public class MarkdownGenerator {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.shouldOutputPedigree = shouldOutputPedigree;
     this.shouldOutputFixml = shouldOutputFixml;
-    // Populate column heading translations. First element is lower case key, second is display format.
-    this.headings.addAll(
-        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
-            {"Base Category", "Category"}, {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"},
-            {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"}});
+    // Populate column heading translations. First element is lower case key, second is display
+    // format.
+    this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
+        {"basecategoryabbrname", "Category XMLName"}, {"Base Category", "Category"},
+        {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
+        {"deprecatedep", "Deprecated EP"}});
   }
 
   public String appinfoToString(Object o, String paragraphDelimiter) {
@@ -135,10 +139,10 @@ public class MarkdownGenerator {
       generateMessages(repository, documentWriter);
       generateGroups(repository, documentWriter);
       generateComponents(repository, documentWriter);
-      generateFields(repository, documentWriter);     
+      generateFields(repository, documentWriter);
       generateCodesets(repository, documentWriter);
       generateDatatypes(repository, documentWriter);
-     } catch (final JAXBException e) {
+    } catch (final JAXBException e) {
       logger.fatal("Orchestra2md failed to parse XML", e);
       throw new IOException(e);
     } catch (final Exception e1) {
@@ -181,7 +185,7 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = componentRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
-    
+
     String added = componentRef.getAdded();
     if (shouldOutputPedigree && added != null) {
       row.addProperty("added", added);
@@ -313,7 +317,7 @@ public class MarkdownGenerator {
     if (implLength != null) {
       row.addIntProperty("implLength", implLength);
     }
-    
+
     String added = fieldRef.getAdded();
     if (shouldOutputPedigree && added != null) {
       row.addProperty("added", added);
@@ -387,7 +391,7 @@ public class MarkdownGenerator {
     }
     final PresenceT presence = groupRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
-    
+
     String added = groupRef.getAdded();
     if (shouldOutputPedigree && added != null) {
       row.addProperty("added", added);
@@ -477,13 +481,29 @@ public class MarkdownGenerator {
   private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
       String paragraphDelimiter) {
     if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
-      return d.getContent().stream()
-          .map(c -> c.toString().strip().replaceAll(" +", " ").replaceAll("\n\n", paragraphDelimiter))
-          .collect(Collectors.joining(paragraphDelimiter));
+      List<String> contents =
+          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
+      List<String> paragraphs = new ArrayList<>();
+      for (String c : contents) {
+        paragraphs.addAll(
+            Stream.of(c.split("\n\n")).map(e -> new String(e)).collect(Collectors.toList()));
+      }
+      List<String> lines = new ArrayList<>();
+      for (String p : paragraphs) {
+        lines.add(Stream.of(p.split("\n")).map(e -> new String(e)).map(String::strip)
+            .filter(s -> !s.isEmpty()).collect(Collectors.joining(" ")));
+      }
+      return String.join(paragraphDelimiter, lines);
     } else {
-      return d.getContent().stream()
-          .map(c -> c.toString().strip().replaceAll(" +", " ").replaceAll("\n", paragraphDelimiter))
-          .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
+      List<String> contents =
+          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
+      List<String> paragraphs = new ArrayList<>();
+      for (String c : contents) {
+        paragraphs
+            .addAll(Stream.of(c.split("\n")).map(e -> new String(e)).collect(Collectors.toList()));
+      }
+      return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
+          .collect(Collectors.joining(paragraphDelimiter));
     }
   }
 
@@ -552,7 +572,8 @@ public class MarkdownGenerator {
     if (actors != null) {
       final List<Object> actorsOrFlows = actors.getActorOrFlow();
       if (!actorsOrFlows.isEmpty()) {
-        final MutableContext context = contextFactory.createContext(new String[] {"Actors and Flows"}, 2);
+        final MutableContext context =
+            contextFactory.createContext(new String[] {"Actors and Flows"}, 2);
         documentWriter.write(context);
       }
       for (final Object actorOrFlow : actorsOrFlows) {
@@ -575,14 +596,14 @@ public class MarkdownGenerator {
       context.addPair("scenario", scenario);
     }
     context.addPair("type", codeset.getType());
-    
+
     final BigInteger id = codeset.getId();
     if (id != null) {
       context.addKey(String.format("(%d)", id.intValue()));
     } else {
       eventLogger.warn("Unknown codeset id; name={0} scenario={1}", codeset.getName(), scenario);
     }
-    
+
     documentWriter.write(context);
 
     final Annotation annotation = codeset.getAnnotation();
@@ -648,7 +669,7 @@ public class MarkdownGenerator {
           row.addProperty("sort", sort);
         }
         addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
-        
+
         String added = code.getAdded();
         if (shouldOutputPedigree && added != null) {
           row.addProperty("added", added);
@@ -750,7 +771,7 @@ public class MarkdownGenerator {
     final Annotation annotation = component.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
-    
+
     final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
     if (!members.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable();
@@ -864,7 +885,7 @@ public class MarkdownGenerator {
       throws IOException {
     final Fields fieldParent = repository.getFields();
     if (fieldParent != null && !fieldParent.getField().isEmpty()) {
-      
+
       final MutableContext context = contextFactory.createContext(2);
       context.addKey("Fields");
       documentWriter.write(context);
@@ -907,7 +928,7 @@ public class MarkdownGenerator {
         final String maxInclusive = field.getMaxInclusive();
         if (maxInclusive != null) {
           row.addProperty("maxInclusive", maxInclusive);
-        }       
+        }
 
         final BigInteger dicriminatorId = field.getDiscriminatorId();
         if (dicriminatorId != null) {
@@ -918,7 +939,7 @@ public class MarkdownGenerator {
         if (unionDataType != null) {
           row.addProperty("unionDataType", unionDataType.value());
         }
-        
+
         final String abbrName = field.getAbbrName();
         if (shouldOutputFixml && abbrName != null) {
           row.addProperty("abbrName", abbrName);
@@ -1055,7 +1076,7 @@ public class MarkdownGenerator {
     } else {
       eventLogger.warn("Group has no members; name={0} scenario={1}", name, scenario);
     }
-    
+
     if (table != null) {
       documentWriter.write(table, headings);
     }
@@ -1178,7 +1199,7 @@ public class MarkdownGenerator {
     } else {
       eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
     }
-    
+
   }
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
@@ -1266,7 +1287,7 @@ public class MarkdownGenerator {
   }
 
   private SortedMap<String, List<Object>> sortDocumentationByPurpose(
-          Map<String, ? extends List<Object>> groups) {
+      Map<String, ? extends List<Object>> groups) {
     final SortedMap<String, List<Object>> sorted =
         new TreeMap<String, List<Object>>(new Comparator<>() {
 
