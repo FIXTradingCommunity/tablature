@@ -26,9 +26,9 @@ public interface DetailTable extends Contextual {
 
   /**
    *
-   * @return a Collection of TableColumn that describes this table
+   * @return an array of TableColumn that describes this table
    */
-  Collection<? extends TableColumn> getTableColumns();
+  TableColumn[] getTableColumns();
 
   /**
    * Supplies a Collection of row values

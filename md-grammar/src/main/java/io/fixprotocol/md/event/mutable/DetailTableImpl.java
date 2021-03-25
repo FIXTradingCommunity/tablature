@@ -27,6 +27,7 @@ import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
+import io.fixprotocol.md.event.MutableTableColumn;
 
 public class DetailTableImpl implements MutableDetailTable {
 
@@ -95,7 +96,7 @@ public class DetailTableImpl implements MutableDetailTable {
   }
 
   @Override
-  public Collection<TableColumnImpl> getTableColumns() {
+  public MutableTableColumn[] getTableColumns() {
     final Map<String, TableColumnImpl> columns = new LinkedHashMap<>();
 
     rows().forEach(r -> r.getProperties().forEach(p -> {
@@ -108,7 +109,10 @@ public class DetailTableImpl implements MutableDetailTable {
       }
     }));
 
-    return columns.values();
+    final Collection<TableColumnImpl> values = columns.values();
+    final MutableTableColumn[] array = new MutableTableColumn[values.size()];
+    values.toArray(array);
+    return array;
   }
 
   @Override

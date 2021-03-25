@@ -53,6 +53,7 @@ public final class DocumentParser {
 
   /**
    * Parse a markdown document
+   *
    * @param inputStream input as markdown
    * @param contextConsumer consumer of document events
    * @return {@code true} if the document is fully parsed without errors

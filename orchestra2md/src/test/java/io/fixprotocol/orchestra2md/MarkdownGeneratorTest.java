@@ -17,7 +17,7 @@ class MarkdownGeneratorTest {
   @BeforeEach
   void setUp() throws Exception {
     jsonOutputStream = new ByteArrayOutputStream(8096);
-    generator = new MarkdownGenerator("/P/", false, false);
+    generator = new MarkdownGenerator("/P/", true, true);
   }
 
   @Test
@@ -306,10 +306,10 @@ class MarkdownGeneratorTest {
     OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
     generator.generate(inputStream, outputWriter, jsonOutputStream);
     outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
+    String md = mdStream.toString();
+    System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    System.out.println(errors);
   }
   
   @Test // ODOC-64

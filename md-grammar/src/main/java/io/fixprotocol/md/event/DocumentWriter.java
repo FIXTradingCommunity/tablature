@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.function.Consumer;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import io.fixprotocol.md.util.AssociativeSet;
 
 public class DocumentWriter implements AutoCloseable {
   enum Alignment {
@@ -27,10 +28,10 @@ public class DocumentWriter implements AutoCloseable {
   }
 
   private static final char[] CELL_PREFIX = "| ".toCharArray();
+  private static final char[] FENCE = "```".toCharArray();
   private static final char[] HEADING_LEVELS = "######".toCharArray();
   private static final char[] HYPHENS = new char[128];
   private static final char[] SPACES = new char[128];
-  private static final char[] FENCE = "```".toCharArray();
 
   private final Logger logger = LogManager.getLogger(getClass());
   private final Writer writer;
@@ -58,26 +59,30 @@ public class DocumentWriter implements AutoCloseable {
 
   }
 
-  // todo: alignment based on column class - align right if numeric, etc.
   public void write(DetailTable detailTable) throws IOException {
-    try {
-      final Iterable<? extends TableColumn> tableColumns = detailTable.getTableColumns();
-      writeTableHeadings(tableColumns);
-      writeTableDelimiters(tableColumns);
-      detailTable.rows().forEach(row -> {
-        try {
-          writeTableRow(tableColumns, row);
-        } catch (final IOException e) {
-          throw new RuntimeException(e);
+    final TableColumn[] tableColumns = detailTable.getTableColumns();
+    write(detailTable, tableColumns);
+  }
+
+  public void write(DetailTable detailTable, AssociativeSet headings) throws IOException {
+    final MutableTableColumn[] tableColumns = (MutableTableColumn[]) detailTable.getTableColumns();
+    for (final MutableTableColumn column : tableColumns) {
+      final String key = column.getKey();
+      if (key != null) {
+        final String display = headings.get(key);
+        if (display != null) {
+          column.setHeading(display);
         }
-      });
-    } catch (final RuntimeException e) {
-      final Throwable cause = e.getCause();
-      if (cause instanceof IOException) {
-        throw (IOException) cause;
-      } else {
-        throw e;
       }
+    }
+    write(detailTable, tableColumns);
+  }
+
+  public void write(DetailTable detailTable, final TableColumn[] tableColumns) throws IOException {
+    writeTableHeadings(tableColumns);
+    writeTableDelimiters(tableColumns);
+    for (final DetailProperties row : detailTable.rows()) {
+      writeTableRow(tableColumns, row);
     }
     writer.write("\n");
   }
@@ -88,15 +93,14 @@ public class DocumentWriter implements AutoCloseable {
     if (text != null) {
       if (format.equals(Documentation.MARKDOWN)) {
         writer.write(text);
-        writer.write("\n\n");
       } else {
         writer.write(FENCE);
         writer.write(format);
         writer.write("\n");
         writer.write(text);
         writer.write(FENCE);
-        writer.write("\n\n");
       }
+      writer.write("\n\n");
     }
   }
 
@@ -128,8 +132,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write(SPACES, 0, spaces);
   }
 
-  private void writeTableDelimiters(Iterable<? extends TableColumn> tableColumns)
-      throws IOException {
+  private void writeTableDelimiters(TableColumn[] tableColumns) throws IOException {
     for (final TableColumn column : tableColumns) {
       writer.write("|");
       final int hyphens = Math.min(column.getWidth() + 2, HYPHENS.length - 1);
@@ -138,7 +141,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("|\n");
   }
 
-  private void writeTableHeadings(Iterable<? extends TableColumn> tableColumns) throws IOException {
+  private void writeTableHeadings(TableColumn[] tableColumns) throws IOException {
     for (final TableColumn column : tableColumns) {
       writer.write(CELL_PREFIX);
       writer.write(column.getHeading());
@@ -149,8 +152,7 @@ public class DocumentWriter implements AutoCloseable {
     writer.write("|\n");
   }
 
-  private void writeTableRow(Iterable<? extends TableColumn> tableColumns, DetailProperties row)
-      throws IOException {
+  private void writeTableRow(TableColumn[] tableColumns, DetailProperties row) throws IOException {
     for (final TableColumn column : tableColumns) {
       final String key = column.getKey();
       String value = row.getProperty(key);

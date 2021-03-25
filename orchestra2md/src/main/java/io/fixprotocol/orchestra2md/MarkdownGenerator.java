@@ -60,7 +60,8 @@ import io.fixprotocol.md.event.MutableContext;
 import io.fixprotocol.md.event.MutableDetailProperties;
 import io.fixprotocol.md.event.MutableDetailTable;
 import io.fixprotocol.md.event.MutableDocumentation;
-import io.fixprotocol.md.event.StringUtil;
+import io.fixprotocol.md.util.AssociativeSet;
+import io.fixprotocol.md.util.StringUtil;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
@@ -86,6 +87,7 @@ public class MarkdownGenerator {
   private final String paragraphDelimiterInTables;
   private final boolean shouldOutputPedigree;
   private final boolean shouldOutputFixml;
+  private final AssociativeSet headings = new AssociativeSet();
 
   /**
    * Contructor
@@ -98,14 +100,22 @@ public class MarkdownGenerator {
 
   /**
    * Contructor
-   * @param paragraphDelimiterInTables token to for a paragraph break in a markdown table, not natively supported
+   * 
+   * @param paragraphDelimiterInTables token to for a paragraph break in a markdown table, not
+   *        natively supported
    * @param shouldOutputPedigree output pedigree attributes -- when an element was added or changed
    * @param shouldOutputFixml output FIXML attributes -- abbreviated name, etc.
    */
-  public MarkdownGenerator(String paragraphDelimiterInTables, boolean shouldOutputPedigree, boolean shouldOutputFixml) {
+  public MarkdownGenerator(String paragraphDelimiterInTables, boolean shouldOutputPedigree,
+      boolean shouldOutputFixml) {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.shouldOutputPedigree = shouldOutputPedigree;
     this.shouldOutputFixml = shouldOutputFixml;
+    // Populate column heading translations. First element is lower case key, second is display format.
+    this.headings.addAll(
+        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
+            {"Base Category", "Category"}, {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"},
+            {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"}});
   }
 
   public String appinfoToString(Object o, String paragraphDelimiter) {
@@ -526,7 +536,7 @@ public class MarkdownGenerator {
 
       final MutableDetailTable table = contextFactory.createDetailTable();
       addMemberRows(table, repository, members);
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     }
 
     for (final Object state : elements) {
@@ -638,8 +648,64 @@ public class MarkdownGenerator {
           row.addProperty("sort", sort);
         }
         addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
+        
+        String added = code.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+
+        BigInteger addedEp = code.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+
+        String deprecated = code.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        BigInteger deprecatedEp = code.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+
+        String issue = code.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+
+        String lastModified = code.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+
+        String replaced = code.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+
+        BigInteger replacedByField = code.getReplacedByField();
+        if (shouldOutputPedigree && replacedByField != null) {
+          row.addIntProperty("replacedByField", replacedByField.intValue());
+        }
+
+        BigInteger replacedEp = code.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+
+        String updated = code.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+
+        BigInteger updatedEp = code.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+
       }
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     } else {
       eventLogger.warn("Codeset has no codes; name={0} scenario={1}", codeset.getName(), scenario);
     }
@@ -689,7 +755,7 @@ public class MarkdownGenerator {
     if (!members.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable();
       addMemberRows(table, repository, members);
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     } else {
       eventLogger.warn("Component has no members; name={0} scenario={1}", name, scenario);
     }
@@ -922,7 +988,7 @@ public class MarkdownGenerator {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
       }
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     } else {
       logger.error("No fields found");
     }
@@ -991,7 +1057,7 @@ public class MarkdownGenerator {
     }
     
     if (table != null) {
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     }
   }
 
@@ -1108,7 +1174,7 @@ public class MarkdownGenerator {
     if (!members.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable();
       addMemberRows(table, repository, members);
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     } else {
       eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
     }

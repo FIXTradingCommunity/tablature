@@ -58,6 +58,15 @@ class Md2OrchestraTest {
         .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
     md2Orchestra1.generate();
   }
+  
+  @Test
+  void roundtrip2() throws Exception {
+    final String inputPath = getResourcePath("OrchestraFIXLatest.md");
+    final String outputFilename = "target/test/OrchestraFIXLatest.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+        .outputFile(outputFilename).eventFile("target/test/OrchestraFIXLatest.json").build();
+    md2Orchestra1.generate();
+  }
 
   @Test
   void twoInputs() throws Exception {

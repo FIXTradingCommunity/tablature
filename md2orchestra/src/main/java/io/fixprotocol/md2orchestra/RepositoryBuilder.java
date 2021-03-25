@@ -65,6 +65,7 @@ import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentParser;
 import io.fixprotocol.md.event.Documentation;
+import io.fixprotocol.md.util.AssociativeSet;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
@@ -422,6 +423,7 @@ public class RepositoryBuilder {
   private TeeEventListener eventLogger;
   private final Logger logger = LogManager.getLogger(getClass());
   private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
+  private final AssociativeSet headings = new AssociativeSet();
 
   private final Consumer<Contextual> markdownConsumer = contextual -> {
     final Context keyContext = getKeyContext(contextual);
@@ -492,6 +494,11 @@ public class RepositoryBuilder {
     this.eventLogger = createEventListener(this.logger, jsonOutputStream);
     this.repositoryAdapter = new RepositoryAdapter(this.eventLogger);
     this.repositoryAdapter.createRepository();
+    // Populate column heading translations. First element is lower case key, second is display format.
+    this.headings.addAll(
+        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
+            {"Base Category", "Category"}, {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"},
+            {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"}});
   }
 
   /**
@@ -650,8 +657,8 @@ public class RepositoryBuilder {
 
               String sourceStateName = null;
               for (final Entry<String, String> p : r.getProperties()) {
-
-                switch (p.getKey().toLowerCase()) {
+                String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+                switch (key) {
                   case "state":
                     sourceStateName = p.getValue();
                     break;
@@ -720,8 +727,9 @@ public class RepositoryBuilder {
 
     String name = "Unknown";
     for (final Entry<String, String> p : detail.getProperties()) {
+      String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
       
-      switch (p.getKey().toLowerCase()) {
+      switch (key) {
         case "name":
           name = textUtil.stripName(p.getValue());
           codeType.setName(name);
@@ -981,7 +989,8 @@ public class RepositoryBuilder {
     mapping.setStandard(standard);
 
     for (final Entry<String, String> p : detail.getProperties()) {
-      switch (p.getKey().toLowerCase()) {
+      String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+      switch (key) {
         case "standard":
           mapping.setStandard(p.getValue());
           break;
@@ -1030,8 +1039,8 @@ public class RepositoryBuilder {
       final FieldType field = new FieldType();
       final Annotation annotation = new Annotation();
       for (final Entry<String, String> p : detail.getProperties()) {
-
-        switch (p.getKey().toLowerCase()) {
+        String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+        switch (key) {
           case "tag":
           case "id":
             field.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
@@ -1386,7 +1395,9 @@ public class RepositoryBuilder {
       detailTable.rows().forEach(detail -> {
         final String term = detail.getProperty("term");
         final String value = detail.getProperty("value");
-        repositoryAdapter.setMetadata(term, value);
+        if (term != null && value != null) {
+          repositoryAdapter.setMetadata(term, value);
+        }
       });
     } else {
       final String name = String.join(" ", context.getKeys());
@@ -1530,7 +1541,8 @@ public class RepositoryBuilder {
     String scenario = DEFAULT_SCENARIO;
     String presenceString = null;
     for (final Entry<String, String> p : detail.getProperties()) {
-      switch (p.getKey().toLowerCase()) {
+      String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+      switch (key) {
         case "name":
           name = p.getValue();
           break;
@@ -1663,7 +1675,8 @@ public class RepositoryBuilder {
     String valueString = null;
 
     for (final Entry<String, String> p : detail.getProperties()) {
-      switch (p.getKey().toLowerCase()) {
+      String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+      switch (key) {
         case "name":
           name = p.getValue();
           break;
@@ -1842,7 +1855,8 @@ public class RepositoryBuilder {
     String scenario = DEFAULT_SCENARIO;
     String presenceString = null;
     for (final Entry<String, String> p : detail.getProperties()) {
-      switch (p.getKey().toLowerCase()) {
+      String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+      switch (key) {
         case "name":
           name = p.getValue();
           break;

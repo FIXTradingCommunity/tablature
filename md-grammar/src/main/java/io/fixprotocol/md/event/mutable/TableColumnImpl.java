@@ -14,10 +14,10 @@
  */
 package io.fixprotocol.md.event.mutable;
 
-import io.fixprotocol.md.event.StringUtil;
-import io.fixprotocol.md.event.TableColumn;
+import io.fixprotocol.md.event.MutableTableColumn;
+import io.fixprotocol.md.util.StringUtil;
 
-class TableColumnImpl implements TableColumn {
+class TableColumnImpl implements MutableTableColumn {
   private final Alignment alignment;
   private String display = null;
   private final String key;
@@ -60,11 +60,13 @@ class TableColumnImpl implements TableColumn {
     return length;
   }
 
+  @Override
   public void setHeading(String display) {
     this.display = display;
     updateLength(display.length());
   }
 
+  @Override
   public int updateLength(int newLength) {
     this.length = Math.max(length, newLength);
     return length;

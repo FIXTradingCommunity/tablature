@@ -20,6 +20,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import io.fixprotocol.md.util.AssociativeSet;
 
 class DocumentWriterTest {
 
@@ -71,6 +72,26 @@ class DocumentWriterTest {
     detailProperties.addProperty("Tag", "22");
     detailProperties.addProperty("Presence", "required");
     documentWriter.write(table);
+    String output = writer.toString();
+    System.out.print(output);
+  }
+  
+  @Test
+  void tableWithHeadings() throws IOException {
+    MutableDetailTable table = factory.createDetailTable();
+    MutableDetailProperties detailProperties = table.newRow();
+    detailProperties.addProperty("Name", "SecurityID");
+    detailProperties.addProperty("Tag", "48");
+    detailProperties.addProperty("Presence", "required");
+    detailProperties.addProperty("abbrName", "ID");
+    detailProperties = table.newRow();
+    detailProperties.addProperty("Name", "SecurityIDSource");
+    detailProperties.addProperty("Tag", "22");
+    detailProperties.addProperty("Presence", "required");
+    detailProperties.addProperty("abbrName", "Src");
+    AssociativeSet headings = new AssociativeSet();
+    headings.add("abbrname", "XMLName");
+    documentWriter.write(table, headings);
     String output = writer.toString();
     System.out.print(output);
   }
