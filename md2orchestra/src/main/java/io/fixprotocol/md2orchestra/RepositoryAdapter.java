@@ -37,6 +37,7 @@ import io.fixprotocol._2020.orchestra.repository.ComponentType;
 import io.fixprotocol._2020.orchestra.repository.Components;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
 import io.fixprotocol._2020.orchestra.repository.Datatypes;
+import io.fixprotocol._2020.orchestra.repository.Documentation;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.Fields;
 import io.fixprotocol._2020.orchestra.repository.FlowType;
@@ -142,6 +143,13 @@ class RepositoryAdapter {
     repository.getDatatypes().getDatatype().add(datatype);
   }
 
+  /**
+   * Add documentation or replace an existing one with the same purpose
+   * 
+   * @param markdown text in markdown format
+   * @param purpose purpose attribute of the documentation element
+   * @param annotation parent element to add new child
+   */
   void addDocumentation(String markdown, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final io.fixprotocol._2020.orchestra.repository.Documentation documentation =
@@ -151,9 +159,25 @@ class RepositoryAdapter {
     if (purpose != null) {
       documentation.setPurpose(purpose);
     }
-    elements.add(documentation);
-  }
+    boolean found = false;
+    for (int i = 0; i < elements.size(); i++) {
+      final Object object = elements.get(i);
+      if (object instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
+        io.fixprotocol._2020.orchestra.repository.Documentation olddoc = (Documentation) object;
+        if ((olddoc.getPurpose() != null && olddoc.getPurpose().equals(purpose))
+            || (olddoc.getPurpose() == null && purpose == null)) {
+          elements.set(i, documentation);
+          found = true;
+          break;
+        }
+      }
+    }
 
+    if (!found) {
+      elements.add(documentation);
+    }
+  }
+  
   void addDocumentation(String markdown, String paragraphDelmiter, String purpose,
       Annotation annotation) {
     addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);

@@ -580,6 +580,30 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // ODOC-98
+  void replaceDocumentation() throws Exception {
+    String text =
+        "### Codeset PartyRoleCodeSet\n"
+        + "#### Synopsis\n"
+        + "Hanno: Identifies the type or role of the PartyID (448) specified.";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    Pattern pattern = Pattern.compile("purpose=\"SYNOPSIS\"");
+    Matcher matcher = pattern.matcher(xml);
+    long count = matcher.results().count();
+    assertEquals(1, count);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @BeforeEach
   void setUp() throws Exception {
     jsonOutputStream = new ByteArrayOutputStream(8096);
