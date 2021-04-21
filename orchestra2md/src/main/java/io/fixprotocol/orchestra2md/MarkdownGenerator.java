@@ -6,7 +6,6 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.math.BigInteger;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -668,7 +667,6 @@ public class MarkdownGenerator {
         if (sort != null) {
           row.addProperty("sort", sort);
         }
-        addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
 
         String added = code.getAdded();
         if (shouldOutputPedigree && added != null) {
@@ -725,7 +723,9 @@ public class MarkdownGenerator {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
 
-      }
+        addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
+     }
+ 
       documentWriter.write(table, headings);
     } else {
       eventLogger.warn("Codeset has no codes; name={0} scenario={1}", codeset.getName(), scenario);
@@ -903,8 +903,7 @@ public class MarkdownGenerator {
           row.addProperty("scenario", scenario);
         }
         row.addProperty("type", field.getType());
-        addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
-
+ 
         final Short implMinLength = field.getImplMinLength();
         if (implMinLength != null) {
           row.addIntProperty("implMinLength", implMinLength);
@@ -1008,7 +1007,10 @@ public class MarkdownGenerator {
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
+        
+        addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
       }
+
       documentWriter.write(table, headings);
     } else {
       logger.error("No fields found");
