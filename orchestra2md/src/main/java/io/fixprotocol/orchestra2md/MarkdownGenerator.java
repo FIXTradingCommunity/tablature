@@ -116,9 +116,9 @@ public class MarkdownGenerator {
     // Populate column heading translations. First element is lower case key, second is display
     // format.
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
-        {"basecategoryabbrname", "Category XMLName"}, {"Base Category", "Category"},
+        {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
         {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
-        {"deprecatedep", "Deprecated EP"}});
+        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}});
   }
 
   public String appinfoToString(Object o, String paragraphDelimiter) {

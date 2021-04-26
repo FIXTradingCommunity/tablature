@@ -494,11 +494,12 @@ public class RepositoryBuilder {
     this.eventLogger = createEventListener(this.logger, jsonOutputStream);
     this.repositoryAdapter = new RepositoryAdapter(this.eventLogger);
     this.repositoryAdapter.createRepository();
-    // Populate column heading translations. First element is lower case key, second is display format.
-    this.headings.addAll(
-        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
-            {"Base Category", "Category"}, {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"},
-            {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"}});
+    // Populate column heading translations. First element is lower case key, second is display
+    // format.
+    this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
+        {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
+        {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
+        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}});
   }
 
   /**
