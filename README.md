@@ -2,6 +2,8 @@
 
 Converts a markdown document to a specification and documents a specification as markdown. Markdown can automatically be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Roundtrip is supported, allowing a user to update a specification iteratively with an ordinary text editor.
 
+For a brief introduction to markdown, see [Markdown Notation](https://github.com/FIXTradingCommunity/tablature/wiki/Markdown-Notation).
+
 ## FIX Orchestra
 
 The intial target of tablature is FIX Orchestra, "machine readable rules of engagement". 
@@ -33,20 +35,14 @@ See the [Tablature User Guide for Interfaces](https://github.com/FIXTradingCommu
 
 Translates an Orchestra interfaces file to a markdown document. 
 
-### md-grammar
-
-A library to parse and write markdown files. Generic data structures act as an intermediary between the markdown parser and writer logic and applications that use them. In other words, the part of an application that reads or writes a specification like Orchestra needs no special knowledge of markdown. 
-
-For a brief introduction to markdown, see [Markdown Notation](https://github.com/FIXTradingCommunity/tablature/wiki/Markdown-Notation).
-
 ## Prerequisites
-This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including OpenJDK.
+This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including [AdoptOpenJDK](https://adoptopenjdk.net/).
 
 ## Build
 The project is built with Maven version 3.0 or later. See [Building this Project](https://github.com/FIXTradingCommunity/tablature/wiki/Building-this-Project)
 
 ## License
-© Copyright 2020 FIX Protocol Limited
+© Copyright 2020-2021 FIX Protocol Limited
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
