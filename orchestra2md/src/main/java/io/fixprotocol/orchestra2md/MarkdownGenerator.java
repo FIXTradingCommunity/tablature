@@ -484,8 +484,9 @@ public class MarkdownGenerator {
           d.getContent().stream().map(Object::toString).collect(Collectors.toList());
       List<String> paragraphs = new ArrayList<>();
       for (String c : contents) {
+        // paragraph delimiter in markdown is two newlines, but coming from xml, they may be separated by horizontal whitespace
         paragraphs.addAll(
-            Stream.of(c.split("\n\n")).map(e -> new String(e)).collect(Collectors.toList()));
+            Stream.of(c.split("\n\\h*\n")).map(e -> new String(e)).collect(Collectors.toList()));
       }
       List<String> lines = new ArrayList<>();
       for (String p : paragraphs) {
@@ -869,7 +870,9 @@ public class MarkdownGenerator {
       final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
       final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
       for (final Entry<String, List<Object>> e : entries) {
-        final String text = concatenateDocumentation(e.getValue(), "\n");
+        boolean hasMarkdown = e.getValue().stream().map(o -> (Documentation) o)
+            .anyMatch(d -> MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(d.getContentType()));
+        final String text = concatenateDocumentation(e.getValue(), hasMarkdown ? "\n\n" : "\n");
         if (!text.isBlank()) {
           final MutableContext documentationContext = contextFactory
               .createContext(new String[] {StringUtil.convertToTitleCase(e.getKey())}, 4);
