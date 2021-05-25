@@ -113,4 +113,7 @@
 			</fixr:annotation>
 		</fixr:message>
 	</fixr:messages>
+    <fixr:annotation>
+        <fixr:documentation purpose="OVERVIEW" contentType="text/markdown">Order messages and their elements.</fixr:documentation>
+    </fixr:annotation>
 </fixr:repository>

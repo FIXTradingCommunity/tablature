@@ -484,7 +484,8 @@ public class MarkdownGenerator {
           d.getContent().stream().map(Object::toString).collect(Collectors.toList());
       List<String> paragraphs = new ArrayList<>();
       for (String c : contents) {
-        // paragraph delimiter in markdown is two newlines, but coming from xml, they may be separated by horizontal whitespace
+        // paragraph delimiter in markdown is two newlines, but coming from xml, they may be
+        // separated by horizontal whitespace
         paragraphs.addAll(
             Stream.of(c.split("\n\\h*\n")).map(e -> new String(e)).collect(Collectors.toList()));
       }
@@ -1221,7 +1222,9 @@ public class MarkdownGenerator {
       context.addKey("Repository");
     }
     documentWriter.write(context);
-
+   
+    Annotation annotation = repository.getAnnotation();
+    generateDocumentationBlocks(annotation, documentWriter);
 
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
     if (!elements.isEmpty()) {

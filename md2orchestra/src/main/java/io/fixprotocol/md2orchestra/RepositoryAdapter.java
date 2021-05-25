@@ -61,8 +61,6 @@ import io.fixprotocol.orchestra.event.EventListener;
  */
 class RepositoryAdapter {
 
-  private final EventListener eventLogger;
-  
   /**
    * Provide deterministic XML namespace prefixes
    *
@@ -87,7 +85,7 @@ class RepositoryAdapter {
       }
     }
   }
-
+  
   // sorted array of valid Dublin Core Terms
   private static final String[] DC_TERMS = new String[] {"accessRights", "accrualMethod",
       "accrualPeriodicity", "accrualPolicy", "abstract", "alternative", "audience", "avaliable",
@@ -103,7 +101,17 @@ class RepositoryAdapter {
     return markdown.replace(token, replacement);
   }
 
+  private final EventListener eventLogger;
+
   private Repository repository;
+
+  RepositoryAdapter(EventListener eventLogger) {
+    this.eventLogger = eventLogger;
+  }
+
+  public Repository getRepository() {
+    return repository;
+  }
 
   void addActor(final ActorType actor) {
     Actors actors = repository.getActors();
@@ -113,6 +121,7 @@ class RepositoryAdapter {
     }
     actors.getActorOrFlow().add(actor);
   }
+
 
   void addAppinfo(String markdown, String purpose, Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
@@ -130,7 +139,6 @@ class RepositoryAdapter {
     addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
-
   void addCodeset(final CodeSetType codeset) {
     repository.getCodeSets().getCodeSet().add(codeset);
   }
@@ -138,7 +146,7 @@ class RepositoryAdapter {
   void addComponent(final ComponentType component) {
     repository.getComponents().getComponent().add(component);
   }
-
+  
   void addDatatype(io.fixprotocol._2020.orchestra.repository.Datatype datatype) {
     repository.getDatatypes().getDatatype().add(datatype);
   }
@@ -177,7 +185,7 @@ class RepositoryAdapter {
       elements.add(documentation);
     }
   }
-  
+
   void addDocumentation(String markdown, String paragraphDelmiter, String purpose,
       Annotation annotation) {
     addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
@@ -302,6 +310,7 @@ class RepositoryAdapter {
     return null;
   }
 
+
   FieldType findFieldByName(String name, String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
@@ -312,6 +321,7 @@ class RepositoryAdapter {
     return null;
   }
 
+
   FieldType findFieldByTag(int tag, String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
@@ -321,7 +331,6 @@ class RepositoryAdapter {
     }
     return null;
   }
-
 
   FlowType findFlowByName(String name) {
     final Actors actors = repository.getActors();
@@ -338,7 +347,6 @@ class RepositoryAdapter {
     }
     return null;
   }
-
 
   GroupType findGroupByName(String name, String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
@@ -419,10 +427,6 @@ class RepositoryAdapter {
 
   void setVersion(final String version) {
     repository.setVersion(version);
-  }
-
-  RepositoryAdapter(EventListener eventLogger) {
-    this.eventLogger = eventLogger;
   }
 
   void unmarshal(InputStream is) throws JAXBException {

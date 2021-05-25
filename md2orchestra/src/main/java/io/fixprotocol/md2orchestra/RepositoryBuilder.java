@@ -53,6 +53,7 @@ import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
+import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
@@ -1400,6 +1401,19 @@ public class RepositoryBuilder {
           repositoryAdapter.setMetadata(term, value);
         }
       });
+    } else if (contextual instanceof Documentation) {
+      final Documentation detail = (Documentation) contextual;
+      final Repository repository = repositoryAdapter.getRepository();
+      if (repository != null) {
+        Annotation annotation = repository.getAnnotation();
+        if (annotation == null) {
+          annotation = new Annotation();
+          repository.setAnnotation(annotation);
+        }
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+            annotation);
+      }
     } else {
       final String name = String.join(" ", context.getKeys());
       repositoryAdapter.setName(name);
@@ -1506,12 +1520,8 @@ public class RepositoryBuilder {
   }
 
   private String getPurpose(String word) {
-    for (final PurposeEnum purpose : PurposeEnum.values()) {
-      if (purpose.value().compareToIgnoreCase(word) == 0) {
-        return word.toUpperCase();
-      }
-    }
-    return null;
+    // May or may not match an enumerated value, but force case for all
+    return word.toUpperCase();
   }
 
   private boolean isDocumentationKey(String word) {
