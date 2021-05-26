@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
 import javax.xml.bind.JAXBException;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.DefaultParser;
@@ -187,10 +188,24 @@ public class Md2Orchestra {
   }
 
   private final String eventFilename;
+  private Consumer<Path> fileConsumer = new Consumer<>() {
+
+    @Override
+    public void accept(Path filePath) {
+      try {
+        appendInput(filePath, outputRepositoryBuilder);
+      } catch (IOException e) {
+        logger.fatal("Md2Orchestra failed to append file {}", filePath, e);
+      }
+    }
+
+  };
   private final List<String> inputFilePatterns;
   private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
+  private RepositoryBuilder outputRepositoryBuilder;
   private final String paragraphDelimiter;
+
   private final String referenceFilename;
 
   private Md2Orchestra(Builder builder) {
@@ -251,73 +266,10 @@ public class Md2Orchestra {
       if (eventFilename != null) {
         jsonOutputStream = new FileOutputStream(eventFilename);
       }
-
-      final FileSystem fileSystem = FileSystems.getDefault();
-      final String separator = fileSystem.getSeparator();
-
-      final RepositoryBuilder outputRepositoryBuilder =
+      outputRepositoryBuilder =
           RepositoryBuilder.instance(referenceStream, jsonOutputStream, paragraphDelimiter);
-      for (final String inputFilePattern : inputFilePatterns) {
-        int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
-        // Handle Windows case for portability of '/' separator 
-        if (lastSeparatorPos == -1 && !separator.equals("/")) {
-          lastSeparatorPos = inputFilePattern.lastIndexOf("/");
-        }
-        Path dirPath;
-        String glob;
-        if (lastSeparatorPos != -1) {
-          dirPath = fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos)).toAbsolutePath();
-          glob = "**" + separator + inputFilePattern.substring(lastSeparatorPos + 1);
-        } else {
-          // current working directory
-          dirPath = fileSystem.getPath("").toAbsolutePath();
-          glob = inputFilePattern;
-        }
 
-        logger.info("Md2Orchestra searching for input at path {} file name pattern {}", dirPath, glob);
-        
-        final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
-        Files.walkFileTree(dirPath, EnumSet.noneOf(FileVisitOption.class), 1,
-            new FileVisitor<Path>() {
-
-              @Override
-              public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-                  throws IOException {
-                return FileVisitResult.CONTINUE;
-              }
-
-              @Override
-              public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
-                  throws IOException {
-                return FileVisitResult.CONTINUE;
-              }
-
-              @Override
-              public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs)
-                  throws IOException {
-
-                if (matcher.matches(filePath)) {
-                  appendInput(filePath, outputRepositoryBuilder);
-                }
-                return FileVisitResult.CONTINUE;
-              }
-
-
-              @Override
-              public FileVisitResult visitFileFailed(Path file, IOException exc)
-                  throws IOException {
-                logger.warn("Md2Orchestra failed to access file {}", file.toString());
-                return FileVisitResult.SKIP_SUBTREE;
-              }
-
-              private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
-                  throws IOException {
-                logger.info("Md2Orchestra opening file {}", filePath.toString());
-                final InputStream inputStream = new FileInputStream(filePath.toFile());
-                outputRepositoryBuilder.appendInput(inputStream);
-              }
-            });
-      }
+      processFiles(inputFilePatterns, fileConsumer);
 
       outputRepositoryBuilder.write(outputStream);
       logger.info("Md2Orchestra output written");
@@ -330,6 +282,76 @@ public class Md2Orchestra {
   void generate(String inputFilePattern, String outputFilename, String referenceFilename,
       String eventFilename) throws Exception {
     generate(List.of(inputFilePattern), outputFilename, referenceFilename, eventFilename);
+  }
+
+  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
+      throws IOException {
+    logger.info("Md2Orchestra opening file {}", filePath.normalize().toString());
+    final InputStream inputStream = new FileInputStream(filePath.toFile());
+    outputRepositoryBuilder.appendInput(inputStream);
+  }
+
+  private void processFiles(List<String> inputFilePatterns, Consumer<Path> fileConsumer)
+      throws IOException {
+    final FileSystem fileSystem = FileSystems.getDefault();
+    final String separator = fileSystem.getSeparator();
+
+    for (final String inputFilePattern : inputFilePatterns) {
+      int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
+      // Handle Windows case for portability of '/' separator
+      if (lastSeparatorPos == -1 && !separator.equals("/")) {
+        lastSeparatorPos = inputFilePattern.lastIndexOf("/");
+      }
+      Path dirPath;
+      String glob;
+      if (lastSeparatorPos != -1) {
+        dirPath =
+            fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos)).toAbsolutePath();
+        glob = "**" + separator + inputFilePattern.substring(lastSeparatorPos + 1);
+      } else {
+        // current working directory
+        dirPath = fileSystem.getPath(".");
+        glob = inputFilePattern;
+      }
+
+      logger.info("Md2Orchestra searching for input at path {} file name pattern {}", dirPath,
+          glob);
+
+      final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
+      Files.walkFileTree(dirPath, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
+          new FileVisitor<Path>() {
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+                throws IOException {
+              return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+                throws IOException {
+              return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs)
+                throws IOException {
+
+              if (matcher.matches(filePath)) {
+                fileConsumer.accept(filePath);
+              }
+              return FileVisitResult.CONTINUE;
+            }
+
+
+            @Override
+            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+              logger.warn("Md2Orchestra failed to access file {}", file.toString());
+              return FileVisitResult.SKIP_SUBTREE;
+            }
+
+          });
+    }
   }
 
 }
