@@ -12,7 +12,28 @@ import org.apache.logging.log4j.Logger;
 class RepositoryTextUtil {
   private final Logger logger = LogManager.getLogger(getClass());
 
-  /* String brackets from code names as it was sometimes written */
+  /**
+   * Return a tag in the form described by {@link #tagToInt(String)}
+   * 
+   * @param strings an array of strings
+   * @return a tag, or {@code -1} if not found
+   */
+  int getTag(String[] strings) {
+    for (String str : strings) {
+      int tag = tagToInt(str);
+      if (tag != -1) {
+        return tag;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Strip brackets from code names as it was sometimes written
+   * 
+   * @param str string containing a code name in the form {@code [name]}
+   * @return the name without brackets
+   */
   String stripName(String str) {
     final int beginIndex = str.indexOf('[');
     final int endIndex = str.lastIndexOf(']');
@@ -20,7 +41,12 @@ class RepositoryTextUtil {
         endIndex >= 0 ? endIndex : str.length());
   }
 
-  /* Strip parentheses from tag */
+  /**
+   * Strip parentheses from tag to get number
+   * 
+   * @param str a string in the form {@code (999)}
+   * @return an integer extracted from the string, or {@code -1} if the value is non-numeric
+   */
   int tagToInt(String str) {
     if (str == null) {
       return -1;

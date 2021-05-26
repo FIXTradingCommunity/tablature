@@ -872,11 +872,12 @@ public class RepositoryBuilder {
       }
       if (codeset == null) {
         codeset = new CodeSetType();
-        int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+        int tag = textUtil.getTag(context.getKeys());
         
         if (tag == -1) {
-          codeset.setId(BigInteger.valueOf(assignId()));
+          tag = assignId(name, scenario);
         }
+        codeset.setId(BigInteger.valueOf(tag));
 
         codeset.setName(name);
         if (!DEFAULT_SCENARIO.equals(scenario)) {
@@ -919,7 +920,7 @@ public class RepositoryBuilder {
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
         && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.getTag(context.getKeys());
       final ComponentType component = new ComponentType();
 
       ComponentType refComponent = null;
@@ -1236,7 +1237,7 @@ public class RepositoryBuilder {
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
         && GROUP_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.getTag(context.getKeys());
       final GroupType group = new GroupType();
 
       GroupType refComponent = null;
@@ -1325,7 +1326,7 @@ public class RepositoryBuilder {
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
         && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      final int tag = textUtil.tagToInt(context.getKeyValue("tag"));
+      int tag = textUtil.getTag(context.getKeys());
       final String msgType = context.getKeyValue("type");
       final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
       final String flow = context.getKeyValue(FLOW_KEYWORD);
@@ -1350,7 +1351,7 @@ public class RepositoryBuilder {
       final Context messageContext = context.getParent();
       if (messageContext != null) {
         final String messageName = messageContext.getKeyValue(MESSAGE_KEYWORD);
-        final int tag = textUtil.tagToInt(messageContext.getKeyValue("tag"));
+        int tag = textUtil.getTag(context.getKeys());
         final String scenario = scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
         final String msgType = messageContext.getKeyValue("type");
 
