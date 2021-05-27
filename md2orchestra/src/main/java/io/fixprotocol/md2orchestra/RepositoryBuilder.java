@@ -979,9 +979,9 @@ public class RepositoryBuilder {
         if (standard != null && !standard.isEmpty()) {
           addDatatypeMapping(detail, standard, mappings);
         }
+      } else {
+        eventLogger.error("Unknown name for datatype");
       }
-    } else {
-      eventLogger.error("Unknown name for datatype");
     }
   }
 

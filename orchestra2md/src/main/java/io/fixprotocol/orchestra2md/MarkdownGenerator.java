@@ -500,8 +500,8 @@ public class MarkdownGenerator {
           d.getContent().stream().map(Object::toString).collect(Collectors.toList());
       List<String> paragraphs = new ArrayList<>();
       for (String c : contents) {
-        paragraphs
-            .addAll(Stream.of(c.split("\n")).map(e -> new String(e)).collect(Collectors.toList()));
+        paragraphs.addAll(Stream.of(c.split("\n")).map(e -> new String(e))
+            .map(s -> MarkdownUtil.plainTextToMarkdown(s)).collect(Collectors.toList()));
       }
       return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
           .collect(Collectors.joining(paragraphDelimiter));
@@ -842,7 +842,7 @@ public class MarkdownGenerator {
             }
             final String pattern = mapping.getPattern();
             if (pattern != null) {
-              row.addProperty("pattern", pattern);
+              row.addProperty("pattern", MarkdownUtil.plainTextToMarkdown(pattern));
             }
             final String min = mapping.getMinInclusive();
             if (min != null) {
