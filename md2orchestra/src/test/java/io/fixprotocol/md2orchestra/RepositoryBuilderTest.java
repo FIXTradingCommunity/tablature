@@ -35,6 +35,32 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing name"));
   }
   
+  @Test // ODOC-86
+  void lookupDatatypes() throws Exception {
+    String text =
+        "## Fields\n"
+        + "| Name             | Tag | Type         |  Values                  |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| Account | 1 | | |\n"
+        + "| AvgPx | | Price | |\n"
+        + "| BeginSeqNo | | | |\n";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    builder.closeEventLogger();
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    Pattern pattern = Pattern.compile("<fixr:datatype ");
+    Matcher matcher = pattern.matcher(xml);
+    long count = matcher.results().count();
+    assertEquals(3, count);
+  }
+  
   @Test // ODOC-43
   void badConstant() throws Exception {
     String text =

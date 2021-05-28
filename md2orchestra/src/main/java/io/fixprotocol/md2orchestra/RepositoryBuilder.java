@@ -182,8 +182,14 @@ public class RepositoryBuilder {
           repositoryAdapter.addField(fieldType);
         }
       }
+      
 
-      if (fieldType == null) {
+
+      if (fieldType != null) {
+        if (fieldType.getType() != null) {
+          buildSteps.add(new TypeBuilder(fieldType.getType(), scenario));
+        }
+      } else {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
         if (!DEFAULT_SCENARIO.equals(scenario)) {
@@ -320,8 +326,7 @@ public class RepositoryBuilder {
       }
       if (!found) {
         // if not found as a datatype or codeset in either current or referenceRepositoryAdapter
-        // repository, then
-        // assume its a datatype name
+        // repository, then assume its a datatype name
         datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
         datatype.setName(type);
         repositoryAdapter.addDatatype(datatype);
