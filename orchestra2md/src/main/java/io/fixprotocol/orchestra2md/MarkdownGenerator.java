@@ -47,6 +47,7 @@ import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.MessageType.Responses;
+import io.fixprotocol._2020.orchestra.repository.MessageType.Structure;
 import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.Repository;
@@ -1201,15 +1202,19 @@ public class MarkdownGenerator {
     final Annotation annotation = message.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
-    final List<Object> members = message.getStructure().getComponentRefOrGroupRefOrFieldRef();
-    if (!members.isEmpty()) {
-      final MutableDetailTable table = contextFactory.createDetailTable();
-      addMemberRows(table, repository, members);
-      documentWriter.write(table, headings);
+    final Structure structure = message.getStructure();
+    if (structure != null) {
+      final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
+      if (!members.isEmpty()) {
+        final MutableDetailTable table = contextFactory.createDetailTable();
+        addMemberRows(table, repository, members);
+        documentWriter.write(table, headings);
+      } else {
+        eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
+      }
     } else {
-      eventLogger.warn("Message structure has no members; name={0} scenario={1}", name, scenario);
+      eventLogger.warn("Message has no structure; name={0} scenario={1}", name, scenario);
     }
-
   }
 
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)

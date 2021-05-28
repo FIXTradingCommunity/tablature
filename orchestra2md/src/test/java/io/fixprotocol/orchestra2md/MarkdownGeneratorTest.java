@@ -14,12 +14,339 @@ class MarkdownGeneratorTest {
   private MarkdownGenerator generator;
   private ByteArrayOutputStream jsonOutputStream;
   
-  @BeforeEach
-  void setUp() throws Exception {
-    jsonOutputStream = new ByteArrayOutputStream(8096);
-    generator = new MarkdownGenerator("/P/", true, true);
+  @Test // ODOC-63
+  void duplicateCodes() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "        <fixr:codeSet type=\"char\" name=\"SideCodeSet\" scenario=\"BuySellDup\">\n"
+        + "            <fixr:code value=\"1\" id=\"10004\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10005\" name=\"Sell\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Unknown codeset id"));
   }
 
+  @Test // ODOC-31
+  void emptyComponent() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components>\n"
+        + "        <fixr:component id=\"10001\" name=\"InstrumentParties\"/>\n"
+        + "    </fixr:components>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Component has no members"));
+  }
+  
+  @Test // ODOC-33
+  void emptyGroup() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:groups>\n"
+        + "        <fixr:group id=\"1012\" name=\"Parties\"/>\n"
+        + "    </fixr:groups>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Group has no members"));
+  }
+  
+  @Test // ODOC-94
+  void messageWithCategory() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "            <fixr:annotation>"
+        + "                 <fixr:documentation>\n"
+        + "                  Line 1\n"
+        + "                  Line 2\n"
+        + "                  Line 3\n"
+        + "                </fixr:documentation>"
+        + "            </fixr:annotation>"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages> "
+        + "     <fixr:message msgType=\"D\" category=\"MyCategory\" id=\"14\" name=\"NewOrderSingle\"/>\n"
+        + "    </fixr:messages> "
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    assertTrue(md.contains("category MyCategory"));
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Message has no structure"));
+  }
+  
+  @Test // ODOC-33
+  void missingNumInGroup() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes>\n"
+        + "        <fixr:datatype name=\"String\"/>\n"
+        + "    </fixr:datatypes>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields>\n"
+        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\"/>\n"
+        + "    </fixr:fields>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups>\n"
+        + "        <fixr:group id=\"1012\" name=\"Parties\"/>"
+        + "    </fixr:groups>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("Unknown numInGroup for group"));
+    assertTrue(errors.contains("Group has no members"));
+  }
+
+  
+  @Test // ODOC-64
+  void noFields() throws Exception {
+    String text ="<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SecurityStatusCodeset\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Active\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10004\" name=\"SecurityStatusCodeset\">\n"
+        + "            <fixr:code value=\"1\" id=\"10005\" name=\"Active\"/>\n"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    //String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-73
+  void normalizeSpaceMarkdown() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "            <fixr:annotation>"
+        + "                 <fixr:documentation contentType=\"text/markdown\">\n"
+        + "                  Line 1\n"
+        + "                  Line 2\n"
+        + "                  Line 3\n"
+        + "                </fixr:documentation>"
+        + "            </fixr:annotation>"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(md.contains("Line 1 Line 2 Line 3"));
+  }
+  
+  @Test // ODOC-73
+  void normalizeSpaceMarkdown2() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "            <fixr:annotation>"
+        + "                 <fixr:documentation contentType=\"text/markdown\">Domains for values of SecurityID(48).\n"
+        + "                            \n"
+        + "                  Second line</fixr:documentation>"
+        + "            </fixr:annotation>"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(md.contains("Domains for values of SecurityID(48).\n\nSecond line"));
+  }
+  
+  @Test // ODOC-73
+  void normalizeSpaceText() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets>\n"
+        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
+        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
+        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
+        + "            <fixr:annotation>"
+        + "                 <fixr:documentation>\n"
+        + "                  Line 1\n"
+        + "                  Line 2\n"
+        + "                  Line 3\n"
+        + "                </fixr:documentation>"
+        + "            </fixr:annotation>"
+        + "        </fixr:codeSet>\n"
+        + "    </fixr:codeSets>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(md.contains("Line 1\nLine 2\nLine 3"));
+  }
+  
+  @Test // ODOC-74
+  void paragraphBreak() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes>\n"
+        + "        <fixr:datatype name=\"String\"/>\n"
+        + "    </fixr:datatypes>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields>\n"
+        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\">\n"
+        + "            <fixr:annotation>\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\" contentType=\"text/markdown\">Line 1\n"
+        + "\n"
+        + "Line 2</fixr:documentation>\n"
+        + "            </fixr:annotation>\n"
+        + "        </fixr:field>\n"
+        + "    </fixr:fields>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    assertTrue(md.contains("Line 1/P/Line 2"));
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }  
+  
   @Test
   void roundTrip() throws Exception {
     String text =
@@ -253,7 +580,13 @@ class MarkdownGeneratorTest {
     //System.out.println(md);
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-  }
+  } 
+  
+  @BeforeEach
+  void setUp() throws Exception {
+    jsonOutputStream = new ByteArrayOutputStream(8096);
+    generator = new MarkdownGenerator("/P/", true, true);
+  }  
   
   @Test
   void table() throws Exception {
@@ -310,299 +643,6 @@ class MarkdownGeneratorTest {
     //System.out.println(md);
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-  }
-  
-  @Test // ODOC-64
-  void noFields() throws Exception {
-    String text ="<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SecurityStatusCodeset\">\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Active\"/>\n"
-        + "        </fixr:codeSet>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10004\" name=\"SecurityStatusCodeset\">\n"
-        + "            <fixr:code value=\"1\" id=\"10005\" name=\"Active\"/>\n"
-        + "        </fixr:codeSet>\n"
-        + "    </fixr:codeSets>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-  }
-  
-  @Test // ODOC-74
-  void paragraphBreak() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes>\n"
-        + "        <fixr:datatype name=\"String\"/>\n"
-        + "    </fixr:datatypes>\n"
-        + "    <fixr:codeSets/>\n"
-        + "    <fixr:fields>\n"
-        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\">\n"
-        + "            <fixr:annotation>\n"
-        + "                <fixr:documentation purpose=\"SYNOPSIS\" contentType=\"text/markdown\">Line 1\n"
-        + "\n"
-        + "Line 2</fixr:documentation>\n"
-        + "            </fixr:annotation>\n"
-        + "        </fixr:field>\n"
-        + "    </fixr:fields>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    String md = mdStream.toString();
-    assertTrue(md.contains("Line 1/P/Line 2"));
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-  }
-
-  
-  @Test // ODOC-33
-  void missingNumInGroup() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes>\n"
-        + "        <fixr:datatype name=\"String\"/>\n"
-        + "    </fixr:datatypes>\n"
-        + "    <fixr:codeSets/>\n"
-        + "    <fixr:fields>\n"
-        + "        <fixr:field type=\"String\" id=\"48\" name=\"SecurityID\"/>\n"
-        + "    </fixr:fields>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups>\n"
-        + "        <fixr:group id=\"1012\" name=\"Parties\"/>"
-        + "    </fixr:groups>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(errors.contains("Unknown numInGroup for group"));
-    assertTrue(errors.contains("Group has no members"));
-  }
-  
-  @Test // ODOC-31
-  void emptyComponent() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets/>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:components>\n"
-        + "        <fixr:component id=\"10001\" name=\"InstrumentParties\"/>\n"
-        + "    </fixr:components>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(errors.contains("Component has no members"));
-  }
-  
-  @Test // ODOC-33
-  void emptyGroup() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets/>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:groups>\n"
-        + "        <fixr:group id=\"1012\" name=\"Parties\"/>\n"
-        + "    </fixr:groups>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(errors.contains("Group has no members"));
-  }
-  
-  @Test // ODOC-63
-  void duplicateCodes() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
-        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
-        + "        </fixr:codeSet>\n"
-        + "        <fixr:codeSet type=\"char\" name=\"SideCodeSet\" scenario=\"BuySellDup\">\n"
-        + "            <fixr:code value=\"1\" id=\"10004\" name=\"Buy\"/>\n"
-        + "            <fixr:code value=\"2\" id=\"10005\" name=\"Sell\"/>\n"
-        + "        </fixr:codeSet>\n"
-        + "    </fixr:codeSets>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    //String md = mdStream.toString();
-    //System.out.println(md);
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(errors.contains("Unknown codeset id"));
-  }
-  
-  @Test // ODOC-73
-  void normalizeSpaceMarkdown() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
-        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
-        + "            <fixr:annotation>"
-        + "                 <fixr:documentation contentType=\"text/markdown\">\n"
-        + "                  Line 1\n"
-        + "                  Line 2\n"
-        + "                  Line 3\n"
-        + "                </fixr:documentation>"
-        + "            </fixr:annotation>"
-        + "        </fixr:codeSet>\n"
-        + "    </fixr:codeSets>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    String md = mdStream.toString();
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(md.contains("Line 1 Line 2 Line 3"));
-  }  
-  
-  @Test // ODOC-73
-  void normalizeSpaceMarkdown2() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
-        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
-        + "            <fixr:annotation>"
-        + "                 <fixr:documentation contentType=\"text/markdown\">Domains for values of SecurityID(48).\n"
-        + "                            \n"
-        + "                  Second line</fixr:documentation>"
-        + "            </fixr:annotation>"
-        + "        </fixr:codeSet>\n"
-        + "    </fixr:codeSets>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    String md = mdStream.toString();
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(md.contains("Domains for values of SecurityID(48).\n\nSecond line"));
-  } 
-  
-  @Test // ODOC-73
-  void normalizeSpaceText() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
-        + "    <fixr:metadata/>\n"
-        + "    <fixr:datatypes/>\n"
-        + "    <fixr:codeSets>\n"
-        + "        <fixr:codeSet type=\"char\" id=\"10001\" name=\"SideCodeSet\" scenario=\"BuySell\">\n"
-        + "            <fixr:code value=\"1\" id=\"10002\" name=\"Buy\"/>\n"
-        + "            <fixr:code value=\"2\" id=\"10003\" name=\"Sell\"/>\n"
-        + "            <fixr:annotation>"
-        + "                 <fixr:documentation>\n"
-        + "                  Line 1\n"
-        + "                  Line 2\n"
-        + "                  Line 3\n"
-        + "                </fixr:documentation>"
-        + "            </fixr:annotation>"
-        + "        </fixr:codeSet>\n"
-        + "    </fixr:codeSets>\n"
-        + "    <fixr:fields/>\n"
-        + "    <fixr:components/>\n"
-        + "    <fixr:groups/>\n"
-        + "    <fixr:messages/>\n"
-        + "</fixr:repository>\n";
-    
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
-    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
-    generator.generate(inputStream, outputWriter, jsonOutputStream);
-    outputWriter.close();
-    String md = mdStream.toString();
-    //System.out.println(md);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(md.contains("Line 1\nLine 2\nLine 3"));
   }  
   
 }
