@@ -252,8 +252,9 @@ public class MarkdownGenerator {
       final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
       for (final Entry<String, List<Object>> e : entries) {
         final String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
-        if (!text.isBlank()) {
-          properties.addProperty(e.getKey(), text);
+        if (!text.isBlank()) {         
+          final String key = e.getKey();
+          properties.addProperty(key != null  && !key.isEmpty() ? key : DOCUMENTATION_KEYWORD, text);
         }
       }
     }
@@ -875,9 +876,12 @@ public class MarkdownGenerator {
             .anyMatch(d -> MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(d.getContentType()));
         final String text = concatenateDocumentation(e.getValue(), hasMarkdown ? "\n\n" : "\n");
         if (!text.isBlank()) {
-          final MutableContext documentationContext = contextFactory
-              .createContext(new String[] {StringUtil.convertToTitleCase(e.getKey())}, 4);
-          documentWriter.write(documentationContext);
+          final String key = e.getKey();
+          if (key != null && !key.isEmpty()) {
+            final MutableContext documentationContext = contextFactory
+                .createContext(new String[] {StringUtil.convertToTitleCase(key)}, 4);
+            documentWriter.write(documentationContext);
+          }
           final MutableDocumentation documentation = contextFactory.createDocumentation(text);
           documentWriter.write(documentation);
         }
@@ -1282,11 +1286,9 @@ public class MarkdownGenerator {
       final List<Object> annotations = annotation.getDocumentationOrAppinfo();
       final Function<Object, String> classifier = o -> {
         if (o instanceof Documentation) {
-          final String purpose = ((Documentation) o).getPurpose();
-          return Objects.requireNonNullElse(purpose, DOCUMENTATION_KEYWORD);
+          return Objects.requireNonNullElse(((Documentation) o).getPurpose(), "");
         } else {
-          final String purpose = ((Appinfo) o).getPurpose();
-          return Objects.requireNonNullElse(purpose, DOCUMENTATION_KEYWORD);
+          return Objects.requireNonNullElse(((Appinfo) o).getPurpose(), "");
         }
       };
       return sortDocumentationByPurpose(
@@ -1305,7 +1307,12 @@ public class MarkdownGenerator {
           }
 
           private int purposeRank(String purpose) {
+            // null or empty purpose is equivalent to synopsis
+            if (purpose == null) {
+              return 0;
+            }
             switch (purpose.toLowerCase()) {
+              case "":
               case "synopsis":
               case DOCUMENTATION_KEYWORD:
                 return 0;
