@@ -35,34 +35,6 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing name"));
   }
   
-  
-  
-  @Test // ODOC-86
-  void lookupDatatypes() throws Exception {
-    String text =
-        "## Fields\n"
-        + "| Name             | Tag | Type         |  Values                  |\n"
-        + "|------------------|----:|--------------|--------------------------|\n"
-        + "| Account | 1 | | |\n"
-        + "| AvgPx | | Price | |\n"
-        + "| BeginSeqNo | | | |\n";
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    builder.closeEventLogger();
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    Pattern pattern = Pattern.compile("<fixr:datatype ");
-    Matcher matcher = pattern.matcher(xml);
-    long count = matcher.results().count();
-    assertEquals(3, count);
-  }
-  
   @Test // ODOC-43
   void badConstant() throws Exception {
     String text =
@@ -87,7 +59,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Missing value for constant"));
   }
-
+  
   @Test // ODOC-23
   void badInlineCodes() throws Exception {
     String text =
@@ -112,7 +84,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Malformed inline code"));
   }
-  
+
   @Test // ODOC-26
   void badMetadata() throws Exception {
     String text =
@@ -232,7 +204,6 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertFalse(xml.contains("purpose="));
   }
-  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =
@@ -345,6 +316,52 @@ class RepositoryBuilderTest {
     assertEquals(1, count);
   }
   
+  @Test // ODOC-100
+  void groupNoNumInGroup() throws Exception {
+    String text =
+        "### Group Parties category MyCategory (1012)\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|---------|-----|----------|\n"
+        + "| PartyID | 448 | required |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("First group field not NumInGroup datatype"));
+  }
+  
+  @Test // ODOC-100
+  void groupNoNumInGroup2() throws Exception {
+    String text =
+        "## Group Parties category MyCategory abbrName Pty\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
+        + "| PartyID | | r |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(errors.contains("First group field not NumInGroup datatype"));
+  }
+  
   @Test
   void inlineCode() throws Exception {
     String text =
@@ -387,7 +404,7 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-    System.out.println(xml);
+    //System.out.println(xml);
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
@@ -421,6 +438,32 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("name=\"Active firm\""));
     assertTrue(errors.contains("Missing value for constant"));
     assertFalse(errors.contains("Malformed inline code"));
+  }
+  
+  @Test // ODOC-86
+  void lookupDatatypes() throws Exception {
+    String text =
+        "## Fields\n"
+        + "| Name             | Tag | Type         |  Values                  |\n"
+        + "|------------------|----:|--------------|--------------------------|\n"
+        + "| Account | 1 | | |\n"
+        + "| AvgPx | | Price | |\n"
+        + "| BeginSeqNo | | | |\n";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    builder.closeEventLogger();
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    Pattern pattern = Pattern.compile("<fixr:datatype ");
+    Matcher matcher = pattern.matcher(xml);
+    long count = matcher.results().count();
+    assertEquals(3, count);
   }
   
   @Test // ODOC-40

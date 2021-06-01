@@ -1221,14 +1221,17 @@ public class RepositoryBuilder {
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
       final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
       final Iterator<? extends DetailProperties> rowIter = detailTable.rows().iterator();
+      int skipRows = 1;
       if (rowIter.hasNext()) {
-        populateNumInGroup(rowIter.next(), group);
+        if (!populateNumInGroup(rowIter.next(), group)) {
+          skipRows = 0;
+        }
       } else {
         eventLogger.error("Unknown NumInGroup for group; name={0}", group.getName());
       }
       final Stream<? extends DetailProperties> stream = detailTable.rows().stream();
       final List<? extends DetailProperties> remainingRows =
-          stream.skip(1).collect(Collectors.toList());
+          stream.skip(skipRows).collect(Collectors.toList());
       addMembers(remainingRows, members);
     } else if (contextual instanceof Documentation) {
       final Documentation detail = (Documentation) contextual;
@@ -2004,9 +2007,34 @@ public class RepositoryBuilder {
     return groupRefType;
   }
 
-  private void populateNumInGroup(DetailProperties detail, GroupType group) {
+  private boolean populateNumInGroup(DetailProperties detail, GroupType group) {
+    FieldType fieldType = null;
+    Integer id = detail.getIntProperty("id");
+    if (id == null) {
+      id = detail.getIntProperty("tag");
+    }
+    if (id != null) {
+      fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO); 
+      if (fieldType == null && referenceRepositoryAdapter != null) {
+        fieldType = referenceRepositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
+      }
+    }
+    if (fieldType == null) {
+      String name = detail.getProperty("name");
+      fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO); 
+      if (fieldType == null && referenceRepositoryAdapter != null) {
+        fieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
+      }
+    }
+    if ((fieldType != null) && !"NumInGroup".equals(fieldType.getType())) {
+      eventLogger.error("First group field not NumInGroup datatype; id={0, number, ###} in group={1}",
+          fieldType.getId(), group.getName());
+      return false;
+    }
+    
     final FieldRefType numInGroup = populateFieldRef(detail);
     group.setNumInGroup(numInGroup);
+    return true;
   }
 
   private String scenarioOrDefault(String scenario) {
