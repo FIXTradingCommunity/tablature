@@ -427,9 +427,9 @@ public class RepositoryBuilder {
       new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
           FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
   private TeeEventListener eventLogger;
-  private final Logger logger = LogManager.getLogger(getClass());
-  private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
   private final AssociativeSet headings = new AssociativeSet();
+  private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
+  private final Logger logger = LogManager.getLogger(getClass());
 
   private final Consumer<Contextual> markdownConsumer = contextual -> {
     final Context keyContext = getKeyContext(contextual);
@@ -603,7 +603,8 @@ public class RepositoryBuilder {
           actor.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
+            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower level heading
@@ -858,7 +859,8 @@ public class RepositoryBuilder {
           codeset.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
+            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower level heading
@@ -919,7 +921,8 @@ public class RepositoryBuilder {
           component.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
+            COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower level heading
@@ -1186,8 +1189,9 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           flow.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), getPurpose(parentKey),
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);       
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
+            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } else if (contextual instanceof DetailTable) {
@@ -1236,7 +1240,8 @@ public class RepositoryBuilder {
           group.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
+            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower level heading
@@ -1323,7 +1328,8 @@ public class RepositoryBuilder {
           message.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
+            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1}", name, scenario);

@@ -35,6 +35,8 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Missing name"));
   }
   
+  
+  
   @Test // ODOC-86
   void lookupDatatypes() throws Exception {
     String text =
@@ -209,6 +211,26 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+  }
+  
+  @Test // ODOC-99
+  void documentationParagraphNoPurpose() throws Exception {
+    String text =
+        "### Codeset SecIDSources type String (22)\n"
+        + "Domains for values of SecurityID(48)\n"
+        + "Second line";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null, jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertFalse(xml.contains("purpose="));
   }
   
   @Test // ODOC-63

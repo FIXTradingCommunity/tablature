@@ -72,25 +72,171 @@ import io.fixprotocol.orchestra.event.TeeEventListener;
 public class MarkdownGenerator {
 
   public static final String ASSIGN_KEYWORD = "assign";
-  public static final String DOCUMENTATION_KEYWORD = "documentation";
-
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
   public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
+
+  public static final String DOCUMENTATION_KEYWORD = "documentation";
 
   // todo: integrate into markdown grammar
   public static final String WHEN_KEYWORD = "when";
   private static final String DEFAULT_SCENARIO = "base";
 
 
+  static String appinfoToString(Object o, String paragraphDelimiter) {
+    final io.fixprotocol._2020.orchestra.repository.Appinfo a =
+        (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
+    return a.getContent().stream().map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
+        .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
+  }
+
+  static String codesToString(CodeSetType codeset, String paragraphDelimiter) {
+    List<CodeType> codes = sortCodes(codeset.getCode());
+    return codes.stream().map(c -> c.getValue() + " = " + c.getName())
+        .collect(Collectors.joining(paragraphDelimiter));
+  }
+
+  static String concatenateDocumentation(List<Object> objects, String paragraphDelimiter) {
+    return objects.stream().map(o -> {
+      if (o instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
+        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation) o,
+            paragraphDelimiter);
+      } else {
+        return appinfoToString(o, paragraphDelimiter);
+      }
+    }).collect(Collectors.joining(paragraphDelimiter));
+  }
+
+  static String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
+      String paragraphDelimiter) {
+    if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
+      List<String> contents =
+          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
+      List<String> paragraphs = new ArrayList<>();
+      for (String c : contents) {
+        // paragraph delimiter in markdown is two newlines, but coming from xml, they may be
+        // separated by horizontal whitespace
+        paragraphs.addAll(
+            Stream.of(c.split("\n\\h*\n")).map(e -> new String(e)).collect(Collectors.toList()));
+      }
+      List<String> lines = new ArrayList<>();
+      for (String p : paragraphs) {
+        lines.add(Stream.of(p.split("\n")).map(e -> new String(e)).map(String::strip)
+            .filter(s -> !s.isEmpty()).collect(Collectors.joining(" ")));
+      }
+      return String.join(paragraphDelimiter, lines);
+    } else {
+      List<String> contents =
+          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
+      List<String> paragraphs = new ArrayList<>();
+      for (String c : contents) {
+        paragraphs.addAll(Stream.of(c.split("\n")).map(e -> new String(e))
+            .map(s -> MarkdownUtil.plainTextToMarkdown(s)).collect(Collectors.toList()));
+      }
+      return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
+          .collect(Collectors.joining(paragraphDelimiter));
+    }
+  }
+
+  static SortedMap<String, List<Object>> groupDocumentationByPurpose(Annotation annotation) {
+    if (annotation == null) {
+      return Collections.emptySortedMap();
+    } else {
+      final List<Object> annotations = annotation.getDocumentationOrAppinfo();
+      final Function<Object, String> classifier = o -> {
+        if (o instanceof Documentation) {
+          return Objects.requireNonNullElse(((Documentation) o).getPurpose(), "");
+        } else {
+          return Objects.requireNonNullElse(((Appinfo) o).getPurpose(), "");
+        }
+      };
+      return sortDocumentationByPurpose(
+          annotations.stream().collect(Collectors.groupingBy(classifier)));
+    }
+  }
+
+  static List<CodeType> sortCodes(final List<CodeType> codes) {
+    final Comparator<CodeType> groupComparator = (o1, o2) -> {
+      final String g1 = o1.getGroup();
+      final String g2 = o2.getGroup();
+      if (g1 == null) {
+        if (g2 == null) {
+          return 0;
+        } else {
+          return -1;
+        }
+      } else if (g2 == null) {
+        return 1;
+      } else {
+        return g1.compareTo(g2);
+      }
+    };
+    final Comparator<CodeType> sortComparator = (o1, o2) -> {
+      final String s1 = o1.getSort();
+      final String s2 = o2.getSort();
+      if (s1 == null) {
+        if (s2 == null) {
+          return 0;
+        } else {
+          return -1;
+        }
+      } else if (s2 == null) {
+        return 1;
+      } else {
+        // sort should be an integer attribute
+        return Integer.parseInt(s1.strip()) - Integer.parseInt(s2.strip());
+      }
+    };
+    final Comparator<? super CodeType> codeComparator =
+        groupComparator.thenComparing(sortComparator);
+    return codes.stream().sorted(codeComparator).collect(Collectors.toList());
+  }
+
+  static SortedMap<String, List<Object>> sortDocumentationByPurpose(
+      Map<String, ? extends List<Object>> groups) {
+    final SortedMap<String, List<Object>> sorted =
+        new TreeMap<String, List<Object>>(new Comparator<>() {
+
+          @Override
+          public int compare(String o1, String o2) {
+            return purposeRank(o1) - purposeRank(o2);
+          }
+
+          private int purposeRank(String purpose) {
+            // null or empty purpose is equivalent to synopsis
+            if (purpose == null) {
+              return 0;
+            }
+            switch (purpose.toLowerCase()) {
+              case "":
+              case "synopsis":
+              case DOCUMENTATION_KEYWORD:
+                return 0;
+              case "elaboration":
+                return 1;
+              case "example":
+                return 2;
+              case "display":
+                return 3;
+              default:
+                return 4;
+            }
+          }
+
+        });
+    sorted.putAll(groups);
+    return sorted;
+  }
+
   private final ContextFactory contextFactory = new ContextFactory();
   private EventListener eventLogger;
+  private final AssociativeSet headings = new AssociativeSet();
   private final Logger logger = LogManager.getLogger(getClass());
   private final String paragraphDelimiterInTables;
-  private final boolean shouldOutputPedigree;
   private final boolean shouldOutputFixml;
-  private final AssociativeSet headings = new AssociativeSet();
+  private final boolean shouldOutputPedigree;
+  private final boolean shouldOutputInlineCodes;
 
   /**
    * Contructor
@@ -98,7 +244,7 @@ public class MarkdownGenerator {
    * Suppresses output of pedigree attributes and FIXML attributes
    */
   public MarkdownGenerator() {
-    this(DEFAULT_PARAGRAPH_DELIMITER, false, false);
+    this(DEFAULT_PARAGRAPH_DELIMITER, false, false, false);
   }
 
   /**
@@ -108,25 +254,20 @@ public class MarkdownGenerator {
    *        natively supported
    * @param shouldOutputPedigree output pedigree attributes -- when an element was added or changed
    * @param shouldOutputFixml output FIXML attributes -- abbreviated name, etc.
+   * @param shouldOutputInlineCodes output a codeset inline with its field
    */
   public MarkdownGenerator(String paragraphDelimiterInTables, boolean shouldOutputPedigree,
-      boolean shouldOutputFixml) {
+      boolean shouldOutputFixml, boolean shouldOutputInlineCodes) {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.shouldOutputPedigree = shouldOutputPedigree;
     this.shouldOutputFixml = shouldOutputFixml;
+    this.shouldOutputInlineCodes = shouldOutputInlineCodes;
     // Populate column heading translations. First element is lower case key, second is display
     // format.
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
         {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
         {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
         {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}});
-  }
-
-  public String appinfoToString(Object o, String paragraphDelimiter) {
-    final io.fixprotocol._2020.orchestra.repository.Appinfo a =
-        (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
-    return a.getContent().stream().map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-        .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
   }
 
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
@@ -173,7 +314,7 @@ public class MarkdownGenerator {
       MutableDetailProperties row) {
     final int tag = componentRef.getId().intValue();
     final String scenario = componentRef.getScenario();
-    final ComponentType component = findComponentByTag(repository, tag, scenario);
+    final ComponentType component = RepositoryAdaptor.findComponentByTag(repository, tag, scenario);
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
@@ -253,9 +394,9 @@ public class MarkdownGenerator {
       final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
       for (final Entry<String, List<Object>> e : entries) {
         final String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
-        if (!text.isBlank()) {         
+        if (!text.isBlank()) {
           final String key = e.getKey();
-          properties.addProperty(key != null  && !key.isEmpty() ? key : DOCUMENTATION_KEYWORD, text);
+          properties.addProperty(key != null && !key.isEmpty() ? key : DOCUMENTATION_KEYWORD, text);
         }
       }
     }
@@ -265,7 +406,7 @@ public class MarkdownGenerator {
       MutableDetailProperties row) {
     final int tag = fieldRef.getId().intValue();
     final String scenario = fieldRef.getScenario();
-    final FieldType field = findFieldByTag(repository, tag, scenario);
+    final FieldType field = RepositoryAdaptor.findFieldByTag(repository, tag, scenario);
     if (field != null) {
       row.addProperty("name", field.getName());
     } else {
@@ -302,6 +443,12 @@ public class MarkdownGenerator {
       }
     } else if (assign != null) {
       row.addProperty("values", ASSIGN_KEYWORD + " " + assign);
+    } else if (shouldOutputInlineCodes && field != null) {
+      CodeSetType codeset =
+          RepositoryAdaptor.findCodesetByName(repository, field.getType(), scenario);
+      if (codeset != null) {
+        row.addProperty("values", codesToString(codeset, getParagraphDelimiterInTables()));
+      }
     }
 
     final Short implMinLength = fieldRef.getImplMinLength();
@@ -380,7 +527,7 @@ public class MarkdownGenerator {
       MutableDetailProperties row) {
     final int tag = groupRef.getId().intValue();
     final String scenario = groupRef.getScenario();
-    final GroupType group = findGroupByTag(repository, tag, scenario);
+    final GroupType group = RepositoryAdaptor.findGroupByTag(repository, tag, scenario);
     if (group != null) {
       row.addProperty("name", group.getName());
     } else {
@@ -451,6 +598,7 @@ public class MarkdownGenerator {
     addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
+
   private void addMemberRows(MutableDetailTable table, Repository repository,
       List<Object> members) {
     for (final Object member : members) {
@@ -466,78 +614,6 @@ public class MarkdownGenerator {
         addComponentRefRow(repository, componentRef, row);
       }
     }
-  }
-
-  private String concatenateDocumentation(List<Object> objects, String paragraphDelimiter) {
-    return objects.stream().map(o -> {
-      if (o instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation) o,
-            paragraphDelimiter);
-      } else {
-        return appinfoToString(o, paragraphDelimiter);
-      }
-    }).collect(Collectors.joining(paragraphDelimiter));
-  }
-
-  private String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
-      String paragraphDelimiter) {
-    if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
-      List<String> contents =
-          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
-      List<String> paragraphs = new ArrayList<>();
-      for (String c : contents) {
-        // paragraph delimiter in markdown is two newlines, but coming from xml, they may be
-        // separated by horizontal whitespace
-        paragraphs.addAll(
-            Stream.of(c.split("\n\\h*\n")).map(e -> new String(e)).collect(Collectors.toList()));
-      }
-      List<String> lines = new ArrayList<>();
-      for (String p : paragraphs) {
-        lines.add(Stream.of(p.split("\n")).map(e -> new String(e)).map(String::strip)
-            .filter(s -> !s.isEmpty()).collect(Collectors.joining(" ")));
-      }
-      return String.join(paragraphDelimiter, lines);
-    } else {
-      List<String> contents =
-          d.getContent().stream().map(Object::toString).collect(Collectors.toList());
-      List<String> paragraphs = new ArrayList<>();
-      for (String c : contents) {
-        paragraphs.addAll(Stream.of(c.split("\n")).map(e -> new String(e))
-            .map(s -> MarkdownUtil.plainTextToMarkdown(s)).collect(Collectors.toList()));
-      }
-      return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
-          .collect(Collectors.joining(paragraphDelimiter));
-    }
-  }
-
-  private ComponentType findComponentByTag(Repository repository, int tag, String scenario) {
-    final List<ComponentType> components = repository.getComponents().getComponent();
-    for (final ComponentType component : components) {
-      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
-        return component;
-      }
-    }
-    return null;
-  }
-
-  private FieldType findFieldByTag(Repository repository, int tag, String scenario) {
-    final List<FieldType> fields = repository.getFields().getField();
-    for (final FieldType field : fields) {
-      if (field.getId().intValue() == tag && field.getScenario().equals(scenario)) {
-        return field;
-      }
-    }
-    return null;
-  }
-
-  private GroupType findGroupByTag(Repository repository, int tag, String scenario) {
-    final List<GroupType> groups = repository.getGroups().getGroup();
-    for (final GroupType group : groups) {
-      if (group.getId().intValue() == tag && group.getScenario().equals(scenario)) {
-        return group;
-      }
-    }
-    return null;
   }
 
   private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter)
@@ -589,7 +665,6 @@ public class MarkdownGenerator {
     }
   }
 
-
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
@@ -616,41 +691,7 @@ public class MarkdownGenerator {
     if (!codes.isEmpty()) {
       final MutableDetailTable table = contextFactory.createDetailTable();
 
-      final Comparator<CodeType> groupComparator = (o1, o2) -> {
-        final String g1 = o1.getGroup();
-        final String g2 = o2.getGroup();
-        if (g1 == null) {
-          if (g2 == null) {
-            return 0;
-          } else {
-            return -1;
-          }
-        } else if (g2 == null) {
-          return 1;
-        } else {
-          return g1.compareTo(g2);
-        }
-      };
-      final Comparator<CodeType> sortComparator = (o1, o2) -> {
-        final String s1 = o1.getSort();
-        final String s2 = o2.getSort();
-        if (s1 == null) {
-          if (s2 == null) {
-            return 0;
-          } else {
-            return -1;
-          }
-        } else if (s2 == null) {
-          return 1;
-        } else {
-          // sort should be an integer attribute
-          return Integer.parseInt(s1.strip()) - Integer.parseInt(s2.strip());
-        }
-      };
-      final Comparator<? super CodeType> codeComparator =
-          groupComparator.thenComparing(sortComparator);
-      final List<CodeType> sortedCodes =
-          codes.stream().sorted(codeComparator).collect(Collectors.toList());
+      final List<CodeType> sortedCodes = sortCodes(codes);
 
       for (final CodeType code : sortedCodes) {
         final MutableDetailProperties row = table.newRow();
@@ -728,8 +769,8 @@ public class MarkdownGenerator {
         }
 
         addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
-     }
- 
+      }
+
       documentWriter.write(table, headings);
     } else {
       eventLogger.warn("Codeset has no codes; name={0} scenario={1}", codeset.getName(), scenario);
@@ -879,8 +920,8 @@ public class MarkdownGenerator {
         if (!text.isBlank()) {
           final String key = e.getKey();
           if (key != null && !key.isEmpty()) {
-            final MutableContext documentationContext = contextFactory
-                .createContext(new String[] {StringUtil.convertToTitleCase(key)}, 4);
+            final MutableContext documentationContext =
+                contextFactory.createContext(new String[] {StringUtil.convertToTitleCase(key)}, 4);
             documentWriter.write(documentationContext);
           }
           final MutableDocumentation documentation = contextFactory.createDocumentation(text);
@@ -912,7 +953,15 @@ public class MarkdownGenerator {
           row.addProperty("scenario", scenario);
         }
         row.addProperty("type", field.getType());
- 
+
+        if (shouldOutputInlineCodes) {
+          CodeSetType codeset =
+              RepositoryAdaptor.findCodesetByName(repository, field.getType(), scenario);
+          if (codeset != null) {
+            row.addProperty("values", codesToString(codeset, getParagraphDelimiterInTables()));
+          }
+        }
+
         final Short implMinLength = field.getImplMinLength();
         if (implMinLength != null) {
           row.addIntProperty("implMinLength", implMinLength);
@@ -1016,7 +1065,7 @@ public class MarkdownGenerator {
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
-        
+
         addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
       }
 
@@ -1231,7 +1280,7 @@ public class MarkdownGenerator {
       context.addKey("Repository");
     }
     documentWriter.write(context);
-   
+
     Annotation annotation = repository.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
@@ -1283,59 +1332,5 @@ public class MarkdownGenerator {
   private String getParagraphDelimiterInTables() {
     return paragraphDelimiterInTables;
   }
-
-  private SortedMap<String, List<Object>> groupDocumentationByPurpose(Annotation annotation) {
-    if (annotation == null) {
-      return Collections.emptySortedMap();
-    } else {
-      final List<Object> annotations = annotation.getDocumentationOrAppinfo();
-      final Function<Object, String> classifier = o -> {
-        if (o instanceof Documentation) {
-          return Objects.requireNonNullElse(((Documentation) o).getPurpose(), "");
-        } else {
-          return Objects.requireNonNullElse(((Appinfo) o).getPurpose(), "");
-        }
-      };
-      return sortDocumentationByPurpose(
-          annotations.stream().collect(Collectors.groupingBy(classifier)));
-    }
-  }
-
-  private SortedMap<String, List<Object>> sortDocumentationByPurpose(
-      Map<String, ? extends List<Object>> groups) {
-    final SortedMap<String, List<Object>> sorted =
-        new TreeMap<String, List<Object>>(new Comparator<>() {
-
-          @Override
-          public int compare(String o1, String o2) {
-            return purposeRank(o1) - purposeRank(o2);
-          }
-
-          private int purposeRank(String purpose) {
-            // null or empty purpose is equivalent to synopsis
-            if (purpose == null) {
-              return 0;
-            }
-            switch (purpose.toLowerCase()) {
-              case "":
-              case "synopsis":
-              case DOCUMENTATION_KEYWORD:
-                return 0;
-              case "elaboration":
-                return 1;
-              case "example":
-                return 2;
-              case "display":
-                return 3;
-              default:
-                return 4;
-            }
-          }
-
-        });
-    sorted.putAll(groups);
-    return sorted;
-  }
-
 
 }
