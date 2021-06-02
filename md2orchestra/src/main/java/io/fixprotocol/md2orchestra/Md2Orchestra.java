@@ -63,23 +63,23 @@ public class Md2Orchestra {
       return new Md2Orchestra(this);
     }
 
-    public Builder eventFile(String eventFilename) {
+    public Builder eventFile(final String eventFilename) {
       this.eventFilename = eventFilename;
       return this;
     }
 
-    public Builder inputFilePattern(String inputFilePatterns) {
+    public Builder inputFilePattern(final String inputFilePatterns) {
       this.inputFilePatterns = List.of(inputFilePatterns);
       return this;
     }
 
-    public Builder inputFilePatterns(List<String> inputFilePatterns) {
+    public Builder inputFilePatterns(final List<String> inputFilePatterns) {
       this.inputFilePatterns.clear();
       this.inputFilePatterns.addAll(inputFilePatterns);
       return this;
     }
 
-    public Builder outputFile(String outputFilename) {
+    public Builder outputFile(final String outputFilename) {
       this.outputFilename = outputFilename;
       return this;
     }
@@ -90,12 +90,12 @@ public class Md2Orchestra {
      * @param paragraphDelimiter token
      * @return this Builder
      */
-    public Builder paragraphDelimiter(String paragraphDelimiter) {
+    public Builder paragraphDelimiter(final String paragraphDelimiter) {
       this.paragraphDelimiter = paragraphDelimiter;
       return this;
     }
 
-    public Builder referenceFile(String referenceFile) {
+    public Builder referenceFile(final String referenceFile) {
       this.referenceFile = referenceFile;
       return this;
     }
@@ -123,8 +123,8 @@ public class Md2Orchestra {
    *
    * @param args command line arguments
    */
-  public static void main(String[] args) {
-    Md2Orchestra md2Orchestra;
+  public static void main(final String[] args) {
+    final Md2Orchestra md2Orchestra;
     try {
       md2Orchestra = Md2Orchestra.parseArgs(args).build();
       md2Orchestra.generate();
@@ -134,7 +134,7 @@ public class Md2Orchestra {
     }
   }
 
-  static Builder parseArgs(String[] args) throws ParseException {
+  static Builder parseArgs(final String[] args) throws ParseException {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of output Orchestra file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
@@ -148,7 +148,7 @@ public class Md2Orchestra {
         .numberOfArgs(1).build());
 
     final DefaultParser parser = new DefaultParser();
-    CommandLine cmd;
+    final CommandLine cmd;
 
     final Builder builder = new Builder();
 
@@ -182,19 +182,19 @@ public class Md2Orchestra {
     }
   }
 
-  private static void showHelp(Options options) {
+  private static void showHelp(final Options options) {
     final HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
   }
 
   private final String eventFilename;
-  private Consumer<Path> fileConsumer = new Consumer<>() {
+  private final Consumer<Path> fileConsumer = new Consumer<>() {
 
     @Override
-    public void accept(Path filePath) {
+    public void accept(final Path filePath) {
       try {
         appendInput(filePath, outputRepositoryBuilder);
-      } catch (IOException e) {
+      } catch (final IOException e) {
         logger.fatal("Md2Orchestra failed to append file {}", filePath, e);
       }
     }
@@ -208,7 +208,7 @@ public class Md2Orchestra {
 
   private final String referenceFilename;
 
-  private Md2Orchestra(Builder builder) {
+  private Md2Orchestra(final Builder builder) {
     this.inputFilePatterns = builder.inputFilePatterns;
     this.outputFilename = builder.outputFilename;
     this.referenceFilename = builder.referenceFile;
@@ -241,8 +241,8 @@ public class Md2Orchestra {
    * @throws Exception IllegalArgumentException if inputFilePatterns is empty NullPointerException
    *         if inputFilePatterns or outputFilename is {@code null}
    */
-  void generate(List<String> inputFilePatterns, String outputFilename, String referenceFilename,
-      String eventFilename) throws Exception {
+  void generate(final List<String> inputFilePatterns, final String outputFilename, final String referenceFilename,
+                final String eventFilename) throws Exception {
     Objects.requireNonNull(inputFilePatterns, "Input file list is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
     if (inputFilePatterns.isEmpty()) {
@@ -255,7 +255,7 @@ public class Md2Orchestra {
       outputDir.mkdirs();
     }
 
-    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+    try (final OutputStream outputStream = new FileOutputStream(outputFile)) {
 
       InputStream referenceStream = null;
       if (referenceFilename != null) {
@@ -279,19 +279,19 @@ public class Md2Orchestra {
     }
   }
 
-  void generate(String inputFilePattern, String outputFilename, String referenceFilename,
-      String eventFilename) throws Exception {
+  void generate(final String inputFilePattern, final String outputFilename, final String referenceFilename,
+                final String eventFilename) throws Exception {
     generate(List.of(inputFilePattern), outputFilename, referenceFilename, eventFilename);
   }
 
-  private void appendInput(Path filePath, RepositoryBuilder outputRepositoryBuilder)
+  void appendInput(final Path filePath, final RepositoryBuilder outputRepositoryBuilder)
       throws IOException {
     logger.info("Md2Orchestra opening file {}", filePath.normalize().toString());
     final InputStream inputStream = new FileInputStream(filePath.toFile());
     outputRepositoryBuilder.appendInput(inputStream);
   }
 
-  private void processFiles(List<String> inputFilePatterns, Consumer<Path> fileConsumer)
+  private void processFiles(final List<String> inputFilePatterns, final Consumer<? super Path> fileConsumer)
       throws IOException {
     final FileSystem fileSystem = FileSystems.getDefault();
     final String separator = fileSystem.getSeparator();
@@ -299,11 +299,11 @@ public class Md2Orchestra {
     for (final String inputFilePattern : inputFilePatterns) {
       int lastSeparatorPos = inputFilePattern.lastIndexOf(separator);
       // Handle Windows case for portability of '/' separator
-      if (lastSeparatorPos == -1 && !separator.equals("/")) {
+      if (lastSeparatorPos == -1 && !"/".equals(separator)) {
         lastSeparatorPos = inputFilePattern.lastIndexOf("/");
       }
-      Path dirPath;
-      String glob;
+      final Path dirPath;
+      final String glob;
       if (lastSeparatorPos != -1) {
         dirPath =
             fileSystem.getPath(inputFilePattern.substring(0, lastSeparatorPos)).toAbsolutePath();
@@ -322,19 +322,19 @@ public class Md2Orchestra {
           new FileVisitor<Path>() {
 
             @Override
-            public FileVisitResult postVisitDirectory(Path dir, IOException exc)
+            public FileVisitResult postVisitDirectory(final Path dir, final IOException exc)
                 throws IOException {
               return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs)
+            public FileVisitResult preVisitDirectory(final Path dir, final BasicFileAttributes attrs)
                 throws IOException {
               return FileVisitResult.CONTINUE;
             }
 
             @Override
-            public FileVisitResult visitFile(Path filePath, BasicFileAttributes attrs)
+            public FileVisitResult visitFile(final Path filePath, final BasicFileAttributes attrs)
                 throws IOException {
 
               if (matcher.matches(filePath)) {
@@ -345,7 +345,7 @@ public class Md2Orchestra {
 
 
             @Override
-            public FileVisitResult visitFileFailed(Path file, IOException exc) throws IOException {
+            public FileVisitResult visitFileFailed(final Path file, final IOException exc) throws IOException {
               logger.warn("Md2Orchestra failed to access file {}", file.toString());
               return FileVisitResult.SKIP_SUBTREE;
             }

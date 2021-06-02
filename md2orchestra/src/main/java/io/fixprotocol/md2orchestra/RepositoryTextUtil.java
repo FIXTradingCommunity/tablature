@@ -18,9 +18,9 @@ class RepositoryTextUtil {
    * @param strings an array of strings
    * @return a tag, or {@code -1} if not found
    */
-  int getTag(String[] strings) {
-    for (String str : strings) {
-      int tag = tagToInt(str);
+  int getTag(final String[] strings) {
+    for (final String str : strings) {
+      final int tag = tagToInt(str);
       if (tag != -1) {
         return tag;
       }
@@ -34,7 +34,7 @@ class RepositoryTextUtil {
    * @param str string containing a code name in the form {@code [name]}
    * @return the name without brackets
    */
-  String stripName(String str) {
+  String stripName(final String str) {
     final int beginIndex = str.indexOf('[');
     final int endIndex = str.lastIndexOf(']');
     return str.substring(beginIndex >= 0 ? beginIndex + 1 : 0,
@@ -47,7 +47,7 @@ class RepositoryTextUtil {
    * @param str a string in the form {@code (999)}
    * @return an integer extracted from the string, or {@code -1} if the value is non-numeric
    */
-  int tagToInt(String str) {
+  int tagToInt(final String str) {
     if (str == null) {
       return -1;
     }

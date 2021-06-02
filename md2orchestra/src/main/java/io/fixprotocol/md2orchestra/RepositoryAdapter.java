@@ -75,8 +75,8 @@ class RepositoryAdapter {
   private static class RepositoryNamespacePrefixMapper extends NamespacePrefixMapper {
 
     @Override
-    public String getPreferredPrefix(String namespaceUri, String suggestion,
-        boolean requirePrefix) {
+    public String getPreferredPrefix(final String namespaceUri, final String suggestion,
+                                     final boolean requirePrefix) {
       switch (namespaceUri) {
         case "http://fixprotocol.io/2020/orchestra/repository":
           return "fixr";
@@ -101,7 +101,7 @@ class RepositoryAdapter {
       "publisher", "references", "relation", "replaces", "requires", "rights", "rightsHolder",
       "source", "spatial", "subject", "tableOfContents", "temporal", "title", "type", "valid"};
 
-  static String substitute(String markdown, String token, String replacement) {
+  static String substitute(final String markdown, final String token, final String replacement) {
     return markdown.replace(token, replacement);
   }
 
@@ -109,7 +109,7 @@ class RepositoryAdapter {
 
   private Repository repository;
 
-  RepositoryAdapter(EventListener eventLogger) {
+  RepositoryAdapter(final EventListener eventLogger) {
     this.eventLogger = eventLogger;
   }
 
@@ -127,7 +127,7 @@ class RepositoryAdapter {
   }
 
 
-  void addAppinfo(String markdown, String purpose, Annotation annotation) {
+  void addAppinfo(final String markdown, final String purpose, final Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final Appinfo appinfo = new Appinfo();
     final List<Object> contents = appinfo.getContent();
@@ -138,12 +138,12 @@ class RepositoryAdapter {
     elements.add(appinfo);
   }
 
-  void addAppinfo(String markdown, String paragraphDelmiter, String purpose,
-      Annotation annotation) {
+  void addAppinfo(final String markdown, final String paragraphDelmiter, final String purpose,
+                  final Annotation annotation) {
     addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
-  void addCategory(CategoryType category) {
+  void addCategory(final CategoryType category) {
     Categories categories = repository.getCategories();
     if (categories == null) {
       categories = new Categories();
@@ -160,7 +160,7 @@ class RepositoryAdapter {
     repository.getComponents().getComponent().add(component);
   }
 
-  void addDatatype(io.fixprotocol._2020.orchestra.repository.Datatype datatype) {
+  void addDatatype(final io.fixprotocol._2020.orchestra.repository.Datatype datatype) {
     repository.getDatatypes().getDatatype().add(datatype);
   }
 
@@ -171,7 +171,7 @@ class RepositoryAdapter {
    * @param purpose purpose attribute of the documentation element
    * @param annotation parent element to add new child
    */
-  void addDocumentation(String markdown, String purpose, Annotation annotation) {
+  void addDocumentation(final String markdown, final String purpose, final Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final io.fixprotocol._2020.orchestra.repository.Documentation documentation =
         new io.fixprotocol._2020.orchestra.repository.Documentation();
@@ -184,7 +184,7 @@ class RepositoryAdapter {
     for (int i = 0; i < elements.size(); i++) {
       final Object object = elements.get(i);
       if (object instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        io.fixprotocol._2020.orchestra.repository.Documentation olddoc = (Documentation) object;
+        final io.fixprotocol._2020.orchestra.repository.Documentation olddoc = (Documentation) object;
         if ((olddoc.getPurpose() != null && olddoc.getPurpose().equals(purpose))
             || (olddoc.getPurpose() == null && purpose == null)) {
           elements.set(i, documentation);
@@ -199,12 +199,12 @@ class RepositoryAdapter {
     }
   }
 
-  void addDocumentation(String markdown, String paragraphDelmiter, String purpose,
-      Annotation annotation) {
+  void addDocumentation(final String markdown, final String paragraphDelmiter, final String purpose,
+                        final Annotation annotation) {
     addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
-  void addField(FieldType field) {
+  void addField(final FieldType field) {
     repository.getFields().getField().add(field);
   }
 
@@ -221,11 +221,11 @@ class RepositoryAdapter {
     repository.getGroups().getGroup().add(group);
   }
 
-  void addMessage(MessageType message) {
+  void addMessage(final MessageType message) {
     repository.getMessages().getMessage().add(message);
   }
 
-  void addSection(SectionType section) {
+  void addSection(final SectionType section) {
     Sections sections = repository.getSections();
     if (sections == null) {
       sections = new Sections();
@@ -234,31 +234,31 @@ class RepositoryAdapter {
     sections.getSection().add(section);
   }
 
-  CodeSetType copyCodeset(CodeSetType source) {
+  CodeSetType copyCodeset(final CodeSetType source) {
     final CodeSetType codeset = (CodeSetType) source.clone();
     repository.getCodeSets().getCodeSet().add(codeset);
     return codeset;
   }
 
-  ComponentType copyComponent(ComponentType source) {
+  ComponentType copyComponent(final ComponentType source) {
     final ComponentType component = (ComponentType) source.clone();
     repository.getComponents().getComponent().add(component);
     return component;
   }
 
-  Datatype copyDatatype(Datatype source) {
+  Datatype copyDatatype(final Datatype source) {
     final Datatype datatype = (Datatype) source.clone();
     repository.getDatatypes().getDatatype().add(datatype);
     return datatype;
   }
 
-  FieldType copyField(FieldType source) {
+  FieldType copyField(final FieldType source) {
     final FieldType field = (FieldType) source.clone();
     repository.getFields().getField().add(field);
     return field;
   }
 
-  GroupType copyGroup(GroupType source) {
+  GroupType copyGroup(final GroupType source) {
     final GroupType group = (GroupType) source.clone();
     repository.getGroups().getGroup().add(group);
     return group;
@@ -275,7 +275,7 @@ class RepositoryAdapter {
     repository.setGroups(new Groups());
   }
 
-  ActorType findActorByName(String name) {
+  ActorType findActorByName(final String name) {
     final Actors actors = repository.getActors();
     if (actors != null) {
       final List<Object> objects = actors.getActorOrFlow();
@@ -291,7 +291,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  CodeSetType findCodesetByName(String name, String scenario) {
+  CodeSetType findCodesetByName(final String name, final String scenario) {
     final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet();
     for (final CodeSetType codeset : codesets) {
       if (codeset.getName().equals(name) && codeset.getScenario().equals(scenario)) {
@@ -301,7 +301,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  ComponentType findComponentByName(String name, String scenario) {
+  ComponentType findComponentByName(final String name, final String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
       if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
@@ -312,7 +312,7 @@ class RepositoryAdapter {
   }
 
 
-  ComponentType findComponentByTag(int tag, String scenario) {
+  ComponentType findComponentByTag(final int tag, final String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
       if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
@@ -323,7 +323,7 @@ class RepositoryAdapter {
   }
 
 
-  io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(String name) {
+  io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(final String name) {
     final List<io.fixprotocol._2020.orchestra.repository.Datatype> datatypes =
         repository.getDatatypes().getDatatype();
     for (final io.fixprotocol._2020.orchestra.repository.Datatype datatype : datatypes) {
@@ -334,7 +334,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  FieldType findFieldByName(String name, String scenario) {
+  FieldType findFieldByName(final String name, final String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
       if (field.getName().equals(name) && field.getScenario().equals(scenario)) {
@@ -344,7 +344,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  FieldType findFieldByTag(int tag, String scenario) {
+  FieldType findFieldByTag(final int tag, final String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
       if (field.getId().intValue() == tag && field.getScenario().equals(scenario)) {
@@ -354,7 +354,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  FlowType findFlowByName(String name) {
+  FlowType findFlowByName(final String name) {
     final Actors actors = repository.getActors();
     if (actors != null) {
       final List<Object> objects = actors.getActorOrFlow();
@@ -370,7 +370,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  GroupType findGroupByName(String name, String scenario) {
+  GroupType findGroupByName(final String name, final String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
       if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
@@ -380,7 +380,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  GroupType findGroupByTag(int tag, String scenario) {
+  GroupType findGroupByTag(final int tag, final String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
       if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
@@ -390,7 +390,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  MessageType findMessageByName(String name, String scenario) {
+  MessageType findMessageByName(final String name, final String scenario) {
     final List<MessageType> messages = repository.getMessages().getMessage();
     for (final MessageType message : messages) {
       if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
@@ -400,7 +400,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  StateMachineType findStatemachineByName(ActorType actor, String name) {
+  StateMachineType findStatemachineByName(final ActorType actor, final String name) {
     final List<Object> objects = actor.getFieldOrFieldRefOrComponent();
     for (final Object object : objects) {
       if (object instanceof StateMachineType) {
@@ -413,7 +413,7 @@ class RepositoryAdapter {
     return null;
   }
 
-  void marshal(OutputStream os) throws JAXBException {
+  void marshal(final OutputStream os) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Marshaller jaxbMarshaller = jaxbContext.createMarshaller();
     jaxbMarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
@@ -428,7 +428,7 @@ class RepositoryAdapter {
     jaxbMarshaller.marshal(repository, os);
   }
 
-  void setMetadata(String term, String value) {
+  void setMetadata(final String term, final String value) {
     final ElementOrRefinementContainer container = repository.getMetadata();
     final List<JAXBElement<SimpleLiteral>> literals = container.getAny();
     if (Arrays.binarySearch(DC_TERMS, term) < 0) {
@@ -452,7 +452,7 @@ class RepositoryAdapter {
     repository.setVersion(version);
   }
 
-  void unmarshal(InputStream is) throws JAXBException {
+  void unmarshal(final InputStream is) throws JAXBException {
     final JAXBContext jaxbContext = JAXBContext.newInstance(Repository.class);
     final Unmarshaller jaxbUnmarshaller = jaxbContext.createUnmarshaller();
     // this.repository = (Repository) jaxbUnmarshaller.unmarshal(is);

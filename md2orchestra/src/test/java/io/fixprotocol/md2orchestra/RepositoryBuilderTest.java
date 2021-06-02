@@ -84,7 +84,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Malformed inline code"));
   }
-
+  
   @Test // ODOC-26
   void badMetadata() throws Exception {
     String text =
@@ -111,7 +111,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("invalid metadata term version"));
   }
-  
+
   @Test //ODOC-20
   void constant() throws Exception {
     String text =
@@ -204,6 +204,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertFalse(xml.contains("purpose="));
   }
+  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =
@@ -234,7 +235,6 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Duplicate definitions of codeset"));
    }
-  
   @Test // ODOC-66
   void duplicateCodesets() throws Exception {
     String text =
@@ -669,6 +669,43 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
+  }
+  
+  @Test // ODOC-81
+  void referencedFields() throws Exception {
+    String text =
+        "### Message OrderCancelRequest type F category SingleGeneralOrderHandling (16)\n"
+        + "\n"
+        + "#### Synopsis\n"
+        + "\n"
+        + "The order cancel request message requests the cancellation of all of the remaining quantity of an existing order. Note that the Order Cancel/Replace Request should be used to partially cancel (reduce) an order).\n"
+        + "\n"
+        + "| Name                     | Tag       | Presence | Added      | Documentation                                                                                                                               | Added EP | Updated    | Updated EP |\n"
+        + "|--------------------------|-----------|----------|------------|-------------------------------------------------------------------------------------------------------------------------------|----------|------------|------------|\n"
+        + "| StandardHeader           | component | required | FIX.2.7    | MsgType = F                                                                                                                               |          |            |            |\n"
+        + "| OrderID                  | 37        | optional | FIX.2.7    | Unique identifier of most recent order as assigned by sell-side (broker, exchange, ECN).                                                                                                                               |          |            |            |\n"
+        + "| ClOrdID                  | 11        | required | FIX.2.7    | Unique ID of cancel request as assigned by the institution.                                                                                                                               |          |            |            |\n"
+        + "| Account                  | 1         | optional | FIX.4.2    |                                                                                                                                |          |            |            |\n"
+        + "| Parties                  | group     | optional | FIX.4.3    | Insert here the set of \"Parties\" (firm identification) fields defined in \"Common Components of Application Messages\"                                                                                                                               |          |            |            |\n"
+        + "| Instrument               | component | required | FIX.4.3    | Insert here the set of \"Instrument\" (symbology) fields defined in \"Common Components of Application Messages\"                                                                                                                               |          |            |            |\n"
+        + "| Side                     | 54        | required | FIX.2.7    |                                                                                                                                |          |            |            |\n"
+        + "| TransactTime             | 60        | required | FIX.4.2    | Time this order request was initiated/released by the trader or trading system.                                                                                                                               |          |            |            |\n"
+        + "| StandardTrailer          | component | required | FIX.2.7    |                                                                                                                                |          |            |            |\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("Symbol")); // in message root
+    assertTrue(xml.contains("Product")); // in Instrument
+    assertFalse(xml.contains("ComplexEventStartDate")); // in nested component
   }
   
   @Test // ODOC-98
