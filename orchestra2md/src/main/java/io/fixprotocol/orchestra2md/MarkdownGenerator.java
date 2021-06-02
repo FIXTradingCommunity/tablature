@@ -27,6 +27,8 @@ import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Actors;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
 import io.fixprotocol._2020.orchestra.repository.Appinfo;
+import io.fixprotocol._2020.orchestra.repository.Categories;
+import io.fixprotocol._2020.orchestra.repository.CategoryType;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
@@ -52,6 +54,8 @@ import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
+import io.fixprotocol._2020.orchestra.repository.SectionType;
+import io.fixprotocol._2020.orchestra.repository.Sections;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
@@ -277,6 +281,8 @@ public class MarkdownGenerator {
       final Repository repository = XmlParser.unmarshal(inputStream, eventLogger);
       generateRepositoryMetadata(repository, documentWriter);
       generateActorsAndFlows(repository, documentWriter);
+      generateSections(repository, documentWriter);
+      generateCategories(repository, documentWriter);
       generateMessages(repository, documentWriter);
       generateGroups(repository, documentWriter);
       generateComponents(repository, documentWriter);
@@ -930,6 +936,79 @@ public class MarkdownGenerator {
       }
     }
   }
+  
+  private void generateSections(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    final Sections sectionParent = repository.getSections();
+    if (sectionParent != null && !sectionParent.getSection().isEmpty()) {
+      final MutableContext context = contextFactory.createContext(2);
+      context.addKey("Sections");
+      documentWriter.write(context);
+      final MutableDetailTable table = contextFactory.createDetailTable();
+
+      final List<SectionType> sections = sectionParent.getSection().stream()
+          .sorted(Comparator.comparing(SectionType::getName)).collect(Collectors.toList());
+
+      for (final SectionType category : sections) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("name", category.getName());
+        
+        String added = category.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+
+        BigInteger addedEp = category.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+
+        String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+
+        String issue = category.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+
+        String lastModified = category.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+
+        String replaced = category.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+
+        BigInteger replacedEp = category.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+
+        String updated = category.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+
+        BigInteger updatedEp = category.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+
+        
+        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+      }
+      documentWriter.write(table, headings);
+    }
+  }
 
   private void generateFields(Repository repository, DocumentWriter documentWriter)
       throws IOException {
@@ -1331,6 +1410,80 @@ public class MarkdownGenerator {
 
   private String getParagraphDelimiterInTables() {
     return paragraphDelimiterInTables;
+  }
+
+  private void generateCategories(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    final Categories categoryParent = repository.getCategories();
+    if (categoryParent != null && !categoryParent.getCategory().isEmpty()) {
+      final MutableContext context = contextFactory.createContext(2);
+      context.addKey("Categories");
+      documentWriter.write(context);
+      final MutableDetailTable table = contextFactory.createDetailTable();
+  
+      final List<CategoryType> categories = categoryParent.getCategory().stream()
+          .sorted(Comparator.comparing(CategoryType::getName)).collect(Collectors.toList());
+  
+      for (final CategoryType category : categories) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("name", category.getName());
+        row.addProperty("section", category.getSection());
+        
+        String added = category.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+  
+        BigInteger addedEp = category.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+  
+        String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+  
+        BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+  
+        String issue = category.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+  
+        String lastModified = category.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+  
+        String replaced = category.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+  
+        BigInteger replacedEp = category.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+  
+        String updated = category.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+  
+        BigInteger updatedEp = category.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+  
+        
+        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+      }
+      documentWriter.write(table, headings);
+    }
   }
 
 }

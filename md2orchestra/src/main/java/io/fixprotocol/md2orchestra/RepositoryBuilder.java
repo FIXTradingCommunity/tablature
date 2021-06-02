@@ -37,6 +37,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
+import io.fixprotocol._2020.orchestra.repository.CategoryType;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentRefType;
@@ -55,6 +56,7 @@ import io.fixprotocol._2020.orchestra.repository.PresenceT;
 import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
+import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
@@ -182,7 +184,7 @@ public class RepositoryBuilder {
           repositoryAdapter.addField(fieldType);
         }
       }
-      
+
 
 
       if (fieldType != null) {
@@ -338,15 +340,16 @@ public class RepositoryBuilder {
   public static final String ABBRNAME_KEYWORD = "abbrname";
   public static final String ACTOR_KEYWORD = "actor";
   public static final String ASSIGN_KEYWORD = "assign";
-  public static final String CATEGORY_KEYWORD = "category";
+  public static final String CATEGORIES_KEYWORD = "categories";
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
-
   public static final String DATATYPES_KEYWORD = "datatypes";
+
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
   public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
+
   public static final String DESCRIPTION_KEYWORD = "description";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
   public static final String FIELDS_KEYWORD = "fields";
@@ -355,6 +358,7 @@ public class RepositoryBuilder {
   public static final String MESSAGE_KEYWORD = "message";
   public static final String RESPONSES_KEYWORD = "responses";
   public static final String SCENARIO_KEYWORD = "scenario";
+  public static final String SECTIONS_KEYWORD = "sections";
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
   public static final String WHEN_KEYWORD = "when";
@@ -423,9 +427,10 @@ public class RepositoryBuilder {
 
   private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
 
-  private final String[] contextKeys =
-      new String[] {ACTOR_KEYWORD, CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD,
-          FIELDS_KEYWORD, FLOW_KEYWORD, GROUP_KEYWORD, MESSAGE_KEYWORD, STATEMACHINE_KEYWORD};
+  private final String[] contextKeys = new String[] {ACTOR_KEYWORD, CATEGORIES_KEYWORD,
+      CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD, FIELDS_KEYWORD, FLOW_KEYWORD,
+      GROUP_KEYWORD, MESSAGE_KEYWORD, SECTIONS_KEYWORD, STATEMACHINE_KEYWORD};
+
   private TeeEventListener eventLogger;
   private final AssociativeSet headings = new AssociativeSet();
   private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
@@ -445,6 +450,9 @@ public class RepositoryBuilder {
       switch (type.toLowerCase()) {
         case ACTOR_KEYWORD:
           addActor(contextual, keyContext);
+          break;
+        case CATEGORIES_KEYWORD:
+          addCategory(contextual, keyContext);
           break;
         case CODESET_KEYWORD:
           addCodeset(contextual, keyContext);
@@ -469,6 +477,9 @@ public class RepositoryBuilder {
           break;
         case RESPONSES_KEYWORD:
           addMessageResponses(contextual, keyContext);
+          break;
+        case SECTIONS_KEYWORD:
+          addSection(contextual, keyContext);
           break;
         case STATEMACHINE_KEYWORD:
           addActorStates(contextual, keyContext);
@@ -603,9 +614,8 @@ public class RepositoryBuilder {
           actor.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
-            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
-            annotation);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
@@ -729,6 +739,66 @@ public class RepositoryBuilder {
     }
   }
 
+  private void addCategory(Contextual contextual, Context keyContext) {
+    if (contextual instanceof Detail) {
+      final Detail detail = (Detail) contextual;
+      final CategoryType category = new CategoryType();
+      final Annotation annotation = new Annotation();
+      for (final Entry<String, String> p : detail.getProperties()) {
+        String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+        switch (key) {
+          case "name":
+            category.setName(p.getValue());
+            break;
+          case "section":
+            category.setSection(p.getValue());
+            break;
+          case "added":
+            category.setAdded(p.getValue());
+            break;
+          case "addedep":
+            category.setAddedEP(new BigInteger(p.getValue()));
+            break;
+          case "deprecated":
+            category.setDeprecated(p.getValue());
+            break;
+          case "deprecatedep":
+            category.setDeprecatedEP(new BigInteger(p.getValue()));
+            break;
+          case "issue":
+            category.setIssue(p.getValue());
+            break;
+          case "lastmodified":
+            category.setLastModified(p.getValue());
+            break;
+          case "replaced":
+            category.setReplaced(p.getValue());
+            break;
+          case "replacedep":
+            category.setReplacedEP(new BigInteger(p.getValue()));
+            break;
+          case "updated":
+            category.setUpdated(p.getValue());
+            break;
+          case "updatedep":
+            category.setUpdatedEP(new BigInteger(p.getValue()));
+            break;
+          default:
+            if (isDocumentationKey(p.getKey())) {
+              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                  getPurpose(p.getKey()), annotation);
+              category.setAnnotation(annotation);
+            } else {
+              repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                  annotation);
+              category.setAnnotation(annotation);
+            }
+        }
+      }
+      repositoryAdapter.addCategory(category);
+    }
+  }
+
   private void addCode(final DetailProperties detail, List<? super CodeType> codes,
       CodeSetType codeset) {
     final CodeType codeType = new CodeType();
@@ -736,7 +806,7 @@ public class RepositoryBuilder {
     String name = "Unknown";
     for (final Entry<String, String> p : detail.getProperties()) {
       String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
-      
+
       switch (key) {
         case "name":
           name = textUtil.stripName(p.getValue());
@@ -859,9 +929,8 @@ public class RepositoryBuilder {
           codeset.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
-            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
-            annotation);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
@@ -880,7 +949,7 @@ public class RepositoryBuilder {
       if (codeset == null) {
         codeset = new CodeSetType();
         int tag = textUtil.getTag(context.getKeys());
-        
+
         if (tag == -1) {
           tag = assignId(name, scenario);
         }
@@ -921,7 +990,7 @@ public class RepositoryBuilder {
           component.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
+        repositoryAdapter.addDocumentation(detail.getDocumentation(),
             COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
@@ -952,7 +1021,7 @@ public class RepositoryBuilder {
         component.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         component.setCategory(category);
       }
@@ -1068,15 +1137,17 @@ public class RepositoryBuilder {
           case "values":
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
-              final String codesetName = detail.getProperty("name") + "Codeset";           
+              final String codesetName = detail.getProperty("name") + "Codeset";
               String codesetScenario = field.getScenario();
-              CodeSetType existingCodeset = repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+              CodeSetType existingCodeset =
+                  repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               if (existingCodeset != null) {
-                eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName, codesetScenario);
+                eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
+                    codesetScenario);
                 codesetScenario = codesetScenario + "Dup";
               }
-              createCodesetFromString(codesetName, codesetScenario,
-                  detail.getProperty("type"), values);
+              createCodesetFromString(codesetName, codesetScenario, detail.getProperty("type"),
+                  values);
               field.setType(codesetName);
             }
             break;
@@ -1189,10 +1260,9 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           flow.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);       
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(), 
-            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
-            annotation);
+        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } else if (contextual instanceof DetailTable) {
       final DetailTable table = (DetailTable) contextual;
@@ -1243,9 +1313,8 @@ public class RepositoryBuilder {
           group.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
-            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
-            annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
     else if (contextual instanceof Context
@@ -1274,7 +1343,7 @@ public class RepositoryBuilder {
         group.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         group.setCategory(category);
       }
@@ -1331,9 +1400,8 @@ public class RepositoryBuilder {
           message.setAnnotation(annotation);
         }
         final String parentKey = contextual.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), 
-            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
-            annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1}", name, scenario);
       }
@@ -1353,7 +1421,7 @@ public class RepositoryBuilder {
         message.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORY_KEYWORD);
+      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         message.setCategory(category);
       }
@@ -1434,6 +1502,63 @@ public class RepositoryBuilder {
       repositoryAdapter.setName(name);
       final String version = context.getKeyValue("version");
       repositoryAdapter.setVersion(Objects.requireNonNullElse(version, "1.0"));
+    }
+  }
+
+  private void addSection(Contextual contextual, Context keyContext) {
+    if (contextual instanceof Detail) {
+      final Detail detail = (Detail) contextual;
+      final SectionType section = new SectionType();
+      final Annotation annotation = new Annotation();
+      for (final Entry<String, String> p : detail.getProperties()) {
+        String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+        switch (key) {
+          case "name":
+            section.setName(p.getValue());
+            break;
+          case "added":
+            section.setAdded(p.getValue());
+            break;
+          case "addedep":
+            section.setAddedEP(new BigInteger(p.getValue()));
+            break;
+          case "deprecated":
+            section.setDeprecated(p.getValue());
+            break;
+          case "deprecatedep":
+            section.setDeprecatedEP(new BigInteger(p.getValue()));
+            break;
+          case "issue":
+            section.setIssue(p.getValue());
+            break;
+          case "lastmodified":
+            section.setLastModified(p.getValue());
+            break;
+          case "replaced":
+            section.setReplaced(p.getValue());
+            break;
+          case "replacedep":
+            section.setReplacedEP(new BigInteger(p.getValue()));
+            break;
+          case "updated":
+            section.setUpdated(p.getValue());
+            break;
+          case "updatedep":
+            section.setUpdatedEP(new BigInteger(p.getValue()));
+            break;
+          default:
+            if (isDocumentationKey(p.getKey())) {
+              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                  getPurpose(p.getKey()), annotation);
+              section.setAnnotation(annotation);
+            } else {
+              repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
+                  annotation);
+              section.setAnnotation(annotation);
+            }
+        }
+      }
+      repositoryAdapter.addSection(section);
     }
   }
 
@@ -1850,9 +1975,11 @@ public class RepositoryBuilder {
         if (codeMatcher.find()) {
           final String codesetName = name + "Codeset";
           String codesetScenario = scenario;
-          CodeSetType existingCodeset = repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+          CodeSetType existingCodeset =
+              repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
           if (existingCodeset != null) {
-            eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName, codesetScenario);
+            eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
+                codesetScenario);
             codesetScenario = codesetScenario + "Dup";
           }
           createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
@@ -1996,7 +2123,7 @@ public class RepositoryBuilder {
         rule.setWhen(String.join(" ", whenWords));
         rules.add(rule);
       }
-    } else if(presence != PresenceT.OPTIONAL) {
+    } else if (presence != PresenceT.OPTIONAL) {
       groupRefType.setPresence(presence);
     }
 
@@ -2014,24 +2141,25 @@ public class RepositoryBuilder {
       id = detail.getIntProperty("tag");
     }
     if (id != null) {
-      fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO); 
+      fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
       if (fieldType == null && referenceRepositoryAdapter != null) {
         fieldType = referenceRepositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
       }
     }
     if (fieldType == null) {
       String name = detail.getProperty("name");
-      fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO); 
+      fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
       if (fieldType == null && referenceRepositoryAdapter != null) {
         fieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
       }
     }
     if ((fieldType != null) && !"NumInGroup".equals(fieldType.getType())) {
-      eventLogger.error("First group field not NumInGroup datatype; id={0, number, ###} in group={1}",
+      eventLogger.error(
+          "First group field not NumInGroup datatype; id={0, number, ###} in group={1}",
           fieldType.getId(), group.getName());
       return false;
     }
-    
+
     final FieldRefType numInGroup = populateFieldRef(detail);
     group.setNumInGroup(numInGroup);
     return true;

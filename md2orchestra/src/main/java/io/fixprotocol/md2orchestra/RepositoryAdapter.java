@@ -31,6 +31,8 @@ import io.fixprotocol._2020.orchestra.repository.ActorType;
 import io.fixprotocol._2020.orchestra.repository.Actors;
 import io.fixprotocol._2020.orchestra.repository.Annotation;
 import io.fixprotocol._2020.orchestra.repository.Appinfo;
+import io.fixprotocol._2020.orchestra.repository.Categories;
+import io.fixprotocol._2020.orchestra.repository.CategoryType;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
@@ -46,6 +48,8 @@ import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.Repository;
+import io.fixprotocol._2020.orchestra.repository.SectionType;
+import io.fixprotocol._2020.orchestra.repository.Sections;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.orchestra.event.EventListener;
@@ -85,7 +89,7 @@ class RepositoryAdapter {
       }
     }
   }
-  
+
   // sorted array of valid Dublin Core Terms
   private static final String[] DC_TERMS = new String[] {"accessRights", "accrualMethod",
       "accrualPeriodicity", "accrualPolicy", "abstract", "alternative", "audience", "avaliable",
@@ -139,6 +143,15 @@ class RepositoryAdapter {
     addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
+  void addCategory(CategoryType category) {
+    Categories categories = repository.getCategories();
+    if (categories == null) {
+      categories = new Categories();
+      repository.setCategories(categories);
+    }
+    categories.getCategory().add(category);
+  }
+
   void addCodeset(final CodeSetType codeset) {
     repository.getCodeSets().getCodeSet().add(codeset);
   }
@@ -146,7 +159,7 @@ class RepositoryAdapter {
   void addComponent(final ComponentType component) {
     repository.getComponents().getComponent().add(component);
   }
-  
+
   void addDatatype(io.fixprotocol._2020.orchestra.repository.Datatype datatype) {
     repository.getDatatypes().getDatatype().add(datatype);
   }
@@ -210,6 +223,15 @@ class RepositoryAdapter {
 
   void addMessage(MessageType message) {
     repository.getMessages().getMessage().add(message);
+  }
+
+  void addSection(SectionType section) {
+    Sections sections = repository.getSections();
+    if (sections == null) {
+      sections = new Sections();
+      repository.setSections(sections);
+    }
+    sections.getSection().add(section);
   }
 
   CodeSetType copyCodeset(CodeSetType source) {
@@ -289,6 +311,7 @@ class RepositoryAdapter {
     return null;
   }
 
+
   ComponentType findComponentByTag(int tag, String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
@@ -298,6 +321,7 @@ class RepositoryAdapter {
     }
     return null;
   }
+
 
   io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(String name) {
     final List<io.fixprotocol._2020.orchestra.repository.Datatype> datatypes =
@@ -310,7 +334,6 @@ class RepositoryAdapter {
     return null;
   }
 
-
   FieldType findFieldByName(String name, String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
@@ -320,7 +343,6 @@ class RepositoryAdapter {
     }
     return null;
   }
-
 
   FieldType findFieldByTag(int tag, String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
@@ -399,8 +421,9 @@ class RepositoryAdapter {
     try {
       jaxbMarshaller.setProperty("com.sun.xml.bind.namespacePrefixMapper",
           new RepositoryNamespacePrefixMapper());
-    } catch (final PropertyException e) {     
-      eventLogger.warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
+    } catch (final PropertyException e) {
+      eventLogger
+          .warn("RepositoryBuilder namespace prefix mapper not supported by XML implementation");
     }
     jaxbMarshaller.marshal(repository, os);
   }
