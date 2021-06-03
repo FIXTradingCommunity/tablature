@@ -136,7 +136,7 @@ public class MarkdownGenerator {
       List<String> paragraphs = new ArrayList<>();
       for (String c : contents) {
         paragraphs.addAll(Stream.of(c.split("\n")).map(e -> new String(e))
-            .map(s -> MarkdownUtil.plainTextToMarkdown(s)).collect(Collectors.toList()));
+            .map(s -> MarkdownUtil.plainTextToMarkdown(s, paragraphDelimiter)).collect(Collectors.toList()));
       }
       return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
           .collect(Collectors.joining(paragraphDelimiter));
@@ -436,7 +436,7 @@ public class MarkdownGenerator {
         final String when = rule.getWhen();
         if (when != null) {
           presenceString.append(" " + WHEN_KEYWORD + " ")
-              .append(MarkdownUtil.plainTextToMarkdown(when)).append(" ");
+              .append(MarkdownUtil.plainTextToMarkdownLiteral(when)).append(" ");
         }
       }
     }
@@ -891,7 +891,7 @@ public class MarkdownGenerator {
             }
             final String pattern = mapping.getPattern();
             if (pattern != null) {
-              row.addProperty("pattern", MarkdownUtil.plainTextToMarkdown(pattern));
+              row.addProperty("pattern", MarkdownUtil.plainTextToMarkdownLiteral(pattern));
             }
             final String min = mapping.getMinInclusive();
             if (min != null) {

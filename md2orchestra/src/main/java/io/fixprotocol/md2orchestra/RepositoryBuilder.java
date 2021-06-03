@@ -68,6 +68,7 @@ import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentParser;
 import io.fixprotocol.md.event.Documentation;
+import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.util.AssociativeSet;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
@@ -81,10 +82,6 @@ public class RepositoryBuilder {
     private final int maxDepth;
     private final String name;
     private final String scenario;
-
-    public ComponentBuilder(final String name, final String scenario) {
-      this(name, scenario, 0, 1);
-    }
     
     public ComponentBuilder(final String name, final String scenario, final int level, final int maxDepth) {
       this.name = name;
@@ -261,10 +258,6 @@ public class RepositoryBuilder {
     private final int maxDepth;
     private final String name;
     private final String scenario;
-
-    public GroupBuilder(final String name, final String scenario) {
-      this(name, scenario, 0, 1);
-    }
     
     public GroupBuilder(final String name, final String scenario, final int level, final int maxDepth) {
       this.name = name;
@@ -1121,7 +1114,7 @@ public class RepositoryBuilder {
           mapping.setParameter(p.getValue());
           break;
         case "pattern":
-          mapping.setPattern(p.getValue());
+          mapping.setPattern(MarkdownUtil.markdownLiteralToPlainText(p.getValue()));
           break;
         case "mininclusive":
           mapping.setMinInclusive(p.getValue());
@@ -1814,35 +1807,22 @@ public class RepositoryBuilder {
     if (presenceString != null) {
       final String[] presenceWords = presenceString.split("[ \t]");
 
-      boolean inWhen = false;
-      final List<String> whenWords = new ArrayList<>();
       for (final String word : presenceWords) {
         if (isPresence(word)) {
-          if (!whenWords.isEmpty()) {
+          presence = stringToPresence(word);
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          if (!expression.isEmpty()) {
             final ComponentRuleType rule = new ComponentRuleType();
             rule.setPresence(presence);
-            rule.setWhen(String.join(" ", whenWords));
+            rule.setWhen(expression);
             rules.add(rule);
           }
-          presence = stringToPresence(word);
-          inWhen = false;
-          whenWords.clear();
-        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          inWhen = true;
-        } else if (inWhen) {
-          whenWords.add(word);
-        }
+          break;
+        } 
       }
-
-      if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
-        componentRefType.setPresence(presence);
-      } else if (!whenWords.isEmpty()) {
-        final ComponentRuleType rule = new ComponentRuleType();
-        rule.setPresence(presence);
-        rule.setWhen(String.join(" ", whenWords));
-        rules.add(rule);
-      }
-    } else if (presence != PresenceT.OPTIONAL) {
+    }
+    if (presence != PresenceT.OPTIONAL) {
       componentRefType.setPresence(presence);
     }
 
@@ -1965,73 +1945,68 @@ public class RepositoryBuilder {
     }
 
     final List<FieldRuleType> rules = fieldRefType.getRule();
+
     PresenceT presence = PresenceT.OPTIONAL;
-
-    final List<String> whenWords = new ArrayList<>();
-
     if (presenceString != null) {
       final String[] presenceWords = presenceString.split("[ \t]");
-      boolean inWhen = false;
+
       for (final String word : presenceWords) {
         if (isPresence(word)) {
-          if (!whenWords.isEmpty()) {
+          presence = stringToPresence(word);
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          if (!expression.isEmpty()) {
             final FieldRuleType rule = new FieldRuleType();
             rule.setPresence(presence);
-            rule.setWhen(String.join(" ", whenWords));
+            rule.setWhen(expression);
             rules.add(rule);
+            presence = PresenceT.OPTIONAL;
+          } else {
+            eventLogger.error("Missing expression for field rule; id={0, number, ###}",
+                fieldRefType.getId());
           }
-          presence = stringToPresence(word);
-          inWhen = false;
-          whenWords.clear();
-        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          inWhen = true;
-        } else if (inWhen) {
-          whenWords.add(word);
+        } else if (word.equalsIgnoreCase(ASSIGN_KEYWORD)) {
+          if (valueString != null && !valueString.isEmpty()) {
+            final int keywordPos = valueString.indexOf(ASSIGN_KEYWORD);
+            if (keywordPos != -1) {
+              fieldRefType
+                  .setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
+            }
+          } else {
+            eventLogger.error("Missing value for assignment; id={0, number, ###}",
+                fieldRefType.getId());
+          }
         }
       }
-    }
-
-    if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
-      fieldRefType.setPresence(presence);
-    } else if (!whenWords.isEmpty()) {
-      final FieldRuleType rule = new FieldRuleType();
-      rule.setPresence(presence);
-      rule.setWhen(String.join(" ", whenWords));
-      rules.add(rule);
     }
 
     if (valueString != null && !valueString.isEmpty()) {
-      final int keywordPos = valueString.indexOf(ASSIGN_KEYWORD);
-      if (keywordPos != -1) {
-        fieldRefType.setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
-      } else {
-        final Matcher codeMatcher = codePattern.matcher(valueString);
-        if (codeMatcher.find()) {
-          final String codesetName = name + "Codeset";
-          String codesetScenario = scenario;
-          final CodeSetType existingCodeset =
-              repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
-          if (existingCodeset != null) {
-            eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
-                codesetScenario);
-            codesetScenario = codesetScenario + "Dup";
-          }
-          createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
-        } else if (presence == PresenceT.CONSTANT) {
-          fieldRefType.setValue(valueString);
-          if (!DEFAULT_SCENARIO.equals(scenario)) {
-            fieldRefType.setScenario(scenario);
-          }
-        } else {
-          eventLogger.error("Field has value but not constant; id={0, number, ###}, presence={1}",
-              fieldRefType.getId(), fieldRefType.getPresence().toString());
+      final Matcher codeMatcher = codePattern.matcher(valueString);
+      if (codeMatcher.find()) {
+        final String codesetName = name + "Codeset";
+        String codesetScenario = scenario;
+        final CodeSetType existingCodeset =
+            repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+        if (existingCodeset != null) {
+          eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
+              codesetScenario);
+          codesetScenario = codesetScenario + "Dup";
         }
+        createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
+      } else {
+        presence = PresenceT.CONSTANT;
+        fieldRefType.setPresence(presence);
+        fieldRefType.setValue(valueString);
       }
-
     } else if (presence == PresenceT.CONSTANT) {
       eventLogger.error("Missing value for constant presence field; id={0, number, ###}",
           fieldRefType.getId());
     }
+    
+    if (presence != PresenceT.OPTIONAL) {
+      fieldRefType.setPresence(presence);
+    }
+
     return fieldRefType;
   }
 
@@ -2129,35 +2104,22 @@ public class RepositoryBuilder {
     if (presenceString != null) {
       final String[] presenceWords = presenceString.split("[ \t]");
 
-      boolean inWhen = false;
-      final List<String> whenWords = new ArrayList<>();
       for (final String word : presenceWords) {
         if (isPresence(word)) {
-          if (!whenWords.isEmpty()) {
+          presence = stringToPresence(word);
+        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
+          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          if (!expression.isEmpty()) {
             final ComponentRuleType rule = new ComponentRuleType();
             rule.setPresence(presence);
-            rule.setWhen(String.join(" ", whenWords));
+            rule.setWhen(expression);
             rules.add(rule);
           }
-          presence = stringToPresence(word);
-          inWhen = false;
-          whenWords.clear();
-        } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          inWhen = true;
-        } else if (inWhen) {
-          whenWords.add(word);
-        }
+          break;
+        } 
       }
-
-      if (presence != PresenceT.OPTIONAL && whenWords.isEmpty()) {
-        groupRefType.setPresence(presence);
-      } else if (!whenWords.isEmpty()) {
-        final ComponentRuleType rule = new ComponentRuleType();
-        rule.setPresence(presence);
-        rule.setWhen(String.join(" ", whenWords));
-        rules.add(rule);
-      }
-    } else if (presence != PresenceT.OPTIONAL) {
+    }
+    if (presence != PresenceT.OPTIONAL) {
       groupRefType.setPresence(presence);
     }
 
