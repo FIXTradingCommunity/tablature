@@ -96,7 +96,7 @@ public class MarkdownGenerator {
   }
 
   static String codesToString(CodeSetType codeset, String paragraphDelimiter) {
-    List<CodeType> codes = sortCodes(codeset.getCode());
+    final List<CodeType> codes = sortCodes(codeset.getCode());
     return codes.stream().map(c -> c.getValue() + " = " + c.getName())
         .collect(Collectors.joining(paragraphDelimiter));
   }
@@ -115,28 +115,29 @@ public class MarkdownGenerator {
   static String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
       String paragraphDelimiter) {
     if (d.getContentType().contentEquals(MarkdownUtil.MARKDOWN_MEDIA_TYPE)) {
-      List<String> contents =
+      final List<String> contents =
           d.getContent().stream().map(Object::toString).collect(Collectors.toList());
-      List<String> paragraphs = new ArrayList<>();
-      for (String c : contents) {
+      final List<String> paragraphs = new ArrayList<>();
+      for (final String c : contents) {
         // paragraph delimiter in markdown is two newlines, but coming from xml, they may be
         // separated by horizontal whitespace
-        paragraphs.addAll(
-            Stream.of(c.split("\n\\h*\n")).map(e -> new String(e)).collect(Collectors.toList()));
+        paragraphs
+            .addAll(Stream.of(c.split("\n\\h*\n")).map(String::new).collect(Collectors.toList()));
       }
-      List<String> lines = new ArrayList<>();
-      for (String p : paragraphs) {
-        lines.add(Stream.of(p.split("\n")).map(e -> new String(e)).map(String::strip)
+      final List<String> lines = new ArrayList<>();
+      for (final String p : paragraphs) {
+        lines.add(Stream.of(p.split("\n")).map(String::new).map(String::strip)
             .filter(s -> !s.isEmpty()).collect(Collectors.joining(" ")));
       }
       return String.join(paragraphDelimiter, lines);
     } else {
-      List<String> contents =
+      final List<String> contents =
           d.getContent().stream().map(Object::toString).collect(Collectors.toList());
-      List<String> paragraphs = new ArrayList<>();
-      for (String c : contents) {
-        paragraphs.addAll(Stream.of(c.split("\n")).map(e -> new String(e))
-            .map(s -> MarkdownUtil.plainTextToMarkdown(s, paragraphDelimiter)).collect(Collectors.toList()));
+      final List<String> paragraphs = new ArrayList<>();
+      for (final String c : contents) {
+        paragraphs.addAll(Stream.of(c.split("\n")).map(String::new)
+            .map(s -> MarkdownUtil.plainTextToMarkdown(s, paragraphDelimiter))
+            .collect(Collectors.toList()));
       }
       return paragraphs.stream().map(String::strip).filter(s -> !s.isEmpty())
           .collect(Collectors.joining(paragraphDelimiter));
@@ -238,34 +239,37 @@ public class MarkdownGenerator {
   private final AssociativeSet headings = new AssociativeSet();
   private final Logger logger = LogManager.getLogger(getClass());
   private final String paragraphDelimiterInTables;
+  private final boolean shouldOutputDatatypes;
   private final boolean shouldOutputFixml;
-  private final boolean shouldOutputPedigree;
   private final boolean shouldOutputInlineCodes;
+  private final boolean shouldOutputPedigree;
 
   /**
-   * Contructor
-   * 
+   * Constructor
+   *
    * Suppresses output of pedigree attributes and FIXML attributes
    */
   public MarkdownGenerator() {
-    this(DEFAULT_PARAGRAPH_DELIMITER, false, false, false);
+    this(DEFAULT_PARAGRAPH_DELIMITER, false, false, false, false);
   }
 
   /**
-   * Contructor
-   * 
+   * Constructor
+   *
    * @param paragraphDelimiterInTables token to for a paragraph break in a markdown table, not
    *        natively supported
    * @param shouldOutputPedigree output pedigree attributes -- when an element was added or changed
    * @param shouldOutputFixml output FIXML attributes -- abbreviated name, etc.
    * @param shouldOutputInlineCodes output a codeset inline with its field
+   * @param shouldOutputDatatypes output datatypes and their mappings
    */
   public MarkdownGenerator(String paragraphDelimiterInTables, boolean shouldOutputPedigree,
-      boolean shouldOutputFixml, boolean shouldOutputInlineCodes) {
+      boolean shouldOutputFixml, boolean shouldOutputInlineCodes, boolean shouldOutputDatatypes) {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.shouldOutputPedigree = shouldOutputPedigree;
     this.shouldOutputFixml = shouldOutputFixml;
     this.shouldOutputInlineCodes = shouldOutputInlineCodes;
+    this.shouldOutputDatatypes = shouldOutputDatatypes;
     // Populate column heading translations. First element is lower case key, second is display
     // format.
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
@@ -288,7 +292,9 @@ public class MarkdownGenerator {
       generateComponents(repository, documentWriter);
       generateFields(repository, documentWriter);
       generateCodesets(repository, documentWriter);
-      generateDatatypes(repository, documentWriter);
+      if (shouldOutputDatatypes) {
+        generateDatatypes(repository, documentWriter);
+      }
     } catch (final JAXBException e) {
       logger.fatal("Orchestra2md failed to parse XML", e);
       throw new IOException(e);
@@ -333,59 +339,61 @@ public class MarkdownGenerator {
     final PresenceT presence = componentRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
 
-    String added = componentRef.getAdded();
-    if (shouldOutputPedigree && added != null) {
-      row.addProperty("added", added);
-    }
+    if (shouldOutputPedigree) {
+      final String added = componentRef.getAdded();
+      if (added != null) {
+        row.addProperty("added", added);
+      }
 
-    BigInteger addedEp = componentRef.getAddedEP();
-    if (shouldOutputPedigree && addedEp != null) {
-      row.addIntProperty("addedEp", addedEp.intValue());
-    }
+      final BigInteger addedEp = componentRef.getAddedEP();
+      if (addedEp != null) {
+        row.addIntProperty("addedEp", addedEp.intValue());
+      }
 
-    String deprecated = componentRef.getDeprecated();
-    if (shouldOutputPedigree && deprecated != null) {
-      row.addProperty("deprecated", deprecated);
-    }
+      final String deprecated = componentRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
 
-    BigInteger deprecatedEp = componentRef.getDeprecatedEP();
-    if (shouldOutputPedigree && deprecatedEp != null) {
-      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-    }
+      final BigInteger deprecatedEp = componentRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+      }
 
-    String issue = componentRef.getIssue();
-    if (shouldOutputPedigree && issue != null) {
-      row.addProperty("issue", issue);
-    }
+      final String issue = componentRef.getIssue();
+      if (issue != null) {
+        row.addProperty("issue", issue);
+      }
 
-    String lastModified = componentRef.getLastModified();
-    if (shouldOutputPedigree && lastModified != null) {
-      row.addProperty("lastModified", lastModified);
-    }
+      final String lastModified = componentRef.getLastModified();
+      if (lastModified != null) {
+        row.addProperty("lastModified", lastModified);
+      }
 
-    String replaced = componentRef.getReplaced();
-    if (shouldOutputPedigree && replaced != null) {
-      row.addProperty("replaced", replaced);
-    }
+      final String replaced = componentRef.getReplaced();
+      if (replaced != null) {
+        row.addProperty("replaced", replaced);
+      }
 
-    BigInteger replacedBycomponentRef = componentRef.getReplacedByField();
-    if (shouldOutputPedigree && replacedBycomponentRef != null) {
-      row.addIntProperty("replacedByField", replacedBycomponentRef.intValue());
-    }
+      final BigInteger replacedBycomponentRef = componentRef.getReplacedByField();
+      if (replacedBycomponentRef != null) {
+        row.addIntProperty("replacedByField", replacedBycomponentRef.intValue());
+      }
 
-    BigInteger replacedEp = componentRef.getReplacedEP();
-    if (shouldOutputPedigree && replacedEp != null) {
-      row.addIntProperty("replacedEp", replacedEp.intValue());
-    }
+      final BigInteger replacedEp = componentRef.getReplacedEP();
+      if (replacedEp != null) {
+        row.addIntProperty("replacedEp", replacedEp.intValue());
+      }
 
-    String updated = componentRef.getUpdated();
-    if (shouldOutputPedigree && updated != null) {
-      row.addProperty("updated", updated);
-    }
+      final String updated = componentRef.getUpdated();
+      if (updated != null) {
+        row.addProperty("updated", updated);
+      }
 
-    BigInteger updatedEp = componentRef.getUpdatedEP();
-    if (shouldOutputPedigree && updatedEp != null) {
-      row.addIntProperty("updatedEp", updatedEp.intValue());
+      final BigInteger updatedEp = componentRef.getUpdatedEP();
+      if (updatedEp != null) {
+        row.addIntProperty("updatedEp", updatedEp.intValue());
+      }
     }
     addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
   }
@@ -450,7 +458,7 @@ public class MarkdownGenerator {
     } else if (assign != null) {
       row.addProperty("values", ASSIGN_KEYWORD + " " + assign);
     } else if (shouldOutputInlineCodes && field != null) {
-      CodeSetType codeset =
+      final CodeSetType codeset =
           RepositoryAdaptor.findCodesetByName(repository, field.getType(), scenario);
       if (codeset != null) {
         row.addProperty("values", codesToString(codeset, getParagraphDelimiterInTables()));
@@ -472,59 +480,61 @@ public class MarkdownGenerator {
       row.addIntProperty("implLength", implLength);
     }
 
-    String added = fieldRef.getAdded();
-    if (shouldOutputPedigree && added != null) {
-      row.addProperty("added", added);
-    }
+    if (shouldOutputPedigree) {
+      final String added = fieldRef.getAdded();
+      if (added != null) {
+        row.addProperty("added", added);
+      }
 
-    BigInteger addedEp = fieldRef.getAddedEP();
-    if (shouldOutputPedigree && addedEp != null) {
-      row.addIntProperty("addedEp", addedEp.intValue());
-    }
+      final BigInteger addedEp = fieldRef.getAddedEP();
+      if (addedEp != null) {
+        row.addIntProperty("addedEp", addedEp.intValue());
+      }
 
-    String deprecated = fieldRef.getDeprecated();
-    if (shouldOutputPedigree && deprecated != null) {
-      row.addProperty("deprecated", deprecated);
-    }
+      final String deprecated = fieldRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
 
-    BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
-    if (shouldOutputPedigree && deprecatedEp != null) {
-      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-    }
+      final BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+      }
 
-    String issue = fieldRef.getIssue();
-    if (shouldOutputPedigree && issue != null) {
-      row.addProperty("issue", issue);
-    }
+      final String issue = fieldRef.getIssue();
+      if (issue != null) {
+        row.addProperty("issue", issue);
+      }
 
-    String lastModified = fieldRef.getLastModified();
-    if (shouldOutputPedigree && lastModified != null) {
-      row.addProperty("lastModified", lastModified);
-    }
+      final String lastModified = fieldRef.getLastModified();
+      if (lastModified != null) {
+        row.addProperty("lastModified", lastModified);
+      }
 
-    String replaced = fieldRef.getReplaced();
-    if (shouldOutputPedigree && replaced != null) {
-      row.addProperty("replaced", replaced);
-    }
+      final String replaced = fieldRef.getReplaced();
+      if (replaced != null) {
+        row.addProperty("replaced", replaced);
+      }
 
-    BigInteger replacedByfieldRef = fieldRef.getReplacedByField();
-    if (shouldOutputPedigree && replacedByfieldRef != null) {
-      row.addIntProperty("replacedByField", replacedByfieldRef.intValue());
-    }
+      final BigInteger replacedByfieldRef = fieldRef.getReplacedByField();
+      if (replacedByfieldRef != null) {
+        row.addIntProperty("replacedByField", replacedByfieldRef.intValue());
+      }
 
-    BigInteger replacedEp = fieldRef.getReplacedEP();
-    if (shouldOutputPedigree && replacedEp != null) {
-      row.addIntProperty("replacedEp", replacedEp.intValue());
-    }
+      final BigInteger replacedEp = fieldRef.getReplacedEP();
+      if (replacedEp != null) {
+        row.addIntProperty("replacedEp", replacedEp.intValue());
+      }
 
-    String updated = fieldRef.getUpdated();
-    if (shouldOutputPedigree && updated != null) {
-      row.addProperty("updated", updated);
-    }
+      final String updated = fieldRef.getUpdated();
+      if (updated != null) {
+        row.addProperty("updated", updated);
+      }
 
-    BigInteger updatedEp = fieldRef.getUpdatedEP();
-    if (shouldOutputPedigree && updatedEp != null) {
-      row.addIntProperty("updatedEp", updatedEp.intValue());
+      final BigInteger updatedEp = fieldRef.getUpdatedEP();
+      if (updatedEp != null) {
+        row.addIntProperty("updatedEp", updatedEp.intValue());
+      }
     }
     addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
   }
@@ -546,61 +556,62 @@ public class MarkdownGenerator {
     final PresenceT presence = groupRef.getPresence();
     row.addProperty("presence", presence.toString().toLowerCase());
 
-    String added = groupRef.getAdded();
-    if (shouldOutputPedigree && added != null) {
-      row.addProperty("added", added);
-    }
+    if (shouldOutputPedigree) {
+      final String added = groupRef.getAdded();
+      if (added != null) {
+        row.addProperty("added", added);
+      }
 
-    BigInteger addedEp = groupRef.getAddedEP();
-    if (shouldOutputPedigree && addedEp != null) {
-      row.addIntProperty("addedEp", addedEp.intValue());
-    }
+      final BigInteger addedEp = groupRef.getAddedEP();
+      if (addedEp != null) {
+        row.addIntProperty("addedEp", addedEp.intValue());
+      }
 
-    String deprecated = groupRef.getDeprecated();
-    if (shouldOutputPedigree && deprecated != null) {
-      row.addProperty("deprecated", deprecated);
-    }
+      final String deprecated = groupRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
 
-    BigInteger deprecatedEp = groupRef.getDeprecatedEP();
-    if (shouldOutputPedigree && deprecatedEp != null) {
-      row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-    }
+      final BigInteger deprecatedEp = groupRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+      }
 
-    String issue = groupRef.getIssue();
-    if (shouldOutputPedigree && issue != null) {
-      row.addProperty("issue", issue);
-    }
+      final String issue = groupRef.getIssue();
+      if (issue != null) {
+        row.addProperty("issue", issue);
+      }
 
-    String lastModified = groupRef.getLastModified();
-    if (shouldOutputPedigree && lastModified != null) {
-      row.addProperty("lastModified", lastModified);
-    }
+      final String lastModified = groupRef.getLastModified();
+      if (lastModified != null) {
+        row.addProperty("lastModified", lastModified);
+      }
 
-    String replaced = groupRef.getReplaced();
-    if (shouldOutputPedigree && replaced != null) {
-      row.addProperty("replaced", replaced);
-    }
+      final String replaced = groupRef.getReplaced();
+      if (replaced != null) {
+        row.addProperty("replaced", replaced);
+      }
 
-    BigInteger replacedBygroupRef = groupRef.getReplacedByField();
-    if (shouldOutputPedigree && replacedBygroupRef != null) {
-      row.addIntProperty("replacedByField", replacedBygroupRef.intValue());
-    }
+      final BigInteger replacedBygroupRef = groupRef.getReplacedByField();
+      if (replacedBygroupRef != null) {
+        row.addIntProperty("replacedByField", replacedBygroupRef.intValue());
+      }
 
-    BigInteger replacedEp = groupRef.getReplacedEP();
-    if (shouldOutputPedigree && replacedEp != null) {
-      row.addIntProperty("replacedEp", replacedEp.intValue());
-    }
+      final BigInteger replacedEp = groupRef.getReplacedEP();
+      if (replacedEp != null) {
+        row.addIntProperty("replacedEp", replacedEp.intValue());
+      }
 
-    String updated = groupRef.getUpdated();
-    if (shouldOutputPedigree && updated != null) {
-      row.addProperty("updated", updated);
-    }
+      final String updated = groupRef.getUpdated();
+      if (updated != null) {
+        row.addProperty("updated", updated);
+      }
 
-    BigInteger updatedEp = groupRef.getUpdatedEP();
-    if (shouldOutputPedigree && updatedEp != null) {
-      row.addIntProperty("updatedEp", updatedEp.intValue());
+      final BigInteger updatedEp = groupRef.getUpdatedEP();
+      if (updatedEp != null) {
+        row.addIntProperty("updatedEp", updatedEp.intValue());
+      }
     }
-
     addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
   }
 
@@ -671,6 +682,80 @@ public class MarkdownGenerator {
     }
   }
 
+  private void generateCategories(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    final Categories categoryParent = repository.getCategories();
+    if (categoryParent != null && !categoryParent.getCategory().isEmpty()) {
+      final MutableContext context = contextFactory.createContext(2);
+      context.addKey("Categories");
+      documentWriter.write(context);
+      final MutableDetailTable table = contextFactory.createDetailTable();
+
+      final List<CategoryType> categories = categoryParent.getCategory().stream()
+          .sorted(Comparator.comparing(CategoryType::getName)).collect(Collectors.toList());
+
+      for (final CategoryType category : categories) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("name", category.getName());
+        row.addProperty("section", category.getSection());
+
+        final String added = category.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+
+        final BigInteger addedEp = category.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+
+        final String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+
+        final String issue = category.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+
+        final String lastModified = category.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+
+        final String replaced = category.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+
+        final BigInteger replacedEp = category.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+
+        final String updated = category.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+
+        final BigInteger updatedEp = category.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+
+
+        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+      }
+      documentWriter.write(table, headings);
+    }
+  }
+
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
@@ -719,57 +804,57 @@ public class MarkdownGenerator {
           row.addProperty("sort", sort);
         }
 
-        String added = code.getAdded();
+        final String added = code.getAdded();
         if (shouldOutputPedigree && added != null) {
           row.addProperty("added", added);
         }
 
-        BigInteger addedEp = code.getAddedEP();
+        final BigInteger addedEp = code.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        String deprecated = code.getDeprecated();
+        final String deprecated = code.getDeprecated();
         if (shouldOutputPedigree && deprecated != null) {
           row.addProperty("deprecated", deprecated);
         }
 
-        BigInteger deprecatedEp = code.getDeprecatedEP();
+        final BigInteger deprecatedEp = code.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
           row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
         }
 
-        String issue = code.getIssue();
+        final String issue = code.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
         }
 
-        String lastModified = code.getLastModified();
+        final String lastModified = code.getLastModified();
         if (shouldOutputPedigree && lastModified != null) {
           row.addProperty("lastModified", lastModified);
         }
 
-        String replaced = code.getReplaced();
+        final String replaced = code.getReplaced();
         if (shouldOutputPedigree && replaced != null) {
           row.addProperty("replaced", replaced);
         }
 
-        BigInteger replacedByField = code.getReplacedByField();
+        final BigInteger replacedByField = code.getReplacedByField();
         if (shouldOutputPedigree && replacedByField != null) {
           row.addIntProperty("replacedByField", replacedByField.intValue());
         }
 
-        BigInteger replacedEp = code.getReplacedEP();
+        final BigInteger replacedEp = code.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
           row.addIntProperty("replacedEp", replacedEp.intValue());
         }
 
-        String updated = code.getUpdated();
+        final String updated = code.getUpdated();
         if (shouldOutputPedigree && updated != null) {
           row.addProperty("updated", updated);
         }
 
-        BigInteger updatedEp = code.getUpdatedEP();
+        final BigInteger updatedEp = code.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
@@ -920,7 +1005,7 @@ public class MarkdownGenerator {
       final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
       final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
       for (final Entry<String, List<Object>> e : entries) {
-        boolean hasMarkdown = e.getValue().stream().map(o -> (Documentation) o)
+        final boolean hasMarkdown = e.getValue().stream().map(o -> (Documentation) o)
             .anyMatch(d -> MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(d.getContentType()));
         final String text = concatenateDocumentation(e.getValue(), hasMarkdown ? "\n\n" : "\n");
         if (!text.isBlank()) {
@@ -934,79 +1019,6 @@ public class MarkdownGenerator {
           documentWriter.write(documentation);
         }
       }
-    }
-  }
-  
-  private void generateSections(Repository repository, DocumentWriter documentWriter)
-      throws IOException {
-    final Sections sectionParent = repository.getSections();
-    if (sectionParent != null && !sectionParent.getSection().isEmpty()) {
-      final MutableContext context = contextFactory.createContext(2);
-      context.addKey("Sections");
-      documentWriter.write(context);
-      final MutableDetailTable table = contextFactory.createDetailTable();
-
-      final List<SectionType> sections = sectionParent.getSection().stream()
-          .sorted(Comparator.comparing(SectionType::getName)).collect(Collectors.toList());
-
-      for (final SectionType category : sections) {
-        final MutableDetailProperties row = table.newRow();
-        row.addProperty("name", category.getName());
-        
-        String added = category.getAdded();
-        if (shouldOutputPedigree && added != null) {
-          row.addProperty("added", added);
-        }
-
-        BigInteger addedEp = category.getAddedEP();
-        if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
-        }
-
-        String deprecated = category.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-
-        BigInteger deprecatedEp = category.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-
-        String issue = category.getIssue();
-        if (shouldOutputPedigree && issue != null) {
-          row.addProperty("issue", issue);
-        }
-
-        String lastModified = category.getLastModified();
-        if (shouldOutputPedigree && lastModified != null) {
-          row.addProperty("lastModified", lastModified);
-        }
-
-        String replaced = category.getReplaced();
-        if (shouldOutputPedigree && replaced != null) {
-          row.addProperty("replaced", replaced);
-        }
-
-        BigInteger replacedEp = category.getReplacedEP();
-        if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
-        }
-
-        String updated = category.getUpdated();
-        if (shouldOutputPedigree && updated != null) {
-          row.addProperty("updated", updated);
-        }
-
-        BigInteger updatedEp = category.getUpdatedEP();
-        if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
-        }
-
-        
-        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
-      }
-      documentWriter.write(table, headings);
     }
   }
 
@@ -1034,7 +1046,7 @@ public class MarkdownGenerator {
         row.addProperty("type", field.getType());
 
         if (shouldOutputInlineCodes) {
-          CodeSetType codeset =
+          final CodeSetType codeset =
               RepositoryAdaptor.findCodesetByName(repository, field.getType(), scenario);
           if (codeset != null) {
             row.addProperty("values", codesToString(codeset, getParagraphDelimiterInTables()));
@@ -1071,76 +1083,78 @@ public class MarkdownGenerator {
           row.addIntProperty("discriminatorId", dicriminatorId.intValue());
         }
 
-        UnionDataTypeT unionDataType = field.getUnionDataType();
+        final UnionDataTypeT unionDataType = field.getUnionDataType();
         if (unionDataType != null) {
           row.addProperty("unionDataType", unionDataType.value());
         }
 
-        final String abbrName = field.getAbbrName();
-        if (shouldOutputFixml && abbrName != null) {
-          row.addProperty("abbrName", abbrName);
-        }
-        final String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
-        if (shouldOutputFixml && baseCategoryAbbrName != null) {
-          row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
+        if (shouldOutputFixml) {
+          final String abbrName = field.getAbbrName();
+          if (abbrName != null) {
+            row.addProperty("abbrName", abbrName);
+          }
+          final String baseCategoryAbbrName = field.getBaseCategoryAbbrName();
+          if (baseCategoryAbbrName != null) {
+            row.addProperty("baseCategoryAbbrName", baseCategoryAbbrName);
+          }
+
+          final String baseCategory = field.getBaseCategory();
+          if (baseCategory != null) {
+            row.addProperty("baseCategory", baseCategory);
+          }
         }
 
-        final String baseCategory = field.getBaseCategory();
-        if (shouldOutputFixml && baseCategory != null) {
-          row.addProperty("baseCategory", baseCategory);
-        }
-
-        String added = field.getAdded();
+        final String added = field.getAdded();
         if (shouldOutputPedigree && added != null) {
           row.addProperty("added", added);
         }
 
-        BigInteger addedEp = field.getAddedEP();
+        final BigInteger addedEp = field.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        String deprecated = field.getDeprecated();
+        final String deprecated = field.getDeprecated();
         if (shouldOutputPedigree && deprecated != null) {
           row.addProperty("deprecated", deprecated);
         }
 
-        BigInteger deprecatedEp = field.getDeprecatedEP();
+        final BigInteger deprecatedEp = field.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
           row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
         }
 
-        String issue = field.getIssue();
+        final String issue = field.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
         }
 
-        String lastModified = field.getLastModified();
+        final String lastModified = field.getLastModified();
         if (shouldOutputPedigree && lastModified != null) {
           row.addProperty("lastModified", lastModified);
         }
 
-        String replaced = field.getReplaced();
+        final String replaced = field.getReplaced();
         if (shouldOutputPedigree && replaced != null) {
           row.addProperty("replaced", replaced);
         }
 
-        BigInteger replacedByField = field.getReplacedByField();
+        final BigInteger replacedByField = field.getReplacedByField();
         if (shouldOutputPedigree && replacedByField != null) {
           row.addIntProperty("replacedByField", replacedByField.intValue());
         }
 
-        BigInteger replacedEp = field.getReplacedEP();
+        final BigInteger replacedEp = field.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
           row.addIntProperty("replacedEp", replacedEp.intValue());
         }
 
-        String updated = field.getUpdated();
+        final String updated = field.getUpdated();
         if (shouldOutputPedigree && updated != null) {
           row.addProperty("updated", updated);
         }
 
-        BigInteger updatedEp = field.getUpdatedEP();
+        final BigInteger updatedEp = field.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
@@ -1360,7 +1374,7 @@ public class MarkdownGenerator {
     }
     documentWriter.write(context);
 
-    Annotation annotation = repository.getAnnotation();
+    final Annotation annotation = repository.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
 
     final List<JAXBElement<SimpleLiteral>> elements = repository.getMetadata().getAny();
@@ -1374,6 +1388,79 @@ public class MarkdownGenerator {
         row.addProperty("value", value);
       }
       documentWriter.write(table);
+    }
+  }
+
+  private void generateSections(Repository repository, DocumentWriter documentWriter)
+      throws IOException {
+    final Sections sectionParent = repository.getSections();
+    if (sectionParent != null && !sectionParent.getSection().isEmpty()) {
+      final MutableContext context = contextFactory.createContext(2);
+      context.addKey("Sections");
+      documentWriter.write(context);
+      final MutableDetailTable table = contextFactory.createDetailTable();
+
+      final List<SectionType> sections = sectionParent.getSection().stream()
+          .sorted(Comparator.comparing(SectionType::getName)).collect(Collectors.toList());
+
+      for (final SectionType category : sections) {
+        final MutableDetailProperties row = table.newRow();
+        row.addProperty("name", category.getName());
+
+        final String added = category.getAdded();
+        if (shouldOutputPedigree && added != null) {
+          row.addProperty("added", added);
+        }
+
+        final BigInteger addedEp = category.getAddedEP();
+        if (shouldOutputPedigree && addedEp != null) {
+          row.addIntProperty("addedEp", addedEp.intValue());
+        }
+
+        final String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
+
+        final String issue = category.getIssue();
+        if (shouldOutputPedigree && issue != null) {
+          row.addProperty("issue", issue);
+        }
+
+        final String lastModified = category.getLastModified();
+        if (shouldOutputPedigree && lastModified != null) {
+          row.addProperty("lastModified", lastModified);
+        }
+
+        final String replaced = category.getReplaced();
+        if (shouldOutputPedigree && replaced != null) {
+          row.addProperty("replaced", replaced);
+        }
+
+        final BigInteger replacedEp = category.getReplacedEP();
+        if (shouldOutputPedigree && replacedEp != null) {
+          row.addIntProperty("replacedEp", replacedEp.intValue());
+        }
+
+        final String updated = category.getUpdated();
+        if (shouldOutputPedigree && updated != null) {
+          row.addProperty("updated", updated);
+        }
+
+        final BigInteger updatedEp = category.getUpdatedEP();
+        if (shouldOutputPedigree && updatedEp != null) {
+          row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+
+
+        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+      }
+      documentWriter.write(table, headings);
     }
   }
 
@@ -1410,80 +1497,6 @@ public class MarkdownGenerator {
 
   private String getParagraphDelimiterInTables() {
     return paragraphDelimiterInTables;
-  }
-
-  private void generateCategories(Repository repository, DocumentWriter documentWriter)
-      throws IOException {
-    final Categories categoryParent = repository.getCategories();
-    if (categoryParent != null && !categoryParent.getCategory().isEmpty()) {
-      final MutableContext context = contextFactory.createContext(2);
-      context.addKey("Categories");
-      documentWriter.write(context);
-      final MutableDetailTable table = contextFactory.createDetailTable();
-  
-      final List<CategoryType> categories = categoryParent.getCategory().stream()
-          .sorted(Comparator.comparing(CategoryType::getName)).collect(Collectors.toList());
-  
-      for (final CategoryType category : categories) {
-        final MutableDetailProperties row = table.newRow();
-        row.addProperty("name", category.getName());
-        row.addProperty("section", category.getSection());
-        
-        String added = category.getAdded();
-        if (shouldOutputPedigree && added != null) {
-          row.addProperty("added", added);
-        }
-  
-        BigInteger addedEp = category.getAddedEP();
-        if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
-        }
-  
-        String deprecated = category.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-  
-        BigInteger deprecatedEp = category.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-  
-        String issue = category.getIssue();
-        if (shouldOutputPedigree && issue != null) {
-          row.addProperty("issue", issue);
-        }
-  
-        String lastModified = category.getLastModified();
-        if (shouldOutputPedigree && lastModified != null) {
-          row.addProperty("lastModified", lastModified);
-        }
-  
-        String replaced = category.getReplaced();
-        if (shouldOutputPedigree && replaced != null) {
-          row.addProperty("replaced", replaced);
-        }
-  
-        BigInteger replacedEp = category.getReplacedEP();
-        if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
-        }
-  
-        String updated = category.getUpdated();
-        if (shouldOutputPedigree && updated != null) {
-          row.addProperty("updated", updated);
-        }
-  
-        BigInteger updatedEp = category.getUpdatedEP();
-        if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
-        }
-  
-        
-        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
-      }
-      documentWriter.write(table, headings);
-    }
   }
 
 }

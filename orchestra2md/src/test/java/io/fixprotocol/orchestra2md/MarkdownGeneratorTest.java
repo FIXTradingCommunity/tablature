@@ -585,7 +585,7 @@ class MarkdownGeneratorTest {
   @BeforeEach
   void setUp() throws Exception {
     jsonOutputStream = new ByteArrayOutputStream(8096);
-    generator = new MarkdownGenerator("/P/", true, true, true);
+    generator = new MarkdownGenerator("/P/", true, true, true, true);
   }  
   
   @Test

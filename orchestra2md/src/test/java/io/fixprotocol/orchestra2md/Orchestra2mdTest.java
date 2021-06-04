@@ -45,7 +45,8 @@ class Orchestra2mdTest {
   @Test
   void FixLatest() throws Exception {
     Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("src/test/resources/OrchestraFIXLatest.xml")
-        .outputFile("target/test/OrchestraFIXLatest.md").eventFile("target/test/OrchestraFIXLatest.json").pedigree(true).build();
+        .outputFile("target/test/OrchestraFIXLatest.md").eventFile("target/test/OrchestraFIXLatest.json")
+        .pedigree(true).datatypes(true).build();
     orchestra2md.generate();
   }
   

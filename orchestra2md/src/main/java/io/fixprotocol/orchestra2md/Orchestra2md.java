@@ -34,20 +34,36 @@ import org.apache.logging.log4j.Logger;
 public class Orchestra2md {
 
   public static class Builder {
-    private String inputFile;
-    private String outputFile;
     public String eventFile;
     public String paragraphDelimiter = MarkdownGenerator.DEFAULT_PARAGRAPH_DELIMITER;
-    private boolean shouldOutputPedigree;
+    private String inputFile;
+    private String outputFile;
+    private boolean shouldOutputDatatypes;
     private boolean shouldOutputFixml;
     private boolean shouldOutputInlineCodes;
+    private boolean shouldOutputPedigree;
 
     public Orchestra2md build() {
       return new Orchestra2md(this);
     }
 
+    public Builder datatypes(boolean shouldOutputDatatypes) {
+      this.shouldOutputDatatypes = shouldOutputDatatypes;
+      return this;
+    }
+
     public Builder eventFile(String eventFile) {
       this.eventFile = eventFile;
+      return this;
+    }
+
+    public Builder fixml(boolean shouldOutputFixml) {
+      this.shouldOutputFixml = shouldOutputFixml;
+      return this;
+    }
+
+    public Builder inlineCodes(boolean shouldOutputInlineCodes) {
+      this.shouldOutputInlineCodes = shouldOutputInlineCodes;
       return this;
     }
 
@@ -74,16 +90,6 @@ public class Orchestra2md {
 
     public Builder pedigree(boolean shouldOutputPedigree) {
       this.shouldOutputPedigree = shouldOutputPedigree;
-      return this;
-    }
-
-    public Builder fixml(boolean shouldOutputFixml) {
-      this.shouldOutputFixml = shouldOutputFixml;
-      return this;
-    }
-
-    public Builder inlineCodes(boolean shouldOutputInlineCodes) {
-      this.shouldOutputInlineCodes = shouldOutputInlineCodes;
       return this;
     }
   }
@@ -172,14 +178,15 @@ public class Orchestra2md {
     formatter.printHelp("Orchestra2md [options] <input-file>", options);
   }
 
+  private final String eventFilename;
   private final String inputFilename;
   private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
-  private final String eventFilename;
   private final String paragraphDelimiter;
-  private final boolean shouldOutputPedigree;
+  private final boolean shouldOutputDatatypes;
   private final boolean shouldOutputFixml;
   private final boolean shouldOutputInlineCodes;
+  private final boolean shouldOutputPedigree;
 
   private Orchestra2md(Builder builder) {
     this.inputFilename = builder.inputFile;
@@ -189,6 +196,7 @@ public class Orchestra2md {
     this.shouldOutputPedigree = builder.shouldOutputPedigree;
     this.shouldOutputFixml = builder.shouldOutputFixml;
     this.shouldOutputInlineCodes = builder.shouldOutputInlineCodes;
+    this.shouldOutputDatatypes = builder.shouldOutputDatatypes;
   }
 
   public void generate() {
@@ -228,7 +236,7 @@ public class Orchestra2md {
       }
 
       final MarkdownGenerator generator = new MarkdownGenerator(paragraphDelimiter,
-          shouldOutputPedigree, shouldOutputFixml, shouldOutputInlineCodes);
+          shouldOutputPedigree, shouldOutputFixml, shouldOutputInlineCodes, shouldOutputDatatypes);
       generator.generate(inputStream, outputWriter, eventStream);
     }
   }
