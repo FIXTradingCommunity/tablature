@@ -105,6 +105,7 @@ public class Orchestra2md {
    * <pre>
   usage: Orchestra2md [options] &lt;input-file&gt;
   -?,--help              display usage
+     --datatypes         output datatypes 
   -e,--eventlog &lt;arg&gt;    path of JSON event file
      --fixml             output fixml attributes
   -o,--output &lt;arg&gt;      path of markdown output file (required)
@@ -137,6 +138,7 @@ public class Orchestra2md {
     options
         .addOption(Option.builder().desc("output pedigree attributes").longOpt("pedigree").build());
     options.addOption(Option.builder().desc("output fixml attributes").longOpt("fixml").build());
+    options.addOption(Option.builder().desc("output datatypes").longOpt("datatypes").build());
 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
@@ -164,6 +166,10 @@ public class Orchestra2md {
 
       if (cmd.hasOption("fixml")) {
         builder.fixml(true);
+      }
+      
+      if (cmd.hasOption("datatypes")) {
+        builder.datatypes(true);
       }
 
       return builder;
