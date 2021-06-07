@@ -104,13 +104,14 @@ public class Orchestra2md {
    *
    * <pre>
   usage: Orchestra2md [options] &lt;input-file&gt;
-  -?,--help              display usage
-     --datatypes         output datatypes 
-  -e,--eventlog &lt;arg&gt;    path of JSON event file
-     --fixml             output fixml attributes
-  -o,--output &lt;arg&gt;      path of markdown output file (required)
-     --paragraph &lt;arg&gt;   paragraph delimiter for tables
-     --pedigree          output pedigree attributes
+ -?,--help              display usage
+ -a,--all               output all elements
+    --datatypes         output datatypes
+ -e,--eventlog &lt;arg&gt;    path of JSON event file
+    --fixml             output fixml attributes
+ -o,--output &lt;arg&gt;      path of markdown output file (required)
+    --paragraph &lt;arg&gt;   paragraph delimiter for tables
+    --pedigree          output pedigree attributes
    * </pre>
    *
    * @param args command line arguments
@@ -139,7 +140,8 @@ public class Orchestra2md {
         .addOption(Option.builder().desc("output pedigree attributes").longOpt("pedigree").build());
     options.addOption(Option.builder().desc("output fixml attributes").longOpt("fixml").build());
     options.addOption(Option.builder().desc("output datatypes").longOpt("datatypes").build());
-
+    options.addOption(Option.builder("a").desc("output all elements").longOpt("all").build());
+ 
     final DefaultParser parser = new DefaultParser();
     CommandLine cmd;
 
@@ -160,15 +162,15 @@ public class Orchestra2md {
         builder.paragraphDelimiter(cmd.getOptionValue("paragraph"));
       }
 
-      if (cmd.hasOption("pedigree")) {
+      if (cmd.hasOption("pedigree") || cmd.hasOption("a")) {
         builder.pedigree(true);
       }
 
-      if (cmd.hasOption("fixml")) {
+      if (cmd.hasOption("fixml") || cmd.hasOption("a")) {
         builder.fixml(true);
       }
       
-      if (cmd.hasOption("datatypes")) {
+      if (cmd.hasOption("datatypes") || cmd.hasOption("a")) {
         builder.datatypes(true);
       }
 
