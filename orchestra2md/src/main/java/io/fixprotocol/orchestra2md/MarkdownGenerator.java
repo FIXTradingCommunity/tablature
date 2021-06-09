@@ -646,7 +646,7 @@ public class MarkdownGenerator {
     final List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType))
         .collect(Collectors.toList());
     if (!members.isEmpty()) {
-      final MutableContext variableContext = contextFactory.createContext(3);
+      final MutableContext variableContext = contextFactory.createContext(4);
       variableContext.addKey("Variables");
       documentWriter.write(variableContext);
 
@@ -1466,7 +1466,7 @@ public class MarkdownGenerator {
 
   private void generateStateMachine(StateMachineType stateMachine, DocumentWriter documentWriter)
       throws IOException {
-    final MutableContext context = contextFactory.createContext(3);
+    final MutableContext context = contextFactory.createContext(4);
     context.addPair("StateMachine", stateMachine.getName());
     documentWriter.write(context);
 

@@ -30,7 +30,7 @@ import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 
 public final class LogUtil {
 
-  public static Logger initializeDefaultLogger(Level level, Class<?> clazz) {
+  public static Logger initializeDefaultLogger(final Level level, final Class<?> clazz) {
     final LoggerContext ctx = (LoggerContext) LogManager.getContext(false);
     final Configuration config = ctx.getConfiguration();
     final ConsoleAppender appender = ConsoleAppender.newBuilder().setName("Console").build();
@@ -44,7 +44,7 @@ public final class LogUtil {
     return LogManager.getLogger(clazz);
   }
 
-  public static Logger initializeFileLogger(String fileName, Level level, Class<?> clazz) {
+  public static Logger initializeFileLogger(final String fileName, final Level level, final Class<?> clazz) {
     final ConfigurationBuilder<BuiltConfiguration> builder =
         ConfigurationBuilderFactory.newConfigurationBuilder();
     final AppenderComponentBuilder appenderBuilder =

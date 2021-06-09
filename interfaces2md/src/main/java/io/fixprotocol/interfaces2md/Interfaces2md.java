@@ -44,17 +44,17 @@ public class Interfaces2md {
       return new Interfaces2md(this);
     }
 
-    public Builder eventFile(String eventFile) {
+    public Builder eventFile(final String eventFile) {
       this.eventFile = eventFile;
       return this;
     }
 
-    public Builder inputFile(String inputFile) {
+    public Builder inputFile(final String inputFile) {
       this.inputFile = inputFile;
       return this;
     }
 
-    public Builder outputFile(String outputFile) {
+    public Builder outputFile(final String outputFile) {
       this.outputFile = outputFile;
       return this;
     }
@@ -71,12 +71,12 @@ public class Interfaces2md {
    * </pre>
    * @param args command line arguments
    */
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     final Interfaces2md interfaces2md = parseArgs(args).build();
     interfaces2md.generate();
   }
 
-  private static Builder parseArgs(String[] args) {
+  private static Builder parseArgs(final String[] args) {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of markdown output file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
@@ -86,7 +86,7 @@ public class Interfaces2md {
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
     final DefaultParser parser = new DefaultParser();
-    CommandLine cmd;
+    final CommandLine cmd;
 
     final Builder builder = new Builder();
 
@@ -112,7 +112,7 @@ public class Interfaces2md {
     }
   }
 
-  private static void showHelp(Options options) {
+  private static void showHelp(final Options options) {
     final HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("Interfaces2md [options] <input-file>", options);
   }
@@ -122,7 +122,7 @@ public class Interfaces2md {
   private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
 
-  private Interfaces2md(Builder builder) {
+  private Interfaces2md(final Builder builder) {
     this.inputFilename = builder.inputFile;
     this.outputFilename = builder.outputFile;
     this.eventFilename = builder.eventFile;
@@ -138,7 +138,7 @@ public class Interfaces2md {
   }
 
 
-  void generate(String inputFilename, String outputFilename, String eventFilename)
+  void generate(final String inputFilename, final String outputFilename, final String eventFilename)
       throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
@@ -149,8 +149,8 @@ public class Interfaces2md {
       outputDir.mkdirs();
     }
 
-    try (InputStream inputStream = new FileInputStream(inputFilename);
-        OutputStreamWriter outputWriter =
+    try (final InputStream inputStream = new FileInputStream(inputFilename);
+         final OutputStreamWriter outputWriter =
             new OutputStreamWriter(new FileOutputStream(outputFilename), StandardCharsets.UTF_8)) {
 
       OutputStream eventStream = null;

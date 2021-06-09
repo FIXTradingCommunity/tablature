@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -62,7 +61,7 @@ import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
 import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.Context;
-import io.fixprotocol.md.event.Contextual;
+import io.fixprotocol.md.event.GraphContext;
 import io.fixprotocol.md.event.Detail;
 import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
@@ -82,8 +81,9 @@ public class RepositoryBuilder {
     private final int maxDepth;
     private final String name;
     private final String scenario;
-    
-    public ComponentBuilder(final String name, final String scenario, final int level, final int maxDepth) {
+
+    public ComponentBuilder(final String name, final String scenario, final int level,
+        final int maxDepth) {
       this.name = name;
       this.scenario = scenario;
       this.level = level;
@@ -145,7 +145,8 @@ public class RepositoryBuilder {
     private final int tag;
     private final String type;
 
-    public FieldBuilder(final int tag, final String name, final String scenario, final String type) {
+    public FieldBuilder(final int tag, final String name, final String scenario,
+        final String type) {
       this.tag = tag;
       this.name = name;
       this.scenario = scenario;
@@ -187,9 +188,7 @@ public class RepositoryBuilder {
           fieldType.setId(baseFieldType.getId());
           fieldType.setName(baseFieldType.getName());
           fieldType.setType(baseFieldType.getType());
-          if (!DEFAULT_SCENARIO.equals(scenario)) {
-            fieldType.setScenario(scenario);
-          }
+          fieldType.setScenario(scenario);
           repositoryAdapter.addField(fieldType);
         }
       }
@@ -258,8 +257,9 @@ public class RepositoryBuilder {
     private final int maxDepth;
     private final String name;
     private final String scenario;
-    
-    public GroupBuilder(final String name, final String scenario, final int level, final int maxDepth) {
+
+    public GroupBuilder(final String name, final String scenario, final int level,
+        final int maxDepth) {
       this.name = name;
       this.scenario = scenario;
       this.level = level;
@@ -399,7 +399,7 @@ public class RepositoryBuilder {
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
    */
   public static RepositoryBuilder instance(final InputStream referenceStream,
-                                           final OutputStream jsonOutputStream) throws Exception {
+      final OutputStream jsonOutputStream) throws Exception {
     return instance(referenceStream, jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
   }
 
@@ -414,7 +414,8 @@ public class RepositoryBuilder {
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
    */
   public static RepositoryBuilder instance(final InputStream referenceStream,
-                                           final OutputStream jsonOutputStream, final String paragraphDelimiterInTables) throws Exception {
+      final OutputStream jsonOutputStream, final String paragraphDelimiterInTables)
+      throws Exception {
     final RepositoryBuilder outputRepositoryBuilder =
         new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
 
@@ -427,8 +428,8 @@ public class RepositoryBuilder {
     return outputRepositoryBuilder;
   }
 
-  static TeeEventListener createEventListener(final Logger logger, final OutputStream jsonOutputStream)
-      throws Exception {
+  static TeeEventListener createEventListener(final Logger logger,
+      final OutputStream jsonOutputStream) throws Exception {
     final EventListenerFactory factory = new EventListenerFactory();
     final TeeEventListener eventLogger = new TeeEventListener();
     final EventListener logEventLogger = factory.getInstance("LOG4J");
@@ -453,8 +454,8 @@ public class RepositoryBuilder {
   private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
   private final Logger logger = LogManager.getLogger(getClass());
 
-  private final Consumer<Contextual> markdownConsumer = contextual -> {
-    final Context keyContext = getKeyContext(contextual);
+  private final Consumer<GraphContext> markdownConsumer = graphContext -> {
+    final Context keyContext = getKeyContext(graphContext);
     if (keyContext == null) {
       eventLogger.warn("Element with unknown context; perhaps missing heading");
       return;
@@ -462,57 +463,57 @@ public class RepositoryBuilder {
     final String type = keyContext.getKey(KEY_POSITION);
     if (type == null) {
       eventLogger.warn("RepositoryBuilder received element with unknown context of class {0}",
-          contextual.getClass());
+          graphContext.getClass());
     } else
       switch (type.toLowerCase()) {
         case ACTOR_KEYWORD:
-          addActor(contextual, keyContext);
+          addActor(graphContext, keyContext);
           break;
         case CATEGORIES_KEYWORD:
-          addCategory(contextual, keyContext);
+          addCategory(graphContext, keyContext);
           break;
         case CODESET_KEYWORD:
-          addCodeset(contextual, keyContext);
+          addCodeset(graphContext, keyContext);
           break;
         case COMPONENT_KEYWORD:
-          addComponent(contextual, keyContext);
+          addComponent(graphContext, keyContext);
           break;
         case DATATYPES_KEYWORD:
-          addDatatype(contextual, keyContext);
+          addDatatype(graphContext, keyContext);
           break;
         case FIELDS_KEYWORD:
-          addField(contextual, keyContext);
+          addField(graphContext, keyContext);
           break;
         case FLOW_KEYWORD:
-          addFlow(contextual, keyContext);
+          addFlow(graphContext, keyContext);
           break;
         case GROUP_KEYWORD:
-          addGroup(contextual, keyContext);
+          addGroup(graphContext, keyContext);
           break;
         case MESSAGE_KEYWORD:
-          addMessage(contextual, keyContext);
+          addMessage(graphContext, keyContext);
           break;
         case RESPONSES_KEYWORD:
-          addMessageResponses(contextual, keyContext);
+          addMessageResponses(graphContext, keyContext);
           break;
         case SECTIONS_KEYWORD:
-          addSection(contextual, keyContext);
+          addSection(graphContext, keyContext);
           break;
         case STATEMACHINE_KEYWORD:
-          addActorStates(contextual, keyContext);
+          addActorStates(graphContext, keyContext);
           break;
         case VARIABLES_KEYWORD:
-          addActorVariables(contextual, keyContext);
+          addActorVariables(graphContext, keyContext);
           break;
         default:
           if (keyContext.getLevel() == 1) {
-            addMetadata(contextual, keyContext);
+            addMetadata(graphContext, keyContext);
           } else {
             eventLogger.warn("RepositoryBuilder received unknown context type {}", type);
           }
       }
   };
-  
+
   private int maxComponentDepth = 1;
   private final String paragraphDelimiterInTables;
   private RepositoryAdapter referenceRepositoryAdapter = null;
@@ -529,7 +530,7 @@ public class RepositoryBuilder {
     this.eventLogger = createEventListener(this.logger, jsonOutputStream);
     this.repositoryAdapter = new RepositoryAdapter(this.eventLogger);
     this.repositoryAdapter.createRepository();
-    
+
     // Populate column heading translations. First element is lower case key, second is display
     // format.
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
@@ -549,7 +550,7 @@ public class RepositoryBuilder {
     parser.parse(inputStream, markdownConsumer);
   }
 
-  public void setMaxComponentDepth(int maxComponentDepth) {
+  public void setMaxComponentDepth(final int maxComponentDepth) {
     this.maxComponentDepth = maxComponentDepth;
   }
 
@@ -629,10 +630,10 @@ public class RepositoryBuilder {
     this.referenceRepositoryAdapter = reference;
   }
 
-  private void addActor(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    if (contextual instanceof Documentation) {
-      final Documentation documentation = (Documentation) contextual;
+  private void addActor(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    if (graphContext instanceof Documentation) {
+      final Documentation documentation = (Documentation) graphContext;
       final ActorType actor = repositoryAdapter.findActorByName(name);
       if (actor != null) {
         Annotation annotation = actor.getAnnotation();
@@ -640,13 +641,13 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           actor.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
             ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && ACTOR_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
+    else if (graphContext instanceof Context
+        && ACTOR_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final ActorType actor = new ActorType();
       actor.setName(name);
 
@@ -654,9 +655,10 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addActorStates(final Contextual contextual, final Context context) {
-    if (contextual instanceof DetailTable) {
-      final Context actorContext = context.getParent();
+  private void addActorStates(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
+      final Context actorContext = keyContext.getParent();
       if (actorContext != null) {
         final String actorName = actorContext.getKeyValue(ACTOR_KEYWORD);
         final ActorType actor = repositoryAdapter.findActorByName(actorName);
@@ -666,9 +668,6 @@ public class RepositoryBuilder {
           statemachine.setName(name);
           final List<Object> actorMembers = actor.getFieldOrFieldRefOrComponent();
           actorMembers.add(statemachine);
-
-          final DetailTable detailTable = (DetailTable) contextual;
-
           final List<String> sources = detailTable.rows().stream().map(r -> r.getProperty("state"))
               .distinct().collect(Collectors.toList());
           final List<String> targets = detailTable.rows().stream().map(r -> r.getProperty("target"))
@@ -702,7 +701,8 @@ public class RepositoryBuilder {
 
               String sourceStateName = null;
               for (final Entry<String, String> p : r.getProperties()) {
-                final String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
+                final String key =
+                    headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
                 switch (key) {
                   case "state":
                     sourceStateName = p.getValue();
@@ -743,32 +743,36 @@ public class RepositoryBuilder {
               Objects.requireNonNull(sourceState).getTransition().add(transition);
             });
           } catch (final NoSuchElementException e) {
-            eventLogger.warn("No states defined for state machine; name={0}", name);
+            eventLogger.warn("No states defined for state machine; name={0} at line {1} char {2}",
+                name, detailTable.getLine(), detailTable.getCharPositionInLine());
           }
         } else {
-          eventLogger.error("Unknown actor for state machine; name={0}", actorName);
+          eventLogger.error("Unknown actor for state machine; name={0} at line {1} char {2}",
+              actorName, detailTable.getLine(), detailTable.getCharPositionInLine());
         }
       }
     }
   }
 
-  private void addActorVariables(final Contextual contextual, final Context context) {
-    if (contextual instanceof DetailTable) {
-      final String name = context.getKey(NAME_POSITION);
+  private void addActorVariables(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
+      final String name = keyContext.getKey(NAME_POSITION);
       final ActorType actor = repositoryAdapter.findActorByName(name);
       if (actor != null) {
-        final DetailTable detailTable = (DetailTable) contextual;
+
         final List<Object> members = actor.getFieldOrFieldRefOrComponent();
         addMembers(detailTable.rows(), members);
       } else {
-        eventLogger.error("Unknown actor for variables; name={0}", name);
+        eventLogger.error("Unknown actor for variables; name={0} at line {1} char {2}", name,
+            detailTable.getLine(), detailTable.getCharPositionInLine());
       }
     }
   }
 
-  private void addCategory(final Contextual contextual, final Context keyContext) {
-    if (contextual instanceof Detail) {
-      final Detail detail = (Detail) contextual;
+  private void addCategory(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof Detail) {
+      final Detail detail = (Detail) graphContext;
       final CategoryType category = new CategoryType();
       final Annotation annotation = new Annotation();
       for (final Entry<String, String> p : detail.getProperties()) {
@@ -826,8 +830,8 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addCode(final DetailProperties detail, final List<? super CodeType> codes,
-                       final CodeSetType codeset) {
+  private void addCode(final DetailTable.TableRow detail, final List<? super CodeType> codes,
+      final CodeSetType codeset) {
     final CodeType codeType = new CodeType();
 
     String name = "Unknown";
@@ -911,28 +915,31 @@ public class RepositoryBuilder {
     }
 
     if (codeType.getName() == null) {
-      eventLogger.error("Missing name for code in codeset {0}; value={1}", codeset.getName(),
-          Objects.requireNonNullElse(codeType.getValue(), "Unknown"));
+      eventLogger.error("Missing name for code in codeset {0}; value={1} at line {2} char {3}",
+          codeset.getName(), Objects.requireNonNullElse(codeType.getValue(), "Unknown"),
+          detail.getLine(), detail.getCharPositionInLine());
     }
 
     if (codeType.getValue() == null) {
-      eventLogger.error("Missing value for code in codeset {0}; name={1}", codeset.getName(),
-          Objects.requireNonNullElse(codeType.getName(), "Unknown"));
+      eventLogger.error("Missing value for code in codeset {0}; name={1} at line {2} char {3}",
+          codeset.getName(), Objects.requireNonNullElse(codeType.getName(), "Unknown"),
+          detail.getLine(), detail.getCharPositionInLine());
     }
 
     codes.add(codeType);
   }
 
-  private void addCodeset(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+  private void addCodeset(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
       CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
 
       if (codeset != null && !codeset.getCode().isEmpty()) {
-        eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", name, scenario);
+        eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}",
+            name, scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
         final String codesetScenario = scenario + "Dup";
         final CodeSetType dupCodeset = new CodeSetType();
         dupCodeset.setName(name);
@@ -943,11 +950,11 @@ public class RepositoryBuilder {
         codeset = dupCodeset;
       }
       final List<CodeType> codes = codeset.getCode();
-      for (final DetailProperties detail : detailTable.rows()) {
+      for (final DetailTable.TableRow detail : detailTable.rows()) {
         addCode(detail, codes, codeset);
       }
-    } else if (contextual instanceof Documentation) {
-      final Documentation documentation = (Documentation) contextual;
+    } else if (graphContext instanceof Documentation) {
+      final Documentation documentation = (Documentation) graphContext;
       final CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
       if (codeset != null) {
         Annotation annotation = codeset.getAnnotation();
@@ -955,16 +962,19 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           codeset.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
             CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && CODESET_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
+    else if (graphContext instanceof Context
+        && CODESET_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
+      final Context context = (Context) graphContext;
       CodeSetType codeset = repositoryAdapter.findCodesetByName(name, scenario);
+
       if (codeset != null) {
-        eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", name, scenario);
+        eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}",
+            name, scenario, context.getLine(), context.getCharPositionInLine());
       } else if (referenceRepositoryAdapter != null) {
         final CodeSetType refCodeset = referenceRepositoryAdapter.findCodesetByName(name, scenario);
         if (refCodeset != null) {
@@ -975,7 +985,7 @@ public class RepositoryBuilder {
       }
       if (codeset == null) {
         codeset = new CodeSetType();
-        int tag = textUtil.getTag(context.getKeys());
+        int tag = textUtil.getTag(keyContext.getKeys());
 
         if (tag == -1) {
           tag = assignId(name, scenario);
@@ -987,28 +997,29 @@ public class RepositoryBuilder {
           codeset.setScenario(scenario);
         }
 
-        final String type = context.getKeyValue("type");
+        final String type = keyContext.getKeyValue("type");
         if (type != null) {
           codeset.setType(type);
         } else {
-          eventLogger.error("Unknown CodeSet underlying datatype; name={0}", name);
+          eventLogger.error("Unknown CodeSet underlying datatype; name={0} at line {2} char {3}",
+              name, context.getLine(), context.getCharPositionInLine());
         }
         repositoryAdapter.addCodeset(codeset);
       }
     }
   }
 
-  private void addComponent(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+  private void addComponent(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
       addMembers(detailTable.rows(), members);
-    } else if (contextual instanceof Documentation) {
-      final Documentation detail = (Documentation) contextual;
+    } else if (graphContext instanceof Documentation) {
+      final Documentation detail = (Documentation) graphContext;
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       if (component != null) {
         Annotation annotation = component.getAnnotation();
@@ -1016,15 +1027,15 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           component.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
             COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.getTag(context.getKeys());
+    else if (graphContext instanceof Context
+        && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
+      int tag = textUtil.getTag(keyContext.getKeys());
       final ComponentType component = new ComponentType();
 
       ComponentType refComponent = null;
@@ -1043,12 +1054,12 @@ public class RepositoryBuilder {
         component.setScenario(scenario);
       }
 
-      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      final String abbrName = keyContext.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         component.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
+      final String category = keyContext.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         component.setCategory(category);
       }
@@ -1057,9 +1068,9 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addDatatype(final Contextual contextual, final Context context) {
-    if (contextual instanceof Detail) {
-      final Detail detail = (Detail) contextual;
+  private void addDatatype(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof Detail) {
+      final Detail detail = (Detail) graphContext;
       final String name = detail.getProperty("name");
       if (name != null) {
         io.fixprotocol._2020.orchestra.repository.Datatype datatype =
@@ -1084,7 +1095,7 @@ public class RepositoryBuilder {
           addDatatypeMapping(detail, standard, mappings);
         }
       } else {
-        eventLogger.error("Unknown name for datatype");
+        eventLogger.error("Unknown name for datatype at line {0} char {1}", detail.getLine(), detail.getCharPositionInLine());
       }
     }
   }
@@ -1140,9 +1151,9 @@ public class RepositoryBuilder {
     mappings.add(mapping);
   }
 
-  private void addField(final Contextual contextual, final Context context) {
-    if (contextual instanceof Detail) {
-      final Detail detail = (Detail) contextual;
+  private void addField(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof Detail) {
+      final Detail detail = (Detail) graphContext;
       final FieldType field = new FieldType();
       final Annotation annotation = new Annotation();
       for (final Entry<String, String> p : detail.getProperties()) {
@@ -1169,8 +1180,8 @@ public class RepositoryBuilder {
               final CodeSetType existingCodeset =
                   repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               if (existingCodeset != null) {
-                eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
-                    codesetScenario);
+                eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
+                    codesetScenario, detail.getLine(), detail.getCharPositionInLine());
                 codesetScenario = codesetScenario + "Dup";
               }
               createCodesetFromString(codesetName, codesetScenario, detail.getProperty("type"),
@@ -1276,10 +1287,10 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addFlow(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    if (contextual instanceof Documentation) {
-      final Documentation documentation = (Documentation) contextual;
+  private void addFlow(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    if (graphContext instanceof Documentation) {
+      final Documentation documentation = (Documentation) graphContext;
       final FlowType flow = repositoryAdapter.findFlowByName(name);
       if (flow != null) {
         Annotation annotation = flow.getAnnotation();
@@ -1287,12 +1298,12 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           flow.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
             FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
-    } else if (contextual instanceof DetailTable) {
-      final DetailTable table = (DetailTable) contextual;
+    } else if (graphContext instanceof DetailTable) {
+      final DetailTable table = (DetailTable) graphContext;
       final FlowType flow = repositoryAdapter.findFlowByName(name);
       if (flow != null) {
         table.rows().forEach(r -> {
@@ -1301,37 +1312,37 @@ public class RepositoryBuilder {
         });
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && FLOW_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
+    else if (graphContext instanceof Context
+        && FLOW_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final FlowType flow = new FlowType();
       flow.setName(name);
       repositoryAdapter.addFlow(flow);
     }
   }
 
-  private void addGroup(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+  private void addGroup(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
       final List<Object> members = group.getComponentRefOrGroupRefOrFieldRef();
-      final Iterator<? extends DetailProperties> rowIter = detailTable.rows().iterator();
+      final Iterator<? extends DetailTable.TableRow> rowIter = detailTable.rows().iterator();
       int skipRows = 1;
       if (rowIter.hasNext()) {
         if (!populateNumInGroup(rowIter.next(), group)) {
           skipRows = 0;
         }
       } else {
-        eventLogger.error("Unknown NumInGroup for group; name={0}", group.getName());
+        eventLogger.error("Unknown NumInGroup for group; name={0} at line {1} char {2}", group.getName(), detailTable.getLine(), detailTable.getCharPositionInLine());
       }
-      final Stream<? extends DetailProperties> stream = detailTable.rows().stream();
-      final List<? extends DetailProperties> remainingRows =
+      final Stream<? extends DetailTable.TableRow> stream = detailTable.rows().stream();
+      final List<? extends DetailTable.TableRow> remainingRows =
           stream.skip(skipRows).collect(Collectors.toList());
       addMembers(remainingRows, members);
-    } else if (contextual instanceof Documentation) {
-      final Documentation detail = (Documentation) contextual;
+    } else if (graphContext instanceof Documentation) {
+      final Documentation detail = (Documentation) graphContext;
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
       if (group != null) {
         Annotation annotation = group.getAnnotation();
@@ -1339,14 +1350,14 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           group.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
             GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && GROUP_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      int tag = textUtil.getTag(context.getKeys());
+    else if (graphContext instanceof Context
+        && GROUP_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
+      int tag = textUtil.getTag(keyContext.getKeys());
       final GroupType group = new GroupType();
 
       GroupType refComponent = null;
@@ -1365,12 +1376,12 @@ public class RepositoryBuilder {
         group.setScenario(scenario);
       }
 
-      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      final String abbrName = keyContext.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         group.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
+      final String category = keyContext.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         group.setCategory(category);
       }
@@ -1379,8 +1390,8 @@ public class RepositoryBuilder {
     }
   }
 
-  private void addMembers(final Iterable<? extends DetailProperties> properties, final List<Object> members)
-      throws IllegalArgumentException {
+  private void addMembers(final Iterable<? extends DetailTable.TableRow> properties,
+      final List<Object> members) throws IllegalArgumentException {
     properties.forEach(detail -> {
       final String tagStr = detail.getProperty("tag");
       if (tagStr != null && !tagStr.isEmpty()) {
@@ -1401,12 +1412,12 @@ public class RepositoryBuilder {
     });
   }
 
-  private void addMessage(final Contextual contextual, final Context context) {
-    final String name = context.getKey(NAME_POSITION);
-    final String scenario = scenarioOrDefault(context.getKeyValue(SCENARIO_KEYWORD));
+  private void addMessage(final GraphContext graphContext, final Context keyContext) {
+    final String name = keyContext.getKey(NAME_POSITION);
+    final String scenario = scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
       final MessageType message = repositoryAdapter.findMessageByName(name, scenario);
       if (message != null) {
 
@@ -1415,10 +1426,10 @@ public class RepositoryBuilder {
         final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
         addMembers(detailTable.rows(), members);
       } else {
-        eventLogger.error("Unknown message; name={0} scenario={1}", name, scenario);
+        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name, scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
       }
-    } else if (contextual instanceof Documentation) {
-      final Documentation detail = (Documentation) contextual;
+    } else if (graphContext instanceof Documentation) {
+      final Documentation detail = (Documentation) graphContext;
       final MessageType message = repositoryAdapter.findMessageByName(name, scenario);
       if (message != null) {
         Annotation annotation = message.getAnnotation();
@@ -1426,41 +1437,41 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           message.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
             MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       } else {
-        eventLogger.error("Unknown message; name={0} scenario={1}", name, scenario);
+        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name, scenario, detail.getLine(), detail.getCharPositionInLine());
       }
     } // make sure it's not a lower level heading
-    else if (contextual instanceof Context
-        && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) contextual).getKey(KEY_POSITION))) {
-      final int tag = textUtil.getTag(context.getKeys());
-      final String msgType = context.getKeyValue("type");
+    else if (graphContext instanceof Context
+        && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
+      final int tag = textUtil.getTag(keyContext.getKeys());
+      final String msgType = keyContext.getKeyValue("type");
       final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
-      final String flow = context.getKeyValue(FLOW_KEYWORD);
+      final String flow = keyContext.getKeyValue(FLOW_KEYWORD);
       if (flow != null) {
         message.setFlow(flow);
       }
 
-      final String abbrName = context.getKeyValue(ABBRNAME_KEYWORD);
+      final String abbrName = keyContext.getKeyValue(ABBRNAME_KEYWORD);
       if (abbrName != null) {
         message.setAbbrName(abbrName);
       }
 
-      final String category = context.getKeyValue(CATEGORIES_KEYWORD);
+      final String category = keyContext.getKeyValue(CATEGORIES_KEYWORD);
       if (category != null) {
         message.setCategory(category);
       }
     }
   }
 
-  private void addMessageResponses(final Contextual contextual, final Context context) {
-    if (contextual instanceof DetailTable) {
-      final Context messageContext = context.getParent();
+  private void addMessageResponses(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof DetailTable) {
+      final Context messageContext = keyContext.getParent();
       if (messageContext != null) {
         final String messageName = messageContext.getKeyValue(MESSAGE_KEYWORD);
-        final int tag = textUtil.getTag(context.getKeys());
+        final int tag = textUtil.getTag(keyContext.getKeys());
         final String scenario = scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
         final String msgType = messageContext.getKeyValue("type");
 
@@ -1468,7 +1479,7 @@ public class RepositoryBuilder {
         final MessageType.Responses responses = new MessageType.Responses();
         message.setResponses(responses);
         final List<ResponseType> responseList = responses.getResponse();
-        final DetailTable detailTable = (DetailTable) context;
+        final DetailTable detailTable = (DetailTable) keyContext;
         detailTable.rows().forEach(detail -> {
           final ResponseType response = new ResponseType();
           final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
@@ -1496,14 +1507,14 @@ public class RepositoryBuilder {
         });
       } else {
         eventLogger.error("Unknown message for responses; keys={0}",
-            String.join(" ", context.getKeys()));
+            String.join(" ", keyContext.getKeys()));
       }
     }
   }
 
-  private void addMetadata(final Contextual contextual, final Context context) {
-    if (contextual instanceof DetailTable) {
-      final DetailTable detailTable = (DetailTable) contextual;
+  private void addMetadata(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof DetailTable) {
+      final DetailTable detailTable = (DetailTable) graphContext;
       detailTable.rows().forEach(detail -> {
         final String term = detail.getProperty("term");
         final String value = detail.getProperty("value");
@@ -1511,8 +1522,8 @@ public class RepositoryBuilder {
           repositoryAdapter.setMetadata(term, value);
         }
       });
-    } else if (contextual instanceof Documentation) {
-      final Documentation detail = (Documentation) contextual;
+    } else if (graphContext instanceof Documentation) {
+      final Documentation detail = (Documentation) graphContext;
       final Repository repository = repositoryAdapter.getRepository();
       if (repository != null) {
         Annotation annotation = repository.getAnnotation();
@@ -1520,21 +1531,21 @@ public class RepositoryBuilder {
           annotation = new Annotation();
           repository.setAnnotation(annotation);
         }
-        final String parentKey = contextual.getParent().getKey(KEY_POSITION);
+        final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
             annotation);
       }
     } else {
-      final String name = String.join(" ", context.getKeys());
+      final String name = String.join(" ", keyContext.getKeys());
       repositoryAdapter.setName(name);
-      final String version = context.getKeyValue("version");
+      final String version = keyContext.getKeyValue("version");
       repositoryAdapter.setVersion(Objects.requireNonNullElse(version, "1.0"));
     }
   }
 
-  private void addSection(final Contextual contextual, final Context keyContext) {
-    if (contextual instanceof Detail) {
-      final Detail detail = (Detail) contextual;
+  private void addSection(final GraphContext graphContext, final Context keyContext) {
+    if (graphContext instanceof Detail) {
+      final Detail detail = (Detail) graphContext;
       final SectionType section = new SectionType();
       final Annotation annotation = new Annotation();
       for (final Entry<String, String> p : detail.getProperties()) {
@@ -1593,8 +1604,8 @@ public class RepositoryBuilder {
     return idGenerator.generate(seeds);
   }
 
-  private void createCodesetFromString(final String codesetName, final String scenario, final String type,
-                                       final String valueString) {
+  private void createCodesetFromString(final String codesetName, final String scenario,
+      final String type, final String valueString) {
     final CodeSetType codeset = new CodeSetType();
     codeset.setId(BigInteger.valueOf(assignId(codesetName, scenario)));
     codeset.setName(codesetName);
@@ -1635,12 +1646,12 @@ public class RepositoryBuilder {
     }
   }
 
-  private Context getKeyContext(final Contextual contextual) {
+  private Context getKeyContext(final GraphContext graphContext) {
     Context context = null;
-    if (contextual instanceof Context) {
-      context = (Context) contextual;
+    if (graphContext instanceof Context) {
+      context = (Context) graphContext;
     } else {
-      context = contextual.getParent();
+      context = graphContext.getParent();
     }
     while (context != null) {
       final String key = context.getKey(KEY_POSITION);
@@ -1653,7 +1664,8 @@ public class RepositoryBuilder {
     return context;
   }
 
-  private MessageType getOrAddMessage(final String name, final String scenario, int tag, String msgType) {
+  private MessageType getOrAddMessage(final String name, final String scenario, int tag,
+      String msgType) {
     final String scenarioOrDefault = scenarioOrDefault(scenario);
     MessageType message = repositoryAdapter.findMessageByName(name, scenarioOrDefault);
     if (message == null) {
@@ -1712,7 +1724,7 @@ public class RepositoryBuilder {
     }
   }
 
-  private ComponentRefType populateComponentRef(final DetailProperties detail) {
+  private ComponentRefType populateComponentRef(final DetailTable.TableRow detail) {
     final ComponentRefType componentRefType = new ComponentRefType();
 
     String name = null;
@@ -1811,7 +1823,7 @@ public class RepositoryBuilder {
         if (isPresence(word)) {
           presence = stringToPresence(word);
         } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          final String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
           if (!expression.isEmpty()) {
             final ComponentRuleType rule = new ComponentRuleType();
             rule.setPresence(presence);
@@ -1819,7 +1831,7 @@ public class RepositoryBuilder {
             rules.add(rule);
           }
           break;
-        } 
+        }
       }
     }
     if (presence != PresenceT.OPTIONAL) {
@@ -1833,7 +1845,7 @@ public class RepositoryBuilder {
     return componentRefType;
   }
 
-  private FieldRefType populateFieldRef(final DetailProperties detail) {
+  private FieldRefType populateFieldRef(final DetailTable.TableRow detail) {
     final FieldRefType fieldRefType = new FieldRefType();
     String name = null;
     String presenceString = null;
@@ -1954,7 +1966,7 @@ public class RepositoryBuilder {
         if (isPresence(word)) {
           presence = stringToPresence(word);
         } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          final String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
           if (!expression.isEmpty()) {
             final FieldRuleType rule = new FieldRuleType();
             rule.setPresence(presence);
@@ -1962,8 +1974,8 @@ public class RepositoryBuilder {
             rules.add(rule);
             presence = PresenceT.OPTIONAL;
           } else {
-            eventLogger.error("Missing expression for field rule; id={0, number, ###}",
-                fieldRefType.getId());
+            eventLogger.error("Missing expression for field rule; id={0, number, ###} at line {1} char {2}",
+                fieldRefType.getId(), detail.getLine(), detail.getCharPositionInLine());
           }
         } else if (word.equalsIgnoreCase(ASSIGN_KEYWORD)) {
           if (valueString != null && !valueString.isEmpty()) {
@@ -1973,8 +1985,8 @@ public class RepositoryBuilder {
                   .setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
             }
           } else {
-            eventLogger.error("Missing value for assignment; id={0, number, ###}",
-                fieldRefType.getId());
+            eventLogger.error("Missing value for assignment; id={0, number, ###} at line {1} char {2}",
+                fieldRefType.getId(), detail.getLine(), detail.getCharPositionInLine());
           }
         }
       }
@@ -1988,8 +2000,8 @@ public class RepositoryBuilder {
         final CodeSetType existingCodeset =
             repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
         if (existingCodeset != null) {
-          eventLogger.error("Duplicate definitions of codeset {0} scenario {1}", codesetName,
-              codesetScenario);
+          eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
+              codesetScenario, detail.getLine(), detail.getCharPositionInLine());
           codesetScenario = codesetScenario + "Dup";
         }
         createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
@@ -2002,7 +2014,7 @@ public class RepositoryBuilder {
       eventLogger.error("Missing value for constant presence field; id={0, number, ###}",
           fieldRefType.getId());
     }
-    
+
     if (presence != PresenceT.OPTIONAL) {
       fieldRefType.setPresence(presence);
     }
@@ -2088,7 +2100,7 @@ public class RepositoryBuilder {
       groupType = referenceRepositoryAdapter.findGroupByName(name, scenario);
       if (groupType != null) {
         groupRefType.setId(groupType.getId());
-        buildSteps.add(new GroupBuilder(name, scenario, 0, maxComponentDepth ));
+        buildSteps.add(new GroupBuilder(name, scenario, 0, maxComponentDepth));
       }
     }
     if (groupType == null) {
@@ -2108,7 +2120,7 @@ public class RepositoryBuilder {
         if (isPresence(word)) {
           presence = stringToPresence(word);
         } else if (word.equalsIgnoreCase(WHEN_KEYWORD)) {
-          String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
+          final String expression = MarkdownUtil.markdownLiteralToPlainText(presenceString);
           if (!expression.isEmpty()) {
             final ComponentRuleType rule = new ComponentRuleType();
             rule.setPresence(presence);
@@ -2116,7 +2128,7 @@ public class RepositoryBuilder {
             rules.add(rule);
           }
           break;
-        } 
+        }
       }
     }
     if (presence != PresenceT.OPTIONAL) {
@@ -2130,7 +2142,7 @@ public class RepositoryBuilder {
     return groupRefType;
   }
 
-  private boolean populateNumInGroup(final DetailProperties detail, final GroupType group) {
+  private boolean populateNumInGroup(final DetailTable.TableRow detail, final GroupType group) {
     FieldType fieldType = null;
     Integer id = detail.getIntProperty("id");
     if (id == null) {
@@ -2151,8 +2163,8 @@ public class RepositoryBuilder {
     }
     if ((fieldType != null) && !"NumInGroup".equals(fieldType.getType())) {
       eventLogger.error(
-          "First group field not NumInGroup datatype; id={0, number, ###} in group={1}",
-          fieldType.getId(), group.getName());
+          "First group field not NumInGroup datatype; id={0, number, ###} in group={1} at line {2} char {3}",
+          fieldType.getId(), group.getName(), detail.getLine(), detail.getCharPositionInLine());
       return false;
     }
 

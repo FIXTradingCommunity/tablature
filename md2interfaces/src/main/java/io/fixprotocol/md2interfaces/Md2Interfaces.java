@@ -45,23 +45,23 @@ public class Md2Interfaces {
       return new Md2Interfaces(this);
     }
 
-    public Builder eventFile(String eventFile) {
+    public Builder eventFile(final String eventFile) {
       this.eventFile = eventFile;
       return this;
     }
 
-    public Builder inputFile(String inputFile) {
+    public Builder inputFile(final String inputFile) {
       inputFiles(List.of(inputFile));
       return this;
     }
 
-    public Builder inputFiles(List<String> inputFiles) {
+    public Builder inputFiles(final List<String> inputFiles) {
       this.inputFiles.clear();
       this.inputFiles.addAll(inputFiles);
       return this;
     }
 
-    public Builder outputFile(String outputFile) {
+    public Builder outputFile(final String outputFile) {
       this.outputFile = outputFile;
       return this;
     }
@@ -85,12 +85,12 @@ public class Md2Interfaces {
    * @param args command line arguments
    *
    */
-  public static void main(String[] args) {
+  public static void main(final String[] args) {
     final Md2Interfaces md2interfaces = parseArgs(args).build();
     md2interfaces.generate();
   }
 
-  private static Builder parseArgs(String[] args) {
+  private static Builder parseArgs(final String[] args) {
     final Options options = new Options();
     options.addOption(Option.builder("o").desc("path of output interfaces file (required)")
         .longOpt("output").numberOfArgs(1).required().build());
@@ -100,7 +100,7 @@ public class Md2Interfaces {
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
 
     final DefaultParser parser = new DefaultParser();
-    CommandLine cmd;
+    final CommandLine cmd;
 
     final Builder builder = new Builder();
 
@@ -126,7 +126,7 @@ public class Md2Interfaces {
     }
   }
 
-  private static void showHelp(Options options) {
+  private static void showHelp(final Options options) {
     final HelpFormatter formatter = new HelpFormatter();
     formatter.printHelp("Md2Interfaces  [options] <input-file>...", options);
   }
@@ -137,7 +137,7 @@ public class Md2Interfaces {
 
   private final String outputFile;
 
-  private Md2Interfaces(Builder builder) {
+  private Md2Interfaces(final Builder builder) {
     this.inputFiles = builder.inputFiles;
     this.outputFile = builder.outputFile;
     this.eventFile = builder.eventFile;
@@ -151,7 +151,7 @@ public class Md2Interfaces {
     }
   }
 
-  void generate(List<String> inputFiles, String outputFilename, String eventFilename)
+  void generate(final List<String> inputFiles, final String outputFilename, final String eventFilename)
       throws Exception {
     Objects.requireNonNull(inputFiles, "Input File is missing");
     Objects.requireNonNull(outputFile, "Output File is missing");
@@ -170,7 +170,7 @@ public class Md2Interfaces {
 
     final InterfacesBuilder interfacesBuilder = new InterfacesBuilder(jsonOutputStream);
 
-    try (OutputStream outputStream = new FileOutputStream(outputFile)) {
+    try (final OutputStream outputStream = new FileOutputStream(outputFile)) {
 
       for (final String inputFile : inputFiles) {
         appendInput(inputFile, interfacesBuilder);
@@ -183,7 +183,7 @@ public class Md2Interfaces {
     }
   }
 
-  private void appendInput(String filePath, InterfacesBuilder interfacesBuilder)
+  private void appendInput(final String filePath, final InterfacesBuilder interfacesBuilder)
       throws IOException {
     logger.info("Md2Interfaces opening file {}", filePath);
     final InputStream inputStream = new FileInputStream(filePath);

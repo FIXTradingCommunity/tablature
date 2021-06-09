@@ -233,7 +233,7 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(errors.contains("Duplicate definitions of codeset"));
+    assertTrue(errors.contains("Duplicate definition of codeset"));
    }
   @Test // ODOC-66
   void duplicateCodesets() throws Exception {
@@ -265,7 +265,7 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(errors.contains("Duplicate definitions of codeset"));
+    assertTrue(errors.contains("Duplicate definition of codeset"));
    }
   
   @Test // ODOC-31
