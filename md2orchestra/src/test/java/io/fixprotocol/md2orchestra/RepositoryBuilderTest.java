@@ -111,7 +111,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("invalid metadata term version"));
   }
-
+  
   @Test //ODOC-20
   void constant() throws Exception {
     String text =
@@ -134,7 +134,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(xml.contains("value=\"8\""));
   }
-  
+
   @Test // ODOC-77
   void documentationColumns() throws Exception {
     String text =
@@ -235,6 +235,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Duplicate definition of codeset"));
    }
+  
   @Test // ODOC-66
   void duplicateCodesets() throws Exception {
     String text =
@@ -267,7 +268,6 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Duplicate definition of codeset"));
    }
-  
   @Test // ODOC-31
   void emptyComponent() throws Exception {
     String text =
@@ -632,6 +632,31 @@ class RepositoryBuilderTest {
     // String errors = jsonOutputStream.toString();
     // System.out.println(errors);
     assertTrue(xml.contains("name=\"InstrumentParties\""));
+  }
+  
+  @Test // ODOC-35
+  void preserveCodeIds() throws Exception {
+    String text =
+        "### Codeset OrdTypeCodeset type char\n"
+        + "\n"
+        + "| Name | Value |\n"
+        + "|--------|-------|\n"
+        + "| Market | 1 |\n"
+        + "| Limit | 2 |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("id=\"40001\" "));
+    assertTrue(xml.contains("id=\"40002\" "));
   }
   
   @Test //ODOC-45

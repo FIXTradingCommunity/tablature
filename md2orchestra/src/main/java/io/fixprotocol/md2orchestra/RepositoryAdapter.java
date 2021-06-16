@@ -35,6 +35,7 @@ import io.fixprotocol._2020.orchestra.repository.Categories;
 import io.fixprotocol._2020.orchestra.repository.CategoryType;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeSets;
+import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
 import io.fixprotocol._2020.orchestra.repository.Components;
 import io.fixprotocol._2020.orchestra.repository.Datatype;
@@ -47,6 +48,8 @@ import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
+import io.fixprotocol._2020.orchestra.repository.PresenceT;
+import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.Sections;
@@ -76,7 +79,7 @@ class RepositoryAdapter {
 
     @Override
     public String getPreferredPrefix(final String namespaceUri, final String suggestion,
-                                     final boolean requirePrefix) {
+        final boolean requirePrefix) {
       switch (namespaceUri) {
         case "http://fixprotocol.io/2020/orchestra/repository":
           return "fixr";
@@ -90,6 +93,8 @@ class RepositoryAdapter {
     }
   }
 
+  static final String DEFAULT_SCENARIO = "base";
+
   // sorted array of valid Dublin Core Terms
   private static final String[] DC_TERMS = new String[] {"accessRights", "accrualMethod",
       "accrualPeriodicity", "accrualPolicy", "abstract", "alternative", "audience", "avaliable",
@@ -101,9 +106,60 @@ class RepositoryAdapter {
       "publisher", "references", "relation", "replaces", "requires", "rights", "rightsHolder",
       "source", "spatial", "subject", "tableOfContents", "temporal", "title", "type", "valid"};
 
+  static String getPurpose(final String word) {
+    // May or may not match an enumerated value, but force case for all
+    return word.toUpperCase();
+  }
+
+  static boolean isDocumentationKey(final String word) {
+    for (final PurposeEnum purpose : PurposeEnum.values()) {
+      if (purpose.value().compareToIgnoreCase(word) == 0) {
+        return true;
+      }
+    }
+    return (RepositoryBuilder.DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0)
+        || (RepositoryBuilder.DESCRIPTION_KEYWORD.compareToIgnoreCase(word) == 0);
+  }
+
+  static boolean isPresence(final String word) {
+    if (word == null || word.isEmpty()) {
+      return false;
+    } else {
+      final String lcWord = word.toLowerCase();
+      return "required".startsWith(lcWord) || "optional".startsWith(lcWord)
+          || "forbidden".startsWith(lcWord) || "ignored".startsWith(lcWord)
+          || "constant".startsWith(lcWord);
+    }
+  }
+
+  static String scenarioOrDefault(final String scenario) {
+    return (scenario != null && !scenario.isEmpty()) ? scenario
+        : RepositoryAdapter.DEFAULT_SCENARIO;
+  }
+
+  static PresenceT stringToPresence(final String word) {
+    if (word == null || word.isEmpty()) {
+      return PresenceT.OPTIONAL;
+    } else {
+      final String lcWord = word.toLowerCase();
+      if ("required".startsWith(lcWord)) {
+        return PresenceT.REQUIRED;
+      } else if ("forbidden".startsWith(lcWord)) {
+        return PresenceT.FORBIDDEN;
+      } else if ("ignored".startsWith(lcWord)) {
+        return PresenceT.IGNORED;
+      } else if ("constant".startsWith(lcWord)) {
+        return PresenceT.CONSTANT;
+      } else {
+        return PresenceT.OPTIONAL;
+      }
+    }
+  }
+
   static String substitute(final String markdown, final String token, final String replacement) {
     return markdown.replace(token, replacement);
   }
+
 
   private final EventListener eventLogger;
 
@@ -126,7 +182,6 @@ class RepositoryAdapter {
     actors.getActorOrFlow().add(actor);
   }
 
-
   void addAppinfo(final String markdown, final String purpose, final Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final Appinfo appinfo = new Appinfo();
@@ -139,7 +194,7 @@ class RepositoryAdapter {
   }
 
   void addAppinfo(final String markdown, final String paragraphDelmiter, final String purpose,
-                  final Annotation annotation) {
+      final Annotation annotation) {
     addAppinfo(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
@@ -184,7 +239,8 @@ class RepositoryAdapter {
     for (int i = 0; i < elements.size(); i++) {
       final Object object = elements.get(i);
       if (object instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        final io.fixprotocol._2020.orchestra.repository.Documentation olddoc = (Documentation) object;
+        final io.fixprotocol._2020.orchestra.repository.Documentation olddoc =
+            (Documentation) object;
         if ((olddoc.getPurpose() != null && olddoc.getPurpose().equals(purpose))
             || (olddoc.getPurpose() == null && purpose == null)) {
           elements.set(i, documentation);
@@ -200,7 +256,7 @@ class RepositoryAdapter {
   }
 
   void addDocumentation(final String markdown, final String paragraphDelmiter, final String purpose,
-                        final Annotation annotation) {
+      final Annotation annotation) {
     addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
   }
 
@@ -258,11 +314,13 @@ class RepositoryAdapter {
     return field;
   }
 
+
   GroupType copyGroup(final GroupType source) {
     final GroupType group = (GroupType) source.clone();
     repository.getGroups().getGroup().add(group);
     return group;
   }
+
 
   void createRepository() {
     repository = new Repository();
@@ -282,7 +340,7 @@ class RepositoryAdapter {
       for (final Object object : objects) {
         if (object instanceof ActorType) {
           final ActorType actor = (ActorType) object;
-          if (actor.getName().equals(name)) {
+          if (actor.getName().equalsIgnoreCase(name)) {
             return actor;
           }
         }
@@ -291,10 +349,26 @@ class RepositoryAdapter {
     return null;
   }
 
+  CodeType findCodeByValue(final String codesetName, final String scenario, final String value) {
+    CodeSetType codeset = findCodesetByName(codesetName, scenario);
+    if (codeset == null) {
+      return null;
+    } else {
+      List<CodeType> codes = codeset.getCode();
+      for (CodeType code : codes) {
+        if (code.getValue().equals(value)) {
+          return code;
+        }
+      }
+      return null;
+    }
+  }
+
   CodeSetType findCodesetByName(final String name, final String scenario) {
     final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet();
     for (final CodeSetType codeset : codesets) {
-      if (codeset.getName().equals(name) && codeset.getScenario().equals(scenario)) {
+      if (codeset.getName().equalsIgnoreCase(name)
+          && scenarioOrDefault(codeset.getScenario()).equalsIgnoreCase(scenario)) {
         return codeset;
       }
     }
@@ -304,30 +378,30 @@ class RepositoryAdapter {
   ComponentType findComponentByName(final String name, final String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
-      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
+      if (component.getName().equalsIgnoreCase(name)
+          && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }
     }
     return null;
   }
-
 
   ComponentType findComponentByTag(final int tag, final String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
-      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
+      if (component.getId().intValue() == tag
+          && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }
     }
     return null;
   }
-
 
   io.fixprotocol._2020.orchestra.repository.Datatype findDatatypeByName(final String name) {
     final List<io.fixprotocol._2020.orchestra.repository.Datatype> datatypes =
         repository.getDatatypes().getDatatype();
     for (final io.fixprotocol._2020.orchestra.repository.Datatype datatype : datatypes) {
-      if (datatype.getName().equals(name)) {
+      if (datatype.getName().equalsIgnoreCase(name)) {
         return datatype;
       }
     }
@@ -337,7 +411,8 @@ class RepositoryAdapter {
   FieldType findFieldByName(final String name, final String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
-      if (field.getName().equals(name) && field.getScenario().equals(scenario)) {
+      if (field.getName().equalsIgnoreCase(name)
+          && scenarioOrDefault(field.getScenario()).equalsIgnoreCase(scenario)) {
         return field;
       }
     }
@@ -347,7 +422,8 @@ class RepositoryAdapter {
   FieldType findFieldByTag(final int tag, final String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
-      if (field.getId().intValue() == tag && field.getScenario().equals(scenario)) {
+      if (field.getId().intValue() == tag
+          && scenarioOrDefault(field.getScenario()).equalsIgnoreCase(scenario)) {
         return field;
       }
     }
@@ -361,7 +437,7 @@ class RepositoryAdapter {
       for (final Object object : objects) {
         if (object instanceof FlowType) {
           final FlowType flow = (FlowType) object;
-          if (flow.getName().equals(name)) {
+          if (flow.getName().equalsIgnoreCase(name)) {
             return flow;
           }
         }
@@ -373,7 +449,8 @@ class RepositoryAdapter {
   GroupType findGroupByName(final String name, final String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
-      if (component.getName().equals(name) && component.getScenario().equals(scenario)) {
+      if (component.getName().equalsIgnoreCase(name)
+          && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }
     }
@@ -383,7 +460,8 @@ class RepositoryAdapter {
   GroupType findGroupByTag(final int tag, final String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
-      if (component.getId().intValue() == tag && component.getScenario().equals(scenario)) {
+      if (component.getId().intValue() == tag
+          && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }
     }
@@ -393,7 +471,8 @@ class RepositoryAdapter {
   MessageType findMessageByName(final String name, final String scenario) {
     final List<MessageType> messages = repository.getMessages().getMessage();
     for (final MessageType message : messages) {
-      if (name.equals(message.getName()) && message.getScenario().equals(scenario)) {
+      if (name.equalsIgnoreCase(message.getName())
+          && scenarioOrDefault(message.getScenario()).equalsIgnoreCase(scenario)) {
         return message;
       }
     }
@@ -405,7 +484,7 @@ class RepositoryAdapter {
     for (final Object object : objects) {
       if (object instanceof StateMachineType) {
         final StateMachineType statemachine = (StateMachineType) object;
-        if (statemachine.getName().equals(name)) {
+        if (statemachine.getName().equalsIgnoreCase(name)) {
           return statemachine;
         }
       }
