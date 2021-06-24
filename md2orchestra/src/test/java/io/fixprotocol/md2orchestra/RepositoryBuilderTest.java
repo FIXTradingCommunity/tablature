@@ -384,7 +384,7 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(xml.contains("name=\"SecurityStatusCodeset\""));
+    assertTrue(xml.contains("name=\"SecurityStatusCodeSet\""));
     assertTrue(xml.contains("type=\"SecurityStatusCodeSet\""));
     assertFalse(errors.contains("Malformed inline code"));
   }
@@ -657,6 +657,34 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(xml.contains("id=\"40001\" "));
     assertTrue(xml.contains("id=\"40002\" "));
+  }
+  
+  @Test // ODOC-110
+  void preserveCodeIds2() throws Exception {
+    String text =
+        "## Group Parties\n"
+        + "\n"
+        + "| Name | Tag | Presence | Values |\n"
+        + "|----------------|----:|-----------|--------|\n"
+        + "| NoParties | 453 | | |\n"
+        + "| PartyID | | required | |\n"
+        + "| PartyIDSource | | | |\n"
+        + "| PartyRole | | required | 1=ExecutingFirm 2=BrokerOfCredit |";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("type=\"int\" "));
+    assertTrue(xml.contains("id=\"452001\" "));
+    assertTrue(xml.contains("id=\"452002\" "));
   }
   
   @Test //ODOC-45

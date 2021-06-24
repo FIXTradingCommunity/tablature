@@ -354,14 +354,18 @@ class RepositoryAdapter {
     if (codeset == null) {
       return null;
     } else {
-      List<CodeType> codes = codeset.getCode();
-      for (CodeType code : codes) {
-        if (code.getValue().equals(value)) {
-          return code;
-        }
-      }
-      return null;
+      return findCodeByValue(codeset, value);
     }
+  }
+
+  CodeType findCodeByValue(CodeSetType codeset, final String value) {
+    List<CodeType> codes = codeset.getCode();
+    for (CodeType code : codes) {
+      if (code.getValue().equals(value)) {
+        return code;
+      }
+    }
+    return null;
   }
 
   CodeSetType findCodesetByName(final String name, final String scenario) {

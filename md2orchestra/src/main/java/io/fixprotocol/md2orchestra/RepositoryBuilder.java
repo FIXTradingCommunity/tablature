@@ -60,18 +60,20 @@ import io.fixprotocol._2020.orchestra.repository.StateType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
 import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.Context;
-import io.fixprotocol.md.event.GraphContext;
 import io.fixprotocol.md.event.Detail;
 import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentParser;
 import io.fixprotocol.md.event.Documentation;
+import io.fixprotocol.md.event.GraphContext;
 import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md.util.AssociativeSet;
+import io.fixprotocol.md2orchestra.util.IdGenerator;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
-import io.fixprotocol.md2orchestra.util.IdGenerator;
+
+import static io.fixprotocol.md2orchestra.RepositoryAdapter.DEFAULT_SCENARIO;
 
 public class RepositoryBuilder {
   private class ComponentBuilder implements ElementBuilder {
@@ -174,13 +176,13 @@ public class RepositoryBuilder {
       }
 
       // if not found retry with base scenario
-      if (fieldType == null && !RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)
+      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)
           && referenceRepositoryAdapter != null) {
         FieldType baseFieldType = null;
         if (tag > 0) {
-          baseFieldType = referenceRepositoryAdapter.findFieldByTag(tag, RepositoryAdapter.DEFAULT_SCENARIO);
+          baseFieldType = referenceRepositoryAdapter.findFieldByTag(tag, DEFAULT_SCENARIO);
         } else {
-          baseFieldType = referenceRepositoryAdapter.findFieldByName(name, RepositoryAdapter.DEFAULT_SCENARIO);
+          baseFieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
         }
         if (baseFieldType != null) {
           fieldType = new FieldType();
@@ -201,7 +203,7 @@ public class RepositoryBuilder {
       } else {
         fieldType = new FieldType();
         fieldType.setName(Objects.requireNonNullElseGet(name, () -> "Field" + tag));
-        if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
           fieldType.setScenario(scenario);
         }
         if (tag > 0) {
@@ -239,8 +241,8 @@ public class RepositoryBuilder {
       final String scenario = fieldRef.getScenario();
       FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
       // if not found retry with base scenario
-      if (fieldType == null && !RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
-        fieldType = repositoryAdapter.findFieldByName(name, RepositoryAdapter.DEFAULT_SCENARIO);
+      if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)) {
+        fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
       }
       if (fieldType != null) {
         fieldRef.setId(fieldType.getId());
@@ -997,7 +999,7 @@ public class RepositoryBuilder {
         codeset.setId(BigInteger.valueOf(tag));
 
         codeset.setName(name);
-        if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
           codeset.setScenario(scenario);
         }
 
@@ -1054,7 +1056,7 @@ public class RepositoryBuilder {
       }
       component.setId(BigInteger.valueOf(tag));
       component.setName(name);
-      if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+      if (!DEFAULT_SCENARIO.equals(scenario)) {
         component.setScenario(scenario);
       }
 
@@ -1179,17 +1181,19 @@ public class RepositoryBuilder {
           case "values":
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
-              final String codesetName = detail.getProperty("name") + "Codeset";
+              final String codesetName = detail.getProperty("name") + "CodeSet";
               String codesetScenario = field.getScenario();
-              final CodeSetType existingCodeset =
+              CodeSetType existingCodeset =
                   repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               if (existingCodeset != null) {
                 eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
                     codesetScenario, detail.getLine(), detail.getCharPositionInLine());
                 codesetScenario = codesetScenario + "Dup";
+              } else if (referenceRepositoryAdapter != null) {
+                  existingCodeset = referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               }
               createCodesetFromString(codesetName, codesetScenario, detail.getProperty("type"),
-                  values);
+                  values, existingCodeset);
               field.setType(codesetName);
             }
             break;
@@ -1376,7 +1380,7 @@ public class RepositoryBuilder {
       }
       group.setId(BigInteger.valueOf(tag));
       group.setName(name);
-      if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+      if (!DEFAULT_SCENARIO.equals(scenario)) {
         group.setScenario(scenario);
       }
 
@@ -1491,7 +1495,7 @@ public class RepositoryBuilder {
           messageRef.setName(detail.getProperty("name"));
 
           final String refScenario = detail.getProperty(SCENARIO_KEYWORD);
-          if (refScenario != null && !RepositoryAdapter.DEFAULT_SCENARIO.equals(refScenario)) {
+          if (refScenario != null && !DEFAULT_SCENARIO.equals(refScenario)) {
             messageRef.setScenario(refScenario);
           }
 
@@ -1609,14 +1613,20 @@ public class RepositoryBuilder {
   }
 
   private void createCodesetFromString(final String codesetName, final String scenario,
-      final String type, final String valueString) {
+      final String type, final String valueString, CodeSetType referenceCodeset) {
     final CodeSetType codeset = new CodeSetType();
-    codeset.setId(BigInteger.valueOf(assignId(codesetName, scenario)));
+    if (referenceCodeset != null) {
+      codeset.setId(referenceCodeset.getId());
+    } else {
+      codeset.setId(BigInteger.valueOf(assignId(codesetName, scenario)));
+    }
     codeset.setName(codesetName);
-    if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+    if (!DEFAULT_SCENARIO.equals(scenario)) {
       codeset.setScenario(scenario);
     }
-    if (type != null) {
+    if (referenceCodeset != null) {
+      codeset.setType(referenceCodeset.getType());
+    } else if (type != null) {
       codeset.setType(type);
     } else {
       eventLogger.warn("Unknown codeset datatype; name={0} scenario={1}", codesetName, scenario);
@@ -1628,10 +1638,19 @@ public class RepositoryBuilder {
     while (codeMatcher.find()) {
       matchOffset = codeMatcher.end();
       final CodeType code = new CodeType();
-      code.setValue(codeMatcher.group(1));
+      final String value = codeMatcher.group(1);
+      code.setValue(value);
       final String name = codeMatcher.group(2).replaceAll("\"", "");
       code.setName(name);
-      code.setId(BigInteger.valueOf(assignId(codesetName, name, scenario)));
+      if (referenceCodeset != null) {
+        CodeType referenceCode = repositoryAdapter.findCodeByValue(referenceCodeset, value);
+        if (referenceCode != null) {
+          code.setId(referenceCode.getId());
+        }
+      }
+      if (code.getId() == null) {
+        code.setId(BigInteger.valueOf(assignId(codesetName, name, scenario)));
+      }
       codes.add(code);
     }
 
@@ -1687,7 +1706,7 @@ public class RepositoryBuilder {
       }
       message.setId(BigInteger.valueOf(tag));
       message.setName(name);
-      if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+      if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
         message.setScenario(scenarioOrDefault);
       }
       if (msgType == null && refMessage != null) {
@@ -1706,7 +1725,7 @@ public class RepositoryBuilder {
     final ComponentRefType componentRefType = new ComponentRefType();
 
     String name = null;
-    String scenario = RepositoryAdapter.DEFAULT_SCENARIO;
+    String scenario = DEFAULT_SCENARIO;
     String presenceString = null;
     for (final Entry<String, String> p : detail.getProperties()) {
       final String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
@@ -1816,7 +1835,7 @@ public class RepositoryBuilder {
       componentRefType.setPresence(presence);
     }
 
-    if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+    if (!DEFAULT_SCENARIO.equals(scenario)) {
       componentRefType.setScenario(scenario);
     }
 
@@ -1973,16 +1992,18 @@ public class RepositoryBuilder {
     if (valueString != null && !valueString.isEmpty()) {
       final Matcher codeMatcher = codePattern.matcher(valueString);
       if (codeMatcher.find()) {
-        final String codesetName = name + "Codeset";
+        final String codesetName = name + "CodeSet";
         String codesetScenario = scenario;
-        final CodeSetType existingCodeset =
+        CodeSetType existingCodeset =
             repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
         if (existingCodeset != null) {
           eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
               codesetScenario, detail.getLine(), detail.getCharPositionInLine());
           codesetScenario = codesetScenario + "Dup";
+        } else if (referenceRepositoryAdapter != null) {
+          existingCodeset = referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
         }
-        createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString);
+        createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString, existingCodeset);
       } else {
         presence = PresenceT.CONSTANT;
         fieldRefType.setPresence(presence);
@@ -2004,7 +2025,7 @@ public class RepositoryBuilder {
     final GroupRefType groupRefType = new GroupRefType();
 
     String name = null;
-    String scenario = RepositoryAdapter.DEFAULT_SCENARIO;
+    String scenario = DEFAULT_SCENARIO;
     String presenceString = null;
     for (final Entry<String, String> p : detail.getProperties()) {
       final String key = headings.getSecondOrDefault(p.getKey(), p.getKey().toLowerCase());
@@ -2113,7 +2134,7 @@ public class RepositoryBuilder {
       groupRefType.setPresence(presence);
     }
 
-    if (!RepositoryAdapter.DEFAULT_SCENARIO.equals(scenario)) {
+    if (!DEFAULT_SCENARIO.equals(scenario)) {
       groupRefType.setScenario(scenario);
     }
 
@@ -2127,16 +2148,16 @@ public class RepositoryBuilder {
       id = detail.getIntProperty("tag");
     }
     if (id != null) {
-      fieldType = repositoryAdapter.findFieldByTag(id, RepositoryAdapter.DEFAULT_SCENARIO);
+      fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
       if (fieldType == null && referenceRepositoryAdapter != null) {
-        fieldType = referenceRepositoryAdapter.findFieldByTag(id, RepositoryAdapter.DEFAULT_SCENARIO);
+        fieldType = referenceRepositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
       }
     }
     if (fieldType == null) {
       final String name = detail.getProperty("name");
-      fieldType = repositoryAdapter.findFieldByName(name, RepositoryAdapter.DEFAULT_SCENARIO);
+      fieldType = repositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
       if (fieldType == null && referenceRepositoryAdapter != null) {
-        fieldType = referenceRepositoryAdapter.findFieldByName(name, RepositoryAdapter.DEFAULT_SCENARIO);
+        fieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
       }
     }
     if ((fieldType != null) && !"NumInGroup".equals(fieldType.getType())) {
