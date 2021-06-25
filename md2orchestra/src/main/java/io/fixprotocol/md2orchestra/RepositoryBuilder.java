@@ -273,6 +273,10 @@ public class RepositoryBuilder {
       if (groupType == null && referenceRepositoryAdapter != null) {
         groupType = referenceRepositoryAdapter.findGroupByName(name, scenario);
         if (groupType != null) {
+          FieldRefType numInGroupRef = groupType.getNumInGroup();
+          if (numInGroupRef != null) {
+            buildSteps.add(new FieldBuilder(numInGroupRef.getId().intValue(), null, scenario, "NumInGroup"));
+          }
           repositoryAdapter.copyGroup(groupType);
           if (level < maxDepth) {
             final List<Object> members = groupType.getComponentRefOrGroupRefOrFieldRef();

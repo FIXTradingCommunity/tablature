@@ -362,6 +362,31 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("First group field not NumInGroup datatype"));
   }
   
+  @Test // ODOC-114
+  void groupNumInGroupField() throws Exception {
+    String text =
+        "## Message NewOrderSingle type 'D'\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|-------------------------|\n"
+        + "| ClOrdID | 11 | required |\n"
+        + "| Account | | |\n"
+        + "| Parties | g | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("name=\"NoPartyIDs\""));
+  }
+  
   @Test
   void inlineCode() throws Exception {
     String text =
