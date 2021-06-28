@@ -13,6 +13,7 @@
  */
 package io.fixprotocol.md2orchestra;
 
+import static io.fixprotocol.md2orchestra.RepositoryAdapter.DEFAULT_SCENARIO;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,7 +32,7 @@ import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import io.fixprotocol._2020.orchestra.repository.ActorType;
@@ -72,8 +73,6 @@ import io.fixprotocol.md2orchestra.util.IdGenerator;
 import io.fixprotocol.orchestra.event.EventListener;
 import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
-
-import static io.fixprotocol.md2orchestra.RepositoryAdapter.DEFAULT_SCENARIO;
 
 public class RepositoryBuilder {
   private class ComponentBuilder implements ElementBuilder {
@@ -671,9 +670,9 @@ public class RepositoryBuilder {
           statemachine.setName(name);
           final List<Object> actorMembers = actor.getFieldOrFieldRefOrComponent();
           actorMembers.add(statemachine);
-          final List<String> sources = detailTable.rows().stream().map(r -> r.getProperty("state"))
+          final List<String> sources = StreamSupport.stream(detailTable.rows().spliterator(), false).map(r -> r.getProperty("state"))
               .distinct().collect(Collectors.toList());
-          final List<String> targets = detailTable.rows().stream().map(r -> r.getProperty("target"))
+          final List<String> targets = StreamSupport.stream(detailTable.rows().spliterator(), false).map(r -> r.getProperty("target"))
               .distinct().collect(Collectors.toList());
           // preserves insertion order
           final Set<String> allStates = new LinkedHashSet<>(sources);
@@ -1349,9 +1348,8 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown NumInGroup for group; name={0} at line {1} char {2}", group.getName(), detailTable.getLine(), detailTable.getCharPositionInLine());
       }
-      final Stream<? extends DetailTable.TableRow> stream = detailTable.rows().stream();
       final List<? extends DetailTable.TableRow> remainingRows =
-          stream.skip(skipRows).collect(Collectors.toList());
+          StreamSupport.stream(detailTable.rows().spliterator(), false).skip(skipRows).collect(Collectors.toList());
       addMembers(remainingRows, members);
     } else if (graphContext instanceof Documentation) {
       final Documentation detail = (Documentation) graphContext;

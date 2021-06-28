@@ -350,16 +350,6 @@ public class MarkdownGenerator {
         row.addIntProperty("addedEp", addedEp.intValue());
       }
 
-      final String deprecated = componentRef.getDeprecated();
-      if (deprecated != null) {
-        row.addProperty("deprecated", deprecated);
-      }
-
-      final BigInteger deprecatedEp = componentRef.getDeprecatedEP();
-      if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-      }
-
       final String issue = componentRef.getIssue();
       if (issue != null) {
         row.addProperty("issue", issue);
@@ -393,6 +383,16 @@ public class MarkdownGenerator {
       final BigInteger updatedEp = componentRef.getUpdatedEP();
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
+      }      
+
+      final String deprecated = componentRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
+
+      final BigInteger deprecatedEp = componentRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
       }
     }
     addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
@@ -491,16 +491,6 @@ public class MarkdownGenerator {
         row.addIntProperty("addedEp", addedEp.intValue());
       }
 
-      final String deprecated = fieldRef.getDeprecated();
-      if (deprecated != null) {
-        row.addProperty("deprecated", deprecated);
-      }
-
-      final BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
-      if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-      }
-
       final String issue = fieldRef.getIssue();
       if (issue != null) {
         row.addProperty("issue", issue);
@@ -535,6 +525,16 @@ public class MarkdownGenerator {
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
       }
+      
+      final String deprecated = fieldRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
+
+      final BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+      }
     }
     addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
   }
@@ -565,16 +565,6 @@ public class MarkdownGenerator {
       final BigInteger addedEp = groupRef.getAddedEP();
       if (addedEp != null) {
         row.addIntProperty("addedEp", addedEp.intValue());
-      }
-
-      final String deprecated = groupRef.getDeprecated();
-      if (deprecated != null) {
-        row.addProperty("deprecated", deprecated);
-      }
-
-      final BigInteger deprecatedEp = groupRef.getDeprecatedEP();
-      if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
       }
 
       final String issue = groupRef.getIssue();
@@ -610,6 +600,16 @@ public class MarkdownGenerator {
       final BigInteger updatedEp = groupRef.getUpdatedEP();
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
+      }
+      
+      final String deprecated = groupRef.getDeprecated();
+      if (deprecated != null) {
+        row.addProperty("deprecated", deprecated);
+      }
+
+      final BigInteger deprecatedEp = groupRef.getDeprecatedEP();
+      if (deprecatedEp != null) {
+        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
       }
     }
     addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
@@ -709,16 +709,6 @@ public class MarkdownGenerator {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        final String deprecated = category.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-
-        final BigInteger deprecatedEp = category.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-
         final String issue = category.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
@@ -749,6 +739,15 @@ public class MarkdownGenerator {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
 
+        final String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
 
         addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
       }
@@ -814,16 +813,6 @@ public class MarkdownGenerator {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        final String deprecated = code.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-
-        final BigInteger deprecatedEp = code.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-
         final String issue = code.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
@@ -857,6 +846,16 @@ public class MarkdownGenerator {
         final BigInteger updatedEp = code.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
+        }      
+
+        final String deprecated = code.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = code.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
@@ -1114,16 +1113,6 @@ public class MarkdownGenerator {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        final String deprecated = field.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-
-        final BigInteger deprecatedEp = field.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-
         final String issue = field.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
@@ -1157,6 +1146,16 @@ public class MarkdownGenerator {
         final BigInteger updatedEp = field.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
+        }
+        
+        final String deprecated = field.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = field.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
@@ -1417,16 +1416,6 @@ public class MarkdownGenerator {
           row.addIntProperty("addedEp", addedEp.intValue());
         }
 
-        final String deprecated = category.getDeprecated();
-        if (shouldOutputPedigree && deprecated != null) {
-          row.addProperty("deprecated", deprecated);
-        }
-
-        final BigInteger deprecatedEp = category.getDeprecatedEP();
-        if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
-        }
-
         final String issue = category.getIssue();
         if (shouldOutputPedigree && issue != null) {
           row.addProperty("issue", issue);
@@ -1457,6 +1446,15 @@ public class MarkdownGenerator {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
 
+        final String deprecated = category.getDeprecated();
+        if (shouldOutputPedigree && deprecated != null) {
+          row.addProperty("deprecated", deprecated);
+        }
+
+        final BigInteger deprecatedEp = category.getDeprecatedEP();
+        if (shouldOutputPedigree && deprecatedEp != null) {
+          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        }
 
         addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
       }
