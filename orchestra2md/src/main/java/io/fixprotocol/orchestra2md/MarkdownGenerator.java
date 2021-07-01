@@ -383,7 +383,7 @@ public class MarkdownGenerator {
       final BigInteger updatedEp = componentRef.getUpdatedEP();
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
-      }      
+      }
 
       final String deprecated = componentRef.getDeprecated();
       if (deprecated != null) {
@@ -525,7 +525,7 @@ public class MarkdownGenerator {
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
       }
-      
+
       final String deprecated = fieldRef.getDeprecated();
       if (deprecated != null) {
         row.addProperty("deprecated", deprecated);
@@ -601,7 +601,7 @@ public class MarkdownGenerator {
       if (updatedEp != null) {
         row.addIntProperty("updatedEp", updatedEp.intValue());
       }
-      
+
       final String deprecated = groupRef.getDeprecated();
       if (deprecated != null) {
         row.addProperty("deprecated", deprecated);
@@ -664,14 +664,12 @@ public class MarkdownGenerator {
 
   private void generateActorsAndFlows(Repository repository, DocumentWriter documentWriter)
       throws IOException {
+    final MutableContext context =
+        contextFactory.createContext(new String[] {"Actors and Flows"}, 2);
+    documentWriter.write(context);
     final Actors actors = repository.getActors();
     if (actors != null) {
       final List<Object> actorsOrFlows = actors.getActorOrFlow();
-      if (!actorsOrFlows.isEmpty()) {
-        final MutableContext context =
-            contextFactory.createContext(new String[] {"Actors and Flows"}, 2);
-        documentWriter.write(context);
-      }
       for (final Object actorOrFlow : actorsOrFlows) {
         if (actorOrFlow instanceof ActorType) {
           generateActor((ActorType) actorOrFlow, repository, documentWriter);
@@ -679,7 +677,17 @@ public class MarkdownGenerator {
           generateFlow((FlowType) actorOrFlow, repository, documentWriter);
         }
       }
+      if (actorsOrFlows.isEmpty()) {
+        generateNoneComment(documentWriter);
+      }
+    } else {
+      generateNoneComment(documentWriter);
     }
+  }
+
+  void generateNoneComment(DocumentWriter documentWriter) throws IOException {
+    final MutableDocumentation documentation = contextFactory.createDocumentation("None");
+    documentWriter.write(documentation);
   }
 
   private void generateCategories(Repository repository, DocumentWriter documentWriter)
@@ -846,7 +854,7 @@ public class MarkdownGenerator {
         final BigInteger updatedEp = code.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
-        }      
+        }
 
         final String deprecated = code.getDeprecated();
         if (shouldOutputPedigree && deprecated != null) {
@@ -869,14 +877,19 @@ public class MarkdownGenerator {
 
   private void generateCodesets(Repository repository, DocumentWriter documentWriter)
       throws IOException {
-    final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet().stream()
-        .sorted(Comparator.comparing(CodeSetType::getName)).collect(Collectors.toList());
-    if (!codesets.isEmpty()) {
-      final MutableContext context = contextFactory.createContext(new String[] {"Codesets"}, 2);
-      documentWriter.write(context);
-    }
-    for (final CodeSetType codeset : codesets) {
-      generateCodeset(documentWriter, codeset);
+    final MutableContext context = contextFactory.createContext(new String[] {"Codesets"}, 2);
+    documentWriter.write(context);
+    if (repository.getCodeSets() != null) {
+      final List<CodeSetType> codesets = repository.getCodeSets().getCodeSet().stream()
+          .sorted(Comparator.comparing(CodeSetType::getName)).collect(Collectors.toList());
+      if (codesets.isEmpty()) {
+        generateNoneComment(documentWriter);
+      }
+      for (final CodeSetType codeset : codesets) {
+        generateCodeset(documentWriter, codeset);
+      }
+    } else {
+      generateNoneComment(documentWriter);
     }
   }
 
@@ -919,19 +932,20 @@ public class MarkdownGenerator {
 
   private void generateComponents(Repository repository, DocumentWriter documentWriter)
       throws IOException {
+    final MutableContext context = contextFactory.createContext(new String[] {"Components"}, 2);
+    documentWriter.write(context);
     final Components componentParent = repository.getComponents();
     if (componentParent != null) {
       final List<ComponentType> components = componentParent.getComponent().stream()
           .sorted(Comparator.comparing(ComponentType::getName)).collect(Collectors.toList());
-      if (!components.isEmpty()) {
-        final MutableContext context = contextFactory.createContext(new String[] {"Components"}, 2);
-        documentWriter.write(context);
+      if (components.isEmpty()) {
+        generateNoneComment(documentWriter);
       }
       for (final ComponentType component : components) {
         generateComponent(repository, documentWriter, component);
       }
     } else {
-      logger.warn("No components found");
+      generateNoneComment(documentWriter);
     }
   }
 
@@ -1023,12 +1037,10 @@ public class MarkdownGenerator {
 
   private void generateFields(Repository repository, DocumentWriter documentWriter)
       throws IOException {
+    final MutableContext context = contextFactory.createContext(new String[] {"Fields"}, 2);
+    documentWriter.write(context);
     final Fields fieldParent = repository.getFields();
     if (fieldParent != null && !fieldParent.getField().isEmpty()) {
-
-      final MutableContext context = contextFactory.createContext(2);
-      context.addKey("Fields");
-      documentWriter.write(context);
       final MutableDetailTable table = contextFactory.createDetailTable();
 
       final List<FieldType> fields = fieldParent.getField().stream()
@@ -1147,7 +1159,7 @@ public class MarkdownGenerator {
         if (shouldOutputPedigree && updatedEp != null) {
           row.addIntProperty("updatedEp", updatedEp.intValue());
         }
-        
+
         final String deprecated = field.getDeprecated();
         if (shouldOutputPedigree && deprecated != null) {
           row.addProperty("deprecated", deprecated);
@@ -1163,7 +1175,7 @@ public class MarkdownGenerator {
 
       documentWriter.write(table, headings);
     } else {
-      logger.error("No fields found");
+      generateNoneComment(documentWriter);
     }
   }
 
@@ -1236,20 +1248,20 @@ public class MarkdownGenerator {
 
   private void generateGroups(Repository repository, DocumentWriter documentWriter)
       throws IOException {
+    final MutableContext context = contextFactory.createContext(new String[] {"Groups"}, 2);
+    documentWriter.write(context);
     final Groups groupParent = repository.getGroups();
     if (groupParent != null) {
       final List<GroupType> groups = groupParent.getGroup().stream()
           .sorted(Comparator.comparing(GroupType::getName)).collect(Collectors.toList());
-      if (!groups.isEmpty()) {
-
-        final MutableContext context = contextFactory.createContext(new String[] {"Groups"}, 2);
-        documentWriter.write(context);
+      if (groups.isEmpty()) {
+        generateNoneComment(documentWriter);
       }
       for (final GroupType group : groups) {
         generateGroup(repository, documentWriter, group);
       }
     } else {
-      logger.warn("No groups found");
+      generateNoneComment(documentWriter);
     }
   }
 
@@ -1291,20 +1303,21 @@ public class MarkdownGenerator {
 
   private void generateMessages(Repository repository, DocumentWriter documentWriter)
       throws IOException {
+    final MutableContext context = contextFactory.createContext(new String[] {"Messages"}, 2);
+    documentWriter.write(context);
     final Messages messageParent = repository.getMessages();
     if (messageParent != null) {
       final List<MessageType> messages = messageParent.getMessage().stream()
           .sorted(Comparator.comparing(MessageType::getName)).collect(Collectors.toList());
-      if (!messages.isEmpty()) {
-        final MutableContext context = contextFactory.createContext(new String[] {"Messages"}, 2);
-        documentWriter.write(context);
+      if (messages.isEmpty()) {
+        generateNoneComment(documentWriter);
       }
       for (final MessageType message : messages) {
         generateMessageStructure(repository, documentWriter, message);
         generateMessageResponses(repository, documentWriter, message);
       }
     } else {
-      logger.error("No message found");
+      generateNoneComment(documentWriter);
     }
   }
 
