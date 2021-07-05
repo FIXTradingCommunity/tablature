@@ -1482,42 +1482,48 @@ public class RepositoryBuilder {
       if (messageContext != null) {
         final String messageName = messageContext.getKeyValue(MESSAGE_KEYWORD);
         final int tag = textUtil.getTag(keyContext.getKeys());
-        final String scenario = RepositoryAdapter.scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
+        final String scenario =
+            RepositoryAdapter.scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
         final String msgType = messageContext.getKeyValue("type");
 
-        final MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
-        final MessageType.Responses responses = new MessageType.Responses();
-        message.setResponses(responses);
-        final List<ResponseType> responseList = responses.getResponse();
-        final DetailTable detailTable = (DetailTable) graphContext;
-        detailTable.rows().forEach(detail -> {
-          final ResponseType response = new ResponseType();
-          final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
-          final MessageRefType messageRef = new MessageRefType();
-          messageRef.setName(detail.getProperty("name"));
+        if (messageName == null) {
+          eventLogger.error("Unknown message name for responses at line {0} char {1}",
+              keyContext.getLine(), keyContext.getCharPositionInLine());
+        } else {
+          final MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
+          final MessageType.Responses responses = new MessageType.Responses();
+          message.setResponses(responses);
+          final List<ResponseType> responseList = responses.getResponse();
+          final DetailTable detailTable = (DetailTable) graphContext;
+          detailTable.rows().forEach(detail -> {
+            final ResponseType response = new ResponseType();
+            final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
+            final MessageRefType messageRef = new MessageRefType();
+            messageRef.setName(detail.getProperty("name"));
 
-          final String refScenario = detail.getProperty(SCENARIO_KEYWORD);
-          if (refScenario != null && !DEFAULT_SCENARIO.equals(refScenario)) {
-            messageRef.setScenario(refScenario);
-          }
-
-          messageRef.setMsgType(detail.getProperty("msgType"));
-          response.setWhen(detail.getProperty("when"));
-          final String markdown = detail.getProperty(DOCUMENTATION_KEYWORD);
-          if (markdown != null) {
-            Annotation annotation = response.getAnnotation();
-            if (annotation == null) {
-              annotation = new Annotation();
-              response.setAnnotation(annotation);
+            final String refScenario = detail.getProperty(SCENARIO_KEYWORD);
+            if (refScenario != null && !DEFAULT_SCENARIO.equals(refScenario)) {
+              messageRef.setScenario(refScenario);
             }
-            repositoryAdapter.addDocumentation(markdown, null, annotation);
-          }
-          responseRefs.add(messageRef);
-          responseList.add(response);
-        });
+
+            messageRef.setMsgType(detail.getProperty("msgType"));
+            response.setWhen(detail.getProperty("when"));
+            final String markdown = detail.getProperty(DOCUMENTATION_KEYWORD);
+            if (markdown != null) {
+              Annotation annotation = response.getAnnotation();
+              if (annotation == null) {
+                annotation = new Annotation();
+                response.setAnnotation(annotation);
+              }
+              repositoryAdapter.addDocumentation(markdown, null, annotation);
+            }
+            responseRefs.add(messageRef);
+            responseList.add(response);
+          });
+        }
       } else {
-        eventLogger.error("Unknown message for responses; keys={0}",
-            String.join(" ", keyContext.getKeys()));
+        eventLogger.error("Unknown message for responses at line {0} char {1}",
+            keyContext.getLine(), keyContext.getCharPositionInLine());
       }
     }
   }

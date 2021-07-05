@@ -1269,7 +1269,7 @@ public class MarkdownGenerator {
       MessageType message) throws IOException {
     final Responses responses = message.getResponses();
     if (responses != null) {
-      final MutableContext context = contextFactory.createContext(3);
+      final MutableContext context = contextFactory.createContext(4);
       context.addKey("Responses");
       documentWriter.write(context);
       final MutableDetailTable table = contextFactory.createDetailTable();
