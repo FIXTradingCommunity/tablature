@@ -945,7 +945,8 @@ public class RepositoryBuilder {
 
   private void addCodeset(final GraphContext graphContext, final Context keyContext) {
     final String name = keyContext.getKey(NAME_POSITION);
-    final String scenario = RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
+    final String scenario =
+        RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
     if (graphContext instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) graphContext;
@@ -978,7 +979,9 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
+            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
+            annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -1011,11 +1014,20 @@ public class RepositoryBuilder {
           codeset.setScenario(scenario);
         }
 
-        final String type = keyContext.getKeyValue("type");
+        String type = keyContext.getKeyValue("type");
+        if (type == null) {
+          CodeSetType refCodeset = repositoryAdapter.findCodesetByName(name, DEFAULT_SCENARIO);
+          if (refCodeset == null) {
+            refCodeset = referenceRepositoryAdapter.findCodesetByName(name, DEFAULT_SCENARIO);
+          }
+          if (refCodeset != null) {
+            type = refCodeset.getType();
+          }
+        }
         if (type != null) {
           codeset.setType(type);
         } else {
-          eventLogger.error("Unknown CodeSet underlying datatype; name={0} at line {2} char {3}",
+          eventLogger.error("Unknown CodeSet underlying datatype; name={0} at line {1} char {2}",
               name, context.getLine(), context.getCharPositionInLine());
         }
         repositoryAdapter.addCodeset(codeset);

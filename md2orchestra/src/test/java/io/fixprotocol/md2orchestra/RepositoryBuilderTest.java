@@ -552,6 +552,30 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // ODOC-121
+  void missingCodesetType() throws Exception {
+    String text =
+        "### Codeset PartyRoleCodeSet scenario Test\n"
+        + "\n"
+        + "| Name | Value | Documentation |\n"
+        + "|------------------|:-------:|---------------|\n"
+        + "| ExecutingFirm | 1 | |\n"
+        + "| ExecutingTrader | 7 | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("type=\"int\""));
+  }
+  
   @Test // ODOC-40
   void missingFieldId() throws Exception {
     String text =
