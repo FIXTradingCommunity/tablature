@@ -1004,24 +1004,20 @@ public class RepositoryBuilder {
         codeset = new CodeSetType();
         int tag = textUtil.getTag(keyContext.getKeys());
 
-        if (tag == -1) {
-          tag = assignId(name, scenario);
-        }
-        codeset.setId(BigInteger.valueOf(tag));
-
         codeset.setName(name);
         if (!DEFAULT_SCENARIO.equals(scenario)) {
           codeset.setScenario(scenario);
         }
 
         String type = keyContext.getKeyValue("type");
-        if (type == null) {
+        if (type == null || tag == -1) {
           CodeSetType refCodeset = repositoryAdapter.findCodesetByName(name, DEFAULT_SCENARIO);
-          if (refCodeset == null) {
+          if (refCodeset == null && referenceRepositoryAdapter != null) {
             refCodeset = referenceRepositoryAdapter.findCodesetByName(name, DEFAULT_SCENARIO);
           }
           if (refCodeset != null) {
             type = refCodeset.getType();
+            tag = refCodeset.getId().intValue();
           }
         }
         if (type != null) {
@@ -1030,6 +1026,11 @@ public class RepositoryBuilder {
           eventLogger.error("Unknown CodeSet underlying datatype; name={0} at line {1} char {2}",
               name, context.getLine(), context.getCharPositionInLine());
         }
+
+        if (tag == -1) {
+          tag = assignId(name, scenario);
+        }
+        codeset.setId(BigInteger.valueOf(tag));
         repositoryAdapter.addCodeset(codeset);
       }
     }
