@@ -552,8 +552,13 @@ public class RepositoryBuilder {
     parser.parse(inputStream, markdownConsumer);
   }
 
+  /**
+   * Controls the depth of a search in a reference file for nested components
+   * @param maxComponentDepth number of levels of nesting to search. Set to {@code Integer.MAX_VALUE} for full
+   * tree walk.
+   */
   public void setMaxComponentDepth(final int maxComponentDepth) {
-    this.maxComponentDepth = maxComponentDepth;
+    this.maxComponentDepth = maxComponentDepth; 
   }
 
   /**
