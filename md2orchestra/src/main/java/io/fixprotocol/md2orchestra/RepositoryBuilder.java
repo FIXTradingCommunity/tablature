@@ -77,16 +77,16 @@ import io.fixprotocol.orchestra.event.TeeEventListener;
 public class RepositoryBuilder {
   private class ComponentBuilder implements ElementBuilder {
 
-    private final int level;
+    private final int currentDepth;
     private final int maxDepth;
     private final String name;
     private final String scenario;
 
-    public ComponentBuilder(final String name, final String scenario, final int level,
+    public ComponentBuilder(final String name, final String scenario, final int currentDepth,
         final int maxDepth) {
       this.name = name;
       this.scenario = scenario;
-      this.level = level;
+      this.currentDepth = currentDepth;
       this.maxDepth = maxDepth;
     }
 
@@ -97,9 +97,9 @@ public class RepositoryBuilder {
         componentType = referenceRepositoryAdapter.findComponentByName(name, scenario);
         if (componentType != null) {
           repositoryAdapter.copyComponent(componentType);
-          if (level < maxDepth) {
+          if (currentDepth < maxDepth) {
             final List<Object> members = componentType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, level, maxDepth);
+            copyMembers(members, currentDepth+1, maxDepth);
           }
         } else {
           eventLogger.error("Unknown component; name={0} scenario={1}", name, scenario);
@@ -253,16 +253,16 @@ public class RepositoryBuilder {
 
   private class GroupBuilder implements ElementBuilder {
 
-    private final int level;
+    private final int currentDepth;
     private final int maxDepth;
     private final String name;
     private final String scenario;
 
-    public GroupBuilder(final String name, final String scenario, final int level,
+    public GroupBuilder(final String name, final String scenario, final int currentDepth,
         final int maxDepth) {
       this.name = name;
       this.scenario = scenario;
-      this.level = level;
+      this.currentDepth = currentDepth;
       this.maxDepth = maxDepth;
     }
 
@@ -277,9 +277,9 @@ public class RepositoryBuilder {
             buildSteps.add(new FieldBuilder(numInGroupRef.getId().intValue(), null, scenario, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
-          if (level < maxDepth) {
+          if (currentDepth < maxDepth) {
             final List<Object> members = groupType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, level, maxDepth);
+            copyMembers(members, currentDepth+1, maxDepth);
           }
         } else {
           eventLogger.error("Unknown group; name={0} scenario={1}", name, scenario);
@@ -572,7 +572,7 @@ public class RepositoryBuilder {
     eventLogger.close();
   }
 
-  void copyMembers(final List<Object> members, int level, final int maxDepth) {
+  void copyMembers(final List<Object> members, int currentDepth, final int maxDepth) {
     for (final Object member : members) {
       if (member instanceof FieldRefType) {
         final FieldRefType fieldRef = (FieldRefType) member;
@@ -597,9 +597,9 @@ public class RepositoryBuilder {
               groupRef.getScenario());
           if (group != null) {
             group = repositoryAdapter.copyGroup(group);
-            if (level < maxDepth) {
+            if (currentDepth < maxDepth) {
               final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(groupMembers, level++, maxDepth);
+              copyMembers(groupMembers, currentDepth+1, maxDepth);
             }
           } else {
             eventLogger.error("Unknown group; lastId={0, number, ##0} scenario={1}", groupRef.getId().intValue(),
@@ -615,9 +615,9 @@ public class RepositoryBuilder {
               componentRef.getScenario());
           if (component != null) {
             component = repositoryAdapter.copyComponent(component);
-            if (level < maxDepth) {
+            if (currentDepth < maxDepth) {
               final List<Object> componentMembers = component.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(componentMembers, level++, maxDepth);
+              copyMembers(componentMembers, currentDepth+1, maxDepth);
             }
           } else {
             eventLogger.error("Unknown component; lastId={0, number, ##0} scenario={1}",
@@ -647,7 +647,7 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
             ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && ACTOR_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final ActorType actor = new ActorType();
@@ -975,7 +975,7 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
             CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && CODESET_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final Context context = (Context) graphContext;
@@ -1041,7 +1041,7 @@ public class RepositoryBuilder {
             COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey),
             annotation);
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       int tag = textUtil.getTag(keyContext.getKeys());
@@ -1322,7 +1322,7 @@ public class RepositoryBuilder {
           flow.setDestination(r.getProperty("destination"));
         });
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && FLOW_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final FlowType flow = new FlowType();
@@ -1364,7 +1364,7 @@ public class RepositoryBuilder {
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
             GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && GROUP_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       int tag = textUtil.getTag(keyContext.getKeys());
@@ -1453,7 +1453,7 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name, scenario, detail.getLine(), detail.getCharPositionInLine());
       }
-    } // make sure it's not a lower level heading
+    } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final int tag = textUtil.getTag(keyContext.getKeys());

@@ -316,6 +316,38 @@ class RepositoryBuilderTest {
     assertEquals(1, count);
   }
   
+  @Test // ODOC-111
+  void fieldsForComponents() throws Exception {
+    String text =
+        "## Message NewOrderSingle type 'D'\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|-------------------------|\n"
+        + "| ClOrdID | 11 | required |\n"
+        + "| Account | | |\n"
+        + "| ComplexEvents | g | |\n"
+        + "| FinancingDetails| c | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    // assumes tree walk limited to 1 level below components listed in markdown
+    assertTrue(xml.contains("id=\"1484\""));    // field in ComplexEvents
+    assertTrue(xml.contains("id=\"1492\""));    // field in nested ComplexEventDates
+    assertTrue(xml.contains("id=\"913\""));     // field in FinancingDetails
+    assertTrue(xml.contains("id=\"40041\""));     // field in nested FinancingContractualDefinitionGrp
+    assertTrue(xml.contains("id=\"40041\""));     // field in nested FinancingContractualDefinitionGrp
+    assertTrue(!xml.contains("id=\"1495\""));     // field in double nested ComplexEventDates/ComplexEventTimes
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-100
   void groupNoNumInGroup() throws Exception {
     String text =
@@ -489,6 +521,35 @@ class RepositoryBuilderTest {
     Matcher matcher = pattern.matcher(xml);
     long count = matcher.results().count();
     assertEquals(3, count);
+  }
+  
+  @Test // ODOC-118
+  void messageResponses() throws Exception {
+    String text =
+        "## Message NewOrderSingle type D\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
+        + "| ClOrdID | | r |\n"
+        + "\n"
+        + "### Responses\n"
+        + "\n"
+        + "| Name | Msgtype |\n"
+        + "|-----------------|---------|\n"
+        + "| ExecutionReport | 8 |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    assertTrue(xml.contains("messageRef"));
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
   }
   
   @Test // ODOC-40
@@ -893,7 +954,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertFalse(errors.contains("Unknown fieldRef ID"));
   }
-  
+
   @Test // ODOC-60, ODOC-55
   void userDefinedColumns() throws Exception {
     String text =
@@ -944,34 +1005,5 @@ class RepositoryBuilderTest {
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(errors.contains("Unknown type for field"));
-  }
-
-  @Test // ODOC-118
-  void messageResponses() throws Exception {
-    String text =
-        "## Message NewOrderSingle type D\n"
-        + "\n"
-        + "| Name | Tag | Presence |\n"
-        + "|----------------|----:|:---------:|\n"
-        + "| ClOrdID | | r |\n"
-        + "\n"
-        + "### Responses\n"
-        + "\n"
-        + "| Name | Msgtype |\n"
-        + "|-----------------|---------|\n"
-        + "| ExecutionReport | 8 |";
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    builder.appendInput(inputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.write(xmlStream);
-    builder.closeEventLogger();
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    assertTrue(xml.contains("messageRef"));
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
   }
 }
