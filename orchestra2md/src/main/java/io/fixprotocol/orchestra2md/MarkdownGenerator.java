@@ -330,7 +330,7 @@ public class MarkdownGenerator {
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
-      eventLogger.warn("Unknown component; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown component; id={0, number, #0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -424,7 +424,7 @@ public class MarkdownGenerator {
     if (field != null) {
       row.addProperty("name", field.getName());
     } else {
-      eventLogger.warn("Unknown field; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown field; id={0, number, #0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", Integer.toString(tag));
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -547,7 +547,7 @@ public class MarkdownGenerator {
     if (group != null) {
       row.addProperty("name", group.getName());
     } else {
-      eventLogger.warn("Unknown group; id={0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown group; id={0, number, #0} scenario={1}", tag, scenario);
     }
     row.addProperty("tag", "group");
     if (!scenario.equals(DEFAULT_SCENARIO)) {

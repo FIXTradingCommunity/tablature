@@ -946,4 +946,32 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("Unknown type for field"));
   }
 
+  @Test // ODOC-118
+  void messageResponses() throws Exception {
+    String text =
+        "## Message NewOrderSingle type D\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
+        + "| ClOrdID | | r |\n"
+        + "\n"
+        + "### Responses\n"
+        + "\n"
+        + "| Name | Msgtype |\n"
+        + "|-----------------|---------|\n"
+        + "| ExecutionReport | 8 |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    assertTrue(xml.contains("messageRef"));
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
 }

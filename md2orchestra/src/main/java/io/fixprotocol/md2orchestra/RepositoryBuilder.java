@@ -449,7 +449,7 @@ public class RepositoryBuilder {
 
   private final String[] contextKeys = new String[] {ACTOR_KEYWORD, CATEGORIES_KEYWORD,
       CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD, FIELDS_KEYWORD, FLOW_KEYWORD,
-      GROUP_KEYWORD, MESSAGE_KEYWORD, SECTIONS_KEYWORD, STATEMACHINE_KEYWORD};
+      GROUP_KEYWORD, MESSAGE_KEYWORD, RESPONSES_KEYWORD, SECTIONS_KEYWORD, STATEMACHINE_KEYWORD};
 
   private TeeEventListener eventLogger;
   private final AssociativeSet headings = new AssociativeSet();
@@ -602,7 +602,7 @@ public class RepositoryBuilder {
               copyMembers(groupMembers, level++, maxDepth);
             }
           } else {
-            eventLogger.error("Unknown group; lastId={0} scenario={1}", groupRef.getId().intValue(),
+            eventLogger.error("Unknown group; lastId={0, number, ##0} scenario={1}", groupRef.getId().intValue(),
                 groupRef.getScenario());
           }
         }
@@ -620,7 +620,7 @@ public class RepositoryBuilder {
               copyMembers(componentMembers, level++, maxDepth);
             }
           } else {
-            eventLogger.error("Unknown component; lastId={0} scenario={1}",
+            eventLogger.error("Unknown component; lastId={0, number, ##0} scenario={1}",
                 componentRef.getId().intValue(), componentRef.getScenario());
           }
         }
@@ -1489,7 +1489,7 @@ public class RepositoryBuilder {
         final MessageType.Responses responses = new MessageType.Responses();
         message.setResponses(responses);
         final List<ResponseType> responseList = responses.getResponse();
-        final DetailTable detailTable = (DetailTable) keyContext;
+        final DetailTable detailTable = (DetailTable) graphContext;
         detailTable.rows().forEach(detail -> {
           final ResponseType response = new ResponseType();
           final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
