@@ -538,7 +538,7 @@ public class RepositoryBuilder {
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
         {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
         {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
-        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}});
+        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
   }
 
   /**

@@ -275,7 +275,7 @@ public class MarkdownGenerator {
     this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
         {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
         {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
-        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}});
+        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
   }
 
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
@@ -1002,7 +1002,7 @@ public class MarkdownGenerator {
             addDocumentationColumns(row, mapping.getAnnotation(), getParagraphDelimiterInTables());
           }
         }
-        documentWriter.write(table);
+        documentWriter.write(table, headings);
       } else {
         logger.warn("No datatypes found");
       }
@@ -1191,7 +1191,7 @@ public class MarkdownGenerator {
     final MutableDetailProperties row = table.newRow();
     row.addProperty("source", flow.getSource());
     row.addProperty("destination", flow.getDestination());
-    documentWriter.write(table);
+    documentWriter.write(table, headings);
   }
 
   private void generateGroup(Repository repository, DocumentWriter documentWriter,
@@ -1297,7 +1297,7 @@ public class MarkdownGenerator {
           }
         }
       }
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     }
   }
 
@@ -1399,7 +1399,7 @@ public class MarkdownGenerator {
         row.addProperty("term", name);
         row.addProperty("value", value);
       }
-      documentWriter.write(table);
+      documentWriter.write(table, headings);
     }
   }
 
@@ -1491,7 +1491,7 @@ public class MarkdownGenerator {
     for (final StateType state : states) {
       generationTransitions(table, state);
     }
-    documentWriter.write(table);
+    documentWriter.write(table, headings);
   }
 
   private void generationTransitions(final MutableDetailTable table, StateType state) {
