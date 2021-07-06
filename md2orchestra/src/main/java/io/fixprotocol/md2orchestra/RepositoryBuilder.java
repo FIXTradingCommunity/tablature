@@ -601,14 +601,19 @@ public class RepositoryBuilder {
           group = referenceRepositoryAdapter.findGroupByTag(groupRef.getId().intValue(),
               groupRef.getScenario());
           if (group != null) {
+            FieldRefType numInGroupRef = group.getNumInGroup();
+            if (numInGroupRef != null) {
+              buildSteps.add(new FieldBuilder(numInGroupRef.getId().intValue(), null,
+                  groupRef.getScenario(), "NumInGroup"));
+            }
             group = repositoryAdapter.copyGroup(group);
             if (currentDepth < maxDepth) {
               final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(groupMembers, currentDepth+1, maxDepth);
+              copyMembers(groupMembers, currentDepth + 1, maxDepth);
             }
           } else {
-            eventLogger.error("Unknown group; lastId={0, number, ##0} scenario={1}", groupRef.getId().intValue(),
-                groupRef.getScenario());
+            eventLogger.error("Unknown group; lastId={0, number, ##0} scenario={1}",
+                groupRef.getId().intValue(), groupRef.getScenario());
           }
         }
       } else if (member instanceof ComponentRefType) {
@@ -622,7 +627,7 @@ public class RepositoryBuilder {
             component = repositoryAdapter.copyComponent(component);
             if (currentDepth < maxDepth) {
               final List<Object> componentMembers = component.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(componentMembers, currentDepth+1, maxDepth);
+              copyMembers(componentMembers, currentDepth + 1, maxDepth);
             }
           } else {
             eventLogger.error("Unknown component; lastId={0, number, ##0} scenario={1}",

@@ -394,7 +394,7 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("First group field not NumInGroup datatype"));
   }
   
-  @Test // ODOC-114
+  @Test // ODOC-114, ODOC-111
   void groupNumInGroupField() throws Exception {
     String text =
         "## Message NewOrderSingle type 'D'\n"
@@ -407,6 +407,7 @@ class RepositoryBuilderTest {
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
     RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.setMaxComponentDepth(2);
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
@@ -417,6 +418,7 @@ class RepositoryBuilderTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(xml.contains("name=\"NoPartyIDs\""));
+    assertTrue(xml.contains("name=\"NoPartySubIDs\""));
   }
   
   @Test
