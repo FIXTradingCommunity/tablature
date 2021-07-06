@@ -75,7 +75,7 @@ import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
 
 public class RepositoryBuilder {
-  private class ComponentBuilder implements ElementBuilder {
+  private class ComponentBuilder implements ElementBuilder<ComponentType> {
 
     private final int currentDepth;
     private final int maxDepth;
@@ -91,7 +91,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public ComponentType build() {
       ComponentType componentType = repositoryAdapter.findComponentByName(name, scenario);
       if (componentType == null && referenceRepositoryAdapter != null) {
         componentType = referenceRepositoryAdapter.findComponentByName(name, scenario);
@@ -105,6 +105,7 @@ public class RepositoryBuilder {
           eventLogger.error("Unknown component; name={0} scenario={1}", name, scenario);
         }
       }
+      return componentType;
     }
   }
 
@@ -112,7 +113,7 @@ public class RepositoryBuilder {
    *
    * Populates the ID of a ComponentRef when the component name is known
    */
-  private class ComponentRefBuilder implements ElementBuilder {
+  private class ComponentRefBuilder implements ElementBuilder<ComponentRefType> {
 
     private final ComponentRefType componentRef;
     private final String name;
@@ -123,7 +124,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public ComponentRefType build() {
       final ComponentType componentType =
           repositoryAdapter.findComponentByName(name, componentRef.getScenario());
       if (componentType != null) {
@@ -132,14 +133,16 @@ public class RepositoryBuilder {
         eventLogger.error("Unknown componentRef ID; name={0} scenario={1}", name,
             componentRef.getScenario());
       }
+      return componentRef;
     }
   }
 
-  private interface ElementBuilder {
-    void build();
+  private interface ElementBuilder<T> {
+    T build();
   }
 
-  private class FieldBuilder implements ElementBuilder {
+
+  private class FieldBuilder implements ElementBuilder<FieldType> {
     private final String name;
     private final String scenario;
     private final int tag;
@@ -154,7 +157,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public FieldType build() {
       FieldType fieldType = null;
       if (tag > 0) {
         fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
@@ -193,8 +196,6 @@ public class RepositoryBuilder {
         }
       }
 
-
-
       if (fieldType != null) {
         if (fieldType.getType() != null) {
           buildSteps.add(new TypeBuilder(fieldType.getType(), scenario));
@@ -217,15 +218,15 @@ public class RepositoryBuilder {
         }
         repositoryAdapter.addField(fieldType);
       }
+      return fieldType;
     }
   }
-
 
   /**
    *
    * Populates the ID of a FieldRef when the field name is known
    */
-  private class FieldRefBuilder implements ElementBuilder {
+  private class FieldRefBuilder implements ElementBuilder<FieldRefType> {
 
     private final FieldRefType fieldRef;
     private final String name;
@@ -236,7 +237,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public FieldRefType build() {
       final String scenario = fieldRef.getScenario();
       FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
       // if not found retry with base scenario
@@ -248,10 +249,11 @@ public class RepositoryBuilder {
       } else {
         eventLogger.error("Unknown fieldRef ID; name={0} scenario={1}", name, scenario);
       }
+      return fieldRef;
     }
   }
-
-  private class GroupBuilder implements ElementBuilder {
+  
+  private class GroupBuilder implements ElementBuilder<GroupType> {
 
     private final int currentDepth;
     private final int maxDepth;
@@ -267,7 +269,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public GroupType build() {
       GroupType groupType = repositoryAdapter.findGroupByName(name, scenario);
       if (groupType == null && referenceRepositoryAdapter != null) {
         groupType = referenceRepositoryAdapter.findGroupByName(name, scenario);
@@ -285,13 +287,15 @@ public class RepositoryBuilder {
           eventLogger.error("Unknown group; name={0} scenario={1}", name, scenario);
         }
       }
+      return groupType;
     }
   }
+  
   /**
    *
    * Populates the ID of a GroupRef when the group name is known
    */
-  private class GroupRefBuilder implements ElementBuilder {
+  private class GroupRefBuilder implements ElementBuilder<GroupRefType> {
 
     private final GroupRefType groupRef;
     private final String name;
@@ -302,7 +306,7 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public GroupRefType build() {
       final GroupType groupType = repositoryAdapter.findGroupByName(name, groupRef.getScenario());
       if (groupType != null) {
         groupRef.setId(groupType.getId());
@@ -310,9 +314,11 @@ public class RepositoryBuilder {
         eventLogger.error("Unknown groupRef ID; name={0} scenario={1}", name,
             groupRef.getScenario());
       }
+      return groupRef;
     }
   }
-  private class TypeBuilder implements ElementBuilder {
+  
+  private class TypeBuilder implements ElementBuilder<DatatypeUnion> {
     final String scenario;
     final String type;
 
@@ -322,7 +328,8 @@ public class RepositoryBuilder {
     }
 
     @Override
-    public void build() {
+    public DatatypeUnion build() {
+      DatatypeUnion union = null;
       boolean found = false;
       io.fixprotocol._2020.orchestra.repository.Datatype datatype =
           repositoryAdapter.findDatatypeByName(type);
@@ -333,6 +340,7 @@ public class RepositoryBuilder {
         if (datatype != null) {
           repositoryAdapter.copyDatatype(datatype);
           found = true;
+          union = new DatatypeUnion(datatype);
         }
       }
       if (!found) {
@@ -344,6 +352,7 @@ public class RepositoryBuilder {
           if (codeset != null) {
             repositoryAdapter.copyCodeset(codeset);
             found = true;
+            union = new DatatypeUnion(codeset);
           }
         }
       }
@@ -353,8 +362,10 @@ public class RepositoryBuilder {
         datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
         datatype.setName(type);
         repositoryAdapter.addDatatype(datatype);
+        union = new DatatypeUnion(datatype);
         eventLogger.info("Datatype added; name={0}", datatype.getName());
       }
+      return union;
     }
   }
 
@@ -445,7 +456,7 @@ public class RepositoryBuilder {
     return eventLogger;
   }
 
-  private final Queue<ElementBuilder> buildSteps = new LinkedList<>();
+  private final Queue<ElementBuilder<?>> buildSteps = new LinkedList<>();
 
   private final String[] contextKeys = new String[] {ACTOR_KEYWORD, CATEGORIES_KEYWORD,
       CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD, FIELDS_KEYWORD, FLOW_KEYWORD,
@@ -1694,7 +1705,7 @@ public class RepositoryBuilder {
   }
 
   private void executeDefferedBuildSteps() {
-    ElementBuilder builder;
+    ElementBuilder<?> builder;
     while ((builder = buildSteps.poll()) != null) {
       builder.build();
     }
@@ -1727,6 +1738,9 @@ public class RepositoryBuilder {
       MessageType refMessage = null;
       if (referenceRepositoryAdapter != null) {
         refMessage = referenceRepositoryAdapter.findMessageByName(name, scenarioOrDefault);
+        if (refMessage == null) {
+          refMessage = referenceRepositoryAdapter.findMessageByName(name, DEFAULT_SCENARIO);
+        }
       }
 
       if (tag == -1 && refMessage != null) {

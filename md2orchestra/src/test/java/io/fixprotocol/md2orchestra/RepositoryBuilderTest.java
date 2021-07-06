@@ -343,7 +343,7 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("id=\"913\""));     // field in FinancingDetails
     assertTrue(xml.contains("id=\"40041\""));     // field in nested FinancingContractualDefinitionGrp
     assertTrue(xml.contains("id=\"40041\""));     // field in nested FinancingContractualDefinitionGrp
-    assertTrue(!xml.contains("id=\"1495\""));     // field in double nested ComplexEventDates/ComplexEventTimes
+    assertFalse(xml.contains("id=\"1495\""));     // field in double nested ComplexEventDates/ComplexEventTimes
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   }
@@ -523,6 +523,29 @@ class RepositoryBuilderTest {
     Matcher matcher = pattern.matcher(xml);
     long count = matcher.results().count();
     assertEquals(3, count);
+  }
+  
+  @Test // ODOC-119
+  void messageIdFromBase() throws Exception {
+    String text =
+        "## Message NewOrderSingle type D scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
+        + "| ClOrdID | | r |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    System.out.println(xml);
+    builder.closeEventLogger();
+    assertTrue(xml.contains("id=\"14\""));
+    String errors = jsonOutputStream.toString();
+    System.out.println(errors);
   }
   
   @Test // ODOC-118

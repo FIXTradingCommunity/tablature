@@ -207,7 +207,7 @@ public class Md2Orchestra {
     formatter.printHelp("Md2Orchestra [options] <input-file>...", options);
   }
 
-  private int componentDepth;
+  private final int componentDepth;
   private final String eventFilename;
   private final Consumer<Path> fileConsumer = new Consumer<>() {
 

@@ -45,9 +45,7 @@ class Md2OrchestraTest {
     final String outputFilename = "target/test/mit_2016.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder()
         .outputFile(outputFilename).eventFile("target/test/mit_2016.json").build();
-    assertThrows(IllegalArgumentException.class, () -> {
-      md2Orchestra1.generate();
-    });
+    assertThrows(IllegalArgumentException.class, md2Orchestra1::generate);
   }
   
   @Test

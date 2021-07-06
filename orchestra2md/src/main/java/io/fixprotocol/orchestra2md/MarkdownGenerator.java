@@ -201,35 +201,35 @@ public class MarkdownGenerator {
   static SortedMap<String, List<Object>> sortDocumentationByPurpose(
       Map<String, ? extends List<Object>> groups) {
     final SortedMap<String, List<Object>> sorted =
-        new TreeMap<String, List<Object>>(new Comparator<>() {
+            new TreeMap<>(new Comparator<>() {
 
-          @Override
-          public int compare(String o1, String o2) {
-            return purposeRank(o1) - purposeRank(o2);
-          }
+              @Override
+              public int compare(String o1, String o2) {
+                return purposeRank(o1) - purposeRank(o2);
+              }
 
-          private int purposeRank(String purpose) {
-            // null or empty purpose is equivalent to synopsis
-            if (purpose == null) {
-              return 0;
-            }
-            switch (purpose.toLowerCase()) {
-              case "":
-              case "synopsis":
-              case DOCUMENTATION_KEYWORD:
-                return 0;
-              case "elaboration":
-                return 1;
-              case "example":
-                return 2;
-              case "display":
-                return 3;
-              default:
-                return 4;
-            }
-          }
+              private int purposeRank(String purpose) {
+                // null or empty purpose is equivalent to synopsis
+                if (purpose == null) {
+                  return 0;
+                }
+                switch (purpose.toLowerCase()) {
+                  case "":
+                  case "synopsis":
+                  case DOCUMENTATION_KEYWORD:
+                    return 0;
+                  case "elaboration":
+                    return 1;
+                  case "example":
+                    return 2;
+                  case "display":
+                    return 3;
+                  default:
+                    return 4;
+                }
+              }
 
-        });
+            });
     sorted.putAll(groups);
     return sorted;
   }
