@@ -29,7 +29,7 @@ class RepositoryTextUtil {
   }
 
   /**
-   * Strip brackets from code names as it was sometimes written
+   * Strip optional brackets from code name
    * 
    * @param str string containing a code name in the form {@code [name]}
    * @return the name without brackets
@@ -42,27 +42,19 @@ class RepositoryTextUtil {
   }
 
   /**
-   * Strip parentheses from tag to get number
+   * Strip expected parentheses from tag to get number
    * 
    * @param str a string in the form {@code (999)}
    * @return an integer extracted from the string, or {@code -1} if the value is non-numeric
    */
   int tagToInt(final String str) {
-    if (str == null) {
+    final int beginIndex = str.indexOf('(');
+    final int endIndex = str.lastIndexOf(')');
+    if (beginIndex == -1 || endIndex == -1) {
       return -1;
     }
-    final int strLen = str.length();
-    int end = strLen - 1;
-    int begin = 0;
 
-    while ((begin < strLen) && (str.charAt(begin) == ' ' || str.charAt(begin) == '\t'
-        || str.charAt(begin) == '|' || str.charAt(begin) == '(')) {
-      begin++;
-    }
-    while ((begin < end) && (str.charAt(end) == ' ' || str.charAt(end) == ')')) {
-      end--;
-    }
-    final String str2 = ((begin > 0) || (end < strLen)) ? str.substring(begin, end + 1) : str;
+    final String str2 = str.substring(beginIndex+1, endIndex);
 
     if (str2.isEmpty()) {
       return -1;

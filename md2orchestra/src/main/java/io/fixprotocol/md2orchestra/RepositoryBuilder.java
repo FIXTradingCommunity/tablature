@@ -1204,7 +1204,7 @@ public class RepositoryBuilder {
         switch (key) {
           case "tag":
           case "id":
-            field.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
+            field.setId(new BigInteger(p.getValue()));
             break;
           case "name":
             field.setName(p.getValue());
@@ -1786,10 +1786,7 @@ public class RepositoryBuilder {
           break;
         case "tag":
         case "id":
-          final int id = textUtil.tagToInt(p.getValue());
-          if (id >= 0) {
-            componentRefType.setId(BigInteger.valueOf(id));
-          }
+          // known to be component keyword
           break;
         case "added":
           componentRefType.setAdded(p.getValue());
@@ -1907,7 +1904,7 @@ public class RepositoryBuilder {
           break;
         case "tag":
         case "id":
-          fieldRefType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
+          fieldRefType.setId(new BigInteger(p.getValue()));
           break;
         case SCENARIO_KEYWORD:
           fieldRefType.setScenario(RepositoryAdapter.scenarioOrDefault(p.getValue()));
@@ -2086,10 +2083,7 @@ public class RepositoryBuilder {
           break;
         case "tag":
         case "id":
-          final int id = textUtil.tagToInt(p.getValue());
-          if (id >= 0) {
-            groupRefType.setId(BigInteger.valueOf(id));
-          }
+          // known to be group keyword
           break;
         case "added":
           groupRefType.setAdded(p.getValue());
