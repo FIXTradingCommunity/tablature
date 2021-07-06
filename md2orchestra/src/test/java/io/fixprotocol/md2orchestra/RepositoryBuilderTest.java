@@ -551,10 +551,33 @@ class RepositoryBuilderTest {
   @Test // ODOC-119
   void messageIdFromBase2() throws Exception {
     String text =
-        "## Message ExecutionReport type 8 scenario Test\r\n"
-        + "\r\n"
-        + "| Name | Tag | Presence |\r\n"
-        + "|----------------|----:|:---------:|\r\n"
+        "## Message ExecutionReport type 8 scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
+        + "| ClOrdID | | r |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    assertTrue(xml.contains("id=\"9\""));
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // ODOC-119
+  void messageIdFromBase3() throws Exception {
+    String text =
+        "## Message ExecutionReport scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence |\n"
+        + "|----------------|----:|:---------:|\n"
         + "| ClOrdID | | r |";
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
