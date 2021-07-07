@@ -647,6 +647,66 @@ class RepositoryBuilderTest {
     assertTrue(xml.contains("type=\"int\""));
   }
   
+  @Test // ODOC-115
+  void codesetType() throws Exception {
+    String text =
+        "## Group Parties scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Scenario\n"
+        + "|---------------------|--------|----------|----------\n"
+        + "| NoPartyIDs | 453 | req |\n"
+        + "| PartyID | 448 | req |\n"
+        + "| PartyIDSource | 447 | req |\n"
+        + "| PartyRole | 452 | req |\n"
+        + "| PartyRoleQualifier | 2376 | opt | Test\n"
+        + "\n"
+        + "## Codeset PartyRoleQualifierCodeSet type int scenario Test\n"
+        + "\n"
+        + "| Name | Value |\n"
+        + "|------------------|-------|\n"
+        + "| Algorithm | 22 |\n"
+        + "| FirmOrLegalEntity| 23 |\n"
+        + "| NaturalPerson | 24 |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("type=\"int\""));
+    assertFalse(errors.contains("Datatype added"));
+  }
+  
+  @Test // ODOC-115
+  void codesetType2() throws Exception {
+    String text =
+        "## Message NewOrderSingle\n"
+        + "\n"
+        + "| Name | Tag | Presence | Scenario |\n"
+        + "|----------------|----:|:---------:|--------------|\n"
+        + "| ClOrdID | 11 | r | |\n"
+        + "| OrdType | 40 | r | Test |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertFalse(errors.contains("Datatype added"));
+  }
+  
   @Test // ODOC-40
   void missingFieldId() throws Exception {
     String text =

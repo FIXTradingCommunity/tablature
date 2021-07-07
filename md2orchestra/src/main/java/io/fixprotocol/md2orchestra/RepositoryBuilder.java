@@ -356,6 +356,29 @@ public class RepositoryBuilder {
           }
         }
       }
+      if (!found && !DEFAULT_SCENARIO.equals(scenario)) {
+        CodeSetType codeset = repositoryAdapter.findCodesetByName(type, DEFAULT_SCENARIO);
+        if (codeset != null) {
+          CodeSetType clone = repositoryAdapter.copyCodeset(codeset);
+          clone.setScenario(scenario);
+          found = true;
+          union = new DatatypeUnion(clone);
+          eventLogger.warn(
+              "RepositoryBuilder missing definition of codeset name={0} scenario={1}; cloning 'base' scenario",
+              type, scenario);
+        } else if (referenceRepositoryAdapter != null) {
+          codeset = referenceRepositoryAdapter.findCodesetByName(type, DEFAULT_SCENARIO);
+          if (codeset != null) {
+            CodeSetType clone = repositoryAdapter.copyCodeset(codeset);
+            clone.setScenario(scenario);
+            found = true;
+            union = new DatatypeUnion(clone);
+            eventLogger.warn(
+                "RepositoryBuilder missing definition of codeset name={0} scenario={1}; cloning 'base' scenario from reference file",
+                type, scenario);
+          }
+        }
+      }
       if (!found) {
         // if not found as a datatype or codeset in either current or referenceRepositoryAdapter
         // repository, then assume its a datatype name
