@@ -616,11 +616,11 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-    //System.out.println(xml);
+    System.out.println(xml);
     builder.closeEventLogger();
     assertTrue(xml.contains("messageRef"));
-    //String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
+    String errors = jsonOutputStream.toString();
+    System.out.println(errors);
   }
   
   @Test // ODOC-121

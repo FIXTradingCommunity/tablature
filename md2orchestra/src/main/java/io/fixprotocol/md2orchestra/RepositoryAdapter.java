@@ -301,7 +301,7 @@ class RepositoryAdapter {
     repository.getComponents().getComponent().add(component);
     return component;
   }
-
+  
   Datatype copyDatatype(final Datatype source) {
     final Datatype datatype = (Datatype) source.clone();
     repository.getDatatypes().getDatatype().add(datatype);
@@ -314,11 +314,17 @@ class RepositoryAdapter {
     return field;
   }
 
-
   GroupType copyGroup(final GroupType source) {
     final GroupType group = (GroupType) source.clone();
     repository.getGroups().getGroup().add(group);
     return group;
+  }
+
+
+  MessageType copyMessage(final MessageType source) {
+    final MessageType message = (MessageType) source.clone();
+    repository.getMessages().getMessage().add(message);
+    return message;
   }
 
 
@@ -349,15 +355,6 @@ class RepositoryAdapter {
     return null;
   }
 
-  CodeType findCodeByValue(final String codesetName, final String scenario, final String value) {
-    CodeSetType codeset = findCodesetByName(codesetName, scenario);
-    if (codeset == null) {
-      return null;
-    } else {
-      return findCodeByValue(codeset, value);
-    }
-  }
-
   CodeType findCodeByValue(CodeSetType codeset, final String value) {
     List<CodeType> codes = codeset.getCode();
     for (CodeType code : codes) {
@@ -366,6 +363,15 @@ class RepositoryAdapter {
       }
     }
     return null;
+  }
+
+  CodeType findCodeByValue(final String codesetName, final String scenario, final String value) {
+    CodeSetType codeset = findCodesetByName(codesetName, scenario);
+    if (codeset == null) {
+      return null;
+    } else {
+      return findCodeByValue(codeset, value);
+    }
   }
 
   CodeSetType findCodesetByName(final String name, final String scenario) {

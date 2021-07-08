@@ -75,6 +75,7 @@ import io.fixprotocol.orchestra.event.EventListenerFactory;
 import io.fixprotocol.orchestra.event.TeeEventListener;
 
 public class RepositoryBuilder {
+
   private class ComponentBuilder implements ElementBuilder<ComponentType> {
 
     private final int currentDepth;
@@ -99,7 +100,7 @@ public class RepositoryBuilder {
           repositoryAdapter.copyComponent(componentType);
           if (currentDepth < maxDepth) {
             final List<Object> members = componentType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, currentDepth+1, maxDepth);
+            copyMembers(members, currentDepth + 1, maxDepth);
           }
         } else {
           eventLogger.error("Unknown component; name={0} scenario={1}", name, scenario);
@@ -130,17 +131,50 @@ public class RepositoryBuilder {
       if (componentType != null) {
         componentRef.setId(componentType.getId());
       } else {
-        eventLogger.error("Unknown componentRef ID; name={0} scenario={1}", name,
+        eventLogger.error("Unknown messageRef ID; name={0} scenario={1}", name,
             componentRef.getScenario());
       }
       return componentRef;
     }
   }
 
+
+  private class MessageRefBuilder implements ElementBuilder<MessageRefType> {
+
+    private final String scenario;
+    private final String name;
+
+    public MessageRefBuilder(final String name, final String scenario) {
+      this.name = name;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public MessageRefType build() {
+      MessageRefType messageRef = null;
+      MessageType messageType = repositoryAdapter.findMessageByName(name, scenario);
+      if (messageType == null && referenceRepositoryAdapter != null) {
+        messageType = referenceRepositoryAdapter.findMessageByName(name, scenario);
+      }
+      if (messageType != null) {
+        messageRef = new MessageRefType();
+        messageRef.setId(messageType.getId());
+        messageRef.setName(name);
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
+          messageRef.setScenario(scenario);
+        }
+        messageRef.setMsgType(messageType.getMsgType());
+      } else {
+        eventLogger.error("Unknown messageRef ID; name={0} scenario={1}", name, scenario);
+      }
+      return messageRef;
+    }
+  }
+
+
   private interface ElementBuilder<T> {
     T build();
   }
-
 
   private class FieldBuilder implements ElementBuilder<FieldType> {
     private final String name;
@@ -222,6 +256,7 @@ public class RepositoryBuilder {
     }
   }
 
+
   /**
    *
    * Populates the ID of a FieldRef when the field name is known
@@ -252,7 +287,7 @@ public class RepositoryBuilder {
       return fieldRef;
     }
   }
-  
+
   private class GroupBuilder implements ElementBuilder<GroupType> {
 
     private final int currentDepth;
@@ -276,12 +311,13 @@ public class RepositoryBuilder {
         if (groupType != null) {
           FieldRefType numInGroupRef = groupType.getNumInGroup();
           if (numInGroupRef != null) {
-            buildSteps.add(new FieldBuilder(numInGroupRef.getId().intValue(), null, scenario, "NumInGroup"));
+            buildSteps.add(
+                new FieldBuilder(numInGroupRef.getId().intValue(), null, scenario, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
           if (currentDepth < maxDepth) {
             final List<Object> members = groupType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, currentDepth+1, maxDepth);
+            copyMembers(members, currentDepth + 1, maxDepth);
           }
         } else {
           eventLogger.error("Unknown group; name={0} scenario={1}", name, scenario);
@@ -290,7 +326,7 @@ public class RepositoryBuilder {
       return groupType;
     }
   }
-  
+
   /**
    *
    * Populates the ID of a GroupRef when the group name is known
@@ -317,7 +353,58 @@ public class RepositoryBuilder {
       return groupRef;
     }
   }
-  
+
+  private class MessageBuilder implements ElementBuilder<MessageType> {
+
+    private String msgType;
+    private final String name;
+    private final String scenario;
+
+    private int tag;
+
+    public MessageBuilder(String name, String scenario, int tag, String msgType) {
+      this.name = name;
+      this.scenario = scenario;
+      this.tag = tag;
+      this.msgType = msgType;
+    }
+
+    @Override
+    public MessageType build() {
+      final String scenarioOrDefault = RepositoryAdapter.scenarioOrDefault(scenario);
+      MessageType message = repositoryAdapter.findMessageByName(name, scenarioOrDefault);
+      if (message == null) {
+        message = new MessageType();
+        MessageType refMessage = null;
+        if (referenceRepositoryAdapter != null) {
+          refMessage = referenceRepositoryAdapter.findMessageByName(name, scenarioOrDefault);
+          if (refMessage == null) {
+            refMessage = referenceRepositoryAdapter.findMessageByName(name, DEFAULT_SCENARIO);
+          }
+        }
+        if (refMessage != null) {
+          message = repositoryAdapter.copyMessage(refMessage);
+        } else {
+          if (tag == -1) {
+            tag = assignId(name, scenario);
+            message.setId(BigInteger.valueOf(tag));
+          }
+          message.setName(name);
+          if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+            message.setScenario(scenarioOrDefault);
+          }
+
+          if (msgType != null) {
+            message.setMsgType(msgType);
+          }
+          repositoryAdapter.addMessage(message);
+        }
+      }
+      return message;
+    }
+
+  }
+
   private class TypeBuilder implements ElementBuilder<DatatypeUnion> {
     final String scenario;
     final String type;
@@ -569,10 +656,11 @@ public class RepositoryBuilder {
 
     // Populate column heading translations. First element is lower case key, second is display
     // format.
-    this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
-        {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
-        {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
-        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
+    this.headings.addAll(
+        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
+            {"basecategory", "Category"}, {"discriminatorid", "Discriminator"},
+            {"addedep", "Added EP"}, {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"},
+            {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
   }
 
   /**
@@ -588,11 +676,12 @@ public class RepositoryBuilder {
 
   /**
    * Controls the depth of a search in a reference file for nested components
-   * @param maxComponentDepth number of levels of nesting to search. Set to {@code Integer.MAX_VALUE} for full
-   * tree walk.
+   * 
+   * @param maxComponentDepth number of levels of nesting to search. Set to
+   *        {@code Integer.MAX_VALUE} for full tree walk.
    */
   public void setMaxComponentDepth(final int maxComponentDepth) {
-    this.maxComponentDepth = maxComponentDepth; 
+    this.maxComponentDepth = maxComponentDepth;
   }
 
   /**
@@ -689,7 +778,9 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
+            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
+            annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -714,10 +805,10 @@ public class RepositoryBuilder {
           statemachine.setName(name);
           final List<Object> actorMembers = actor.getFieldOrFieldRefOrComponent();
           actorMembers.add(statemachine);
-          final List<String> sources = StreamSupport.stream(detailTable.rows().spliterator(), false).map(r -> r.getProperty("state"))
-              .distinct().collect(Collectors.toList());
-          final List<String> targets = StreamSupport.stream(detailTable.rows().spliterator(), false).map(r -> r.getProperty("target"))
-              .distinct().collect(Collectors.toList());
+          final List<String> sources = StreamSupport.stream(detailTable.rows().spliterator(), false)
+              .map(r -> r.getProperty("state")).distinct().collect(Collectors.toList());
+          final List<String> targets = StreamSupport.stream(detailTable.rows().spliterator(), false)
+              .map(r -> r.getProperty("target")).distinct().collect(Collectors.toList());
           // preserves insertion order
           final Set<String> allStates = new LinkedHashSet<>(sources);
           allStates.addAll(targets);
@@ -957,12 +1048,13 @@ public class RepositoryBuilder {
     }
 
     if (referenceRepositoryAdapter != null) {
-      CodeType refCode = referenceRepositoryAdapter.findCodeByValue(codeset.getName(), RepositoryAdapter.scenarioOrDefault(codeset.getScenario()), codeType.getValue());
+      CodeType refCode = referenceRepositoryAdapter.findCodeByValue(codeset.getName(),
+          RepositoryAdapter.scenarioOrDefault(codeset.getScenario()), codeType.getValue());
       if (refCode != null) {
         codeType.setId(refCode.getId());
       }
     }
-    
+
     if (codeType.getId() == null) {
       codeType.setId(BigInteger.valueOf(assignId(codeset.getName(), name)));
     }
@@ -1077,7 +1169,8 @@ public class RepositoryBuilder {
 
   private void addComponent(final GraphContext graphContext, final Context keyContext) {
     final String name = keyContext.getKey(NAME_POSITION);
-    final String scenario = RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
+    final String scenario =
+        RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
     if (graphContext instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) graphContext;
@@ -1095,7 +1188,8 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey),
+            COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower currentDepth heading
@@ -1161,7 +1255,8 @@ public class RepositoryBuilder {
           addDatatypeMapping(detail, standard, mappings);
         }
       } else {
-        eventLogger.error("Unknown name for datatype at line {0} char {1}", detail.getLine(), detail.getCharPositionInLine());
+        eventLogger.error("Unknown name for datatype at line {0} char {1}", detail.getLine(),
+            detail.getCharPositionInLine());
       }
     }
   }
@@ -1246,11 +1341,13 @@ public class RepositoryBuilder {
               CodeSetType existingCodeset =
                   repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               if (existingCodeset != null) {
-                eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
-                    codesetScenario, detail.getLine(), detail.getCharPositionInLine());
+                eventLogger.error(
+                    "Duplicate definition of codeset {0} scenario {1} at line {2} char {3}",
+                    codesetName, codesetScenario, detail.getLine(), detail.getCharPositionInLine());
                 codesetScenario = codesetScenario + "Dup";
               } else if (referenceRepositoryAdapter != null) {
-                  existingCodeset = referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+                existingCodeset =
+                    referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
               }
               createCodesetFromString(codesetName, codesetScenario, detail.getProperty("type"),
                   values, existingCodeset);
@@ -1368,7 +1465,9 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
+            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
+            annotation);
       }
     } else if (graphContext instanceof DetailTable) {
       final DetailTable table = (DetailTable) graphContext;
@@ -1390,7 +1489,8 @@ public class RepositoryBuilder {
 
   private void addGroup(final GraphContext graphContext, final Context keyContext) {
     final String name = keyContext.getKey(NAME_POSITION);
-    final String scenario = RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
+    final String scenario =
+        RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
     if (graphContext instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) graphContext;
@@ -1403,10 +1503,12 @@ public class RepositoryBuilder {
           skipRows = 0;
         }
       } else {
-        eventLogger.error("Unknown NumInGroup for group; name={0} at line {1} char {2}", group.getName(), detailTable.getLine(), detailTable.getCharPositionInLine());
+        eventLogger.error("Unknown NumInGroup for group; name={0} at line {1} char {2}",
+            group.getName(), detailTable.getLine(), detailTable.getCharPositionInLine());
       }
       final List<? extends DetailTable.TableRow> remainingRows =
-          StreamSupport.stream(detailTable.rows().spliterator(), false).skip(skipRows).collect(Collectors.toList());
+          StreamSupport.stream(detailTable.rows().spliterator(), false).skip(skipRows)
+              .collect(Collectors.toList());
       addMembers(remainingRows, members);
     } else if (graphContext instanceof Documentation) {
       final Documentation detail = (Documentation) graphContext;
@@ -1419,7 +1521,9 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
+            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
+            annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -1481,7 +1585,8 @@ public class RepositoryBuilder {
 
   private void addMessage(final GraphContext graphContext, final Context keyContext) {
     final String name = keyContext.getKey(NAME_POSITION);
-    final String scenario = RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
+    final String scenario =
+        RepositoryAdapter.scenarioOrDefault(keyContext.getKeyValue(SCENARIO_KEYWORD));
 
     if (graphContext instanceof DetailTable) {
       final DetailTable detailTable = (DetailTable) graphContext;
@@ -1493,7 +1598,8 @@ public class RepositoryBuilder {
         final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
         addMembers(detailTable.rows(), members);
       } else {
-        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name, scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
+        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name,
+            scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
       }
     } else if (graphContext instanceof Documentation) {
       final Documentation detail = (Documentation) graphContext;
@@ -1506,16 +1612,20 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : RepositoryAdapter.getPurpose(parentKey), annotation);
+            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null
+                : RepositoryAdapter.getPurpose(parentKey),
+            annotation);
       } else {
-        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name, scenario, detail.getLine(), detail.getCharPositionInLine());
+        eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name,
+            scenario, detail.getLine(), detail.getCharPositionInLine());
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
         && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final int tag = textUtil.getTag(keyContext.getKeys());
       final String msgType = keyContext.getKeyValue("type");
-      final MessageType message = getOrAddMessage(name, scenario, tag, msgType);
+      MessageBuilder builder = new MessageBuilder(name, scenario, tag, msgType);
+      final MessageType message = builder.build();
       final String flow = keyContext.getKeyValue(FLOW_KEYWORD);
       if (flow != null) {
         message.setFlow(flow);
@@ -1537,17 +1647,18 @@ public class RepositoryBuilder {
     if (graphContext instanceof DetailTable) {
       final Context messageContext = keyContext.getParent();
       if (messageContext != null) {
-        final String messageName = messageContext.getKeyValue(MESSAGE_KEYWORD);
+        final String name = messageContext.getKeyValue(MESSAGE_KEYWORD);
         final int tag = textUtil.getTag(keyContext.getKeys());
         final String scenario =
             RepositoryAdapter.scenarioOrDefault(messageContext.getKeyValue(SCENARIO_KEYWORD));
         final String msgType = messageContext.getKeyValue("type");
 
-        if (messageName == null) {
+        if (name == null) {
           eventLogger.error("Unknown message name for responses at line {0} char {1}",
               keyContext.getLine(), keyContext.getCharPositionInLine());
         } else {
-          final MessageType message = getOrAddMessage(messageName, scenario, tag, msgType);
+          MessageBuilder builder = new MessageBuilder(name, scenario, tag, msgType);
+          final MessageType message = builder.build();
           final MessageType.Responses responses = new MessageType.Responses();
           message.setResponses(responses);
           final List<ResponseType> responseList = responses.getResponse();
@@ -1555,15 +1666,14 @@ public class RepositoryBuilder {
           detailTable.rows().forEach(detail -> {
             final ResponseType response = new ResponseType();
             final List<Object> responseRefs = response.getMessageRefOrAssignOrTrigger();
-            final MessageRefType messageRef = new MessageRefType();
-            messageRef.setName(detail.getProperty("name"));
 
-            final String refScenario = detail.getProperty(SCENARIO_KEYWORD);
-            if (refScenario != null && !DEFAULT_SCENARIO.equals(refScenario)) {
-              messageRef.setScenario(refScenario);
-            }
+            final String refScenario =
+                RepositoryAdapter.scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
 
-            messageRef.setMsgType(detail.getProperty("msgType"));
+            final String refName = detail.getProperty("name");
+            MessageRefBuilder refBuilder = new MessageRefBuilder(refName, refScenario);
+            MessageRefType messageRef = refBuilder.build();
+
             response.setWhen(detail.getProperty("when"));
             final String markdown = detail.getProperty(DOCUMENTATION_KEYWORD);
             if (markdown != null) {
@@ -1576,6 +1686,10 @@ public class RepositoryBuilder {
             }
             responseRefs.add(messageRef);
             responseList.add(response);
+
+            int refId = messageRef.getId() != null ? messageRef.getId().intValue() : -1;
+            buildSteps.add(new MessageBuilder(refName, refScenario, refId,
+                messageRef.getMsgType()));
           });
         }
       } else {
@@ -1605,8 +1719,8 @@ public class RepositoryBuilder {
           repository.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+            RepositoryAdapter.getPurpose(parentKey), annotation);
       }
     } else {
       final String name = String.join(" ", keyContext.getKeys());
@@ -1750,43 +1864,6 @@ public class RepositoryBuilder {
       }
     }
     return context;
-  }
-
-  private MessageType getOrAddMessage(final String name, final String scenario, int tag,
-      String msgType) {
-    final String scenarioOrDefault = RepositoryAdapter.scenarioOrDefault(scenario);
-    MessageType message = repositoryAdapter.findMessageByName(name, scenarioOrDefault);
-    if (message == null) {
-      message = new MessageType();
-      MessageType refMessage = null;
-      if (referenceRepositoryAdapter != null) {
-        refMessage = referenceRepositoryAdapter.findMessageByName(name, scenarioOrDefault);
-        if (refMessage == null) {
-          refMessage = referenceRepositoryAdapter.findMessageByName(name, DEFAULT_SCENARIO);
-        }
-      }
-
-      if (tag == -1 && refMessage != null) {
-        tag = refMessage.getId().intValue();
-      }
-      if (tag == -1) {
-        tag = assignId(name, scenario);
-      }
-      message.setId(BigInteger.valueOf(tag));
-      message.setName(name);
-      if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
-        message.setScenario(scenarioOrDefault);
-      }
-      if (msgType == null && refMessage != null) {
-        msgType = refMessage.getMsgType();
-      }
-      if (msgType != null) {
-        message.setMsgType(msgType);
-      }
-      repositoryAdapter.addMessage(message);
-
-    }
-    return message;
   }
 
   private ComponentRefType populateComponentRef(final DetailTable.TableRow detail) {
@@ -2000,7 +2077,8 @@ public class RepositoryBuilder {
       }
     }
 
-    final String scenario = RepositoryAdapter.scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
+    final String scenario =
+        RepositoryAdapter.scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     if (fieldRefType.getId() != null) {
       final FieldType fieldType =
           repositoryAdapter.findFieldByTag(fieldRefType.getId().intValue(), scenario);
@@ -2036,7 +2114,8 @@ public class RepositoryBuilder {
             rules.add(rule);
             presence = PresenceT.OPTIONAL;
           } else {
-            eventLogger.error("Missing expression for field rule; id={0, number, ###} at line {1} char {2}",
+            eventLogger.error(
+                "Missing expression for field rule; id={0, number, ###} at line {1} char {2}",
                 fieldRefType.getId(), detail.getLine(), detail.getCharPositionInLine());
           }
         } else if (word.equalsIgnoreCase(ASSIGN_KEYWORD)) {
@@ -2047,7 +2126,8 @@ public class RepositoryBuilder {
                   .setAssign(valueString.substring(keywordPos + ASSIGN_KEYWORD.length() + 1));
             }
           } else {
-            eventLogger.error("Missing value for assignment; id={0, number, ###} at line {1} char {2}",
+            eventLogger.error(
+                "Missing value for assignment; id={0, number, ###} at line {1} char {2}",
                 fieldRefType.getId(), detail.getLine(), detail.getCharPositionInLine());
           }
         }
@@ -2062,13 +2142,15 @@ public class RepositoryBuilder {
         CodeSetType existingCodeset =
             repositoryAdapter.findCodesetByName(codesetName, codesetScenario);
         if (existingCodeset != null) {
-          eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}", codesetName,
-              codesetScenario, detail.getLine(), detail.getCharPositionInLine());
+          eventLogger.error("Duplicate definition of codeset {0} scenario {1} at line {2} char {3}",
+              codesetName, codesetScenario, detail.getLine(), detail.getCharPositionInLine());
           codesetScenario = codesetScenario + "Dup";
         } else if (referenceRepositoryAdapter != null) {
-          existingCodeset = referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
+          existingCodeset =
+              referenceRepositoryAdapter.findCodesetByName(codesetName, codesetScenario);
         }
-        createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString, existingCodeset);
+        createCodesetFromString(codesetName, codesetScenario, DEFAULT_CODE_TYPE, valueString,
+            existingCodeset);
       } else {
         presence = PresenceT.CONSTANT;
         fieldRefType.setPresence(presence);
