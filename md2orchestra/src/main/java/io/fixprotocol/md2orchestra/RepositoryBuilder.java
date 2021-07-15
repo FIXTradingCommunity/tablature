@@ -53,6 +53,7 @@ import io.fixprotocol._2020.orchestra.repository.MappedDatatype;
 import io.fixprotocol._2020.orchestra.repository.MessageRefType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
+import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.SectionType;
@@ -139,42 +140,10 @@ public class RepositoryBuilder {
   }
 
 
-  private class MessageRefBuilder implements ElementBuilder<MessageRefType> {
-
-    private final String scenario;
-    private final String name;
-
-    public MessageRefBuilder(final String name, final String scenario) {
-      this.name = name;
-      this.scenario = scenario;
-    }
-
-    @Override
-    public MessageRefType build() {
-      MessageRefType messageRef = null;
-      MessageType messageType = repositoryAdapter.findMessageByName(name, scenario);
-      if (messageType == null && referenceRepositoryAdapter != null) {
-        messageType = referenceRepositoryAdapter.findMessageByName(name, scenario);
-      }
-      if (messageType != null) {
-        messageRef = new MessageRefType();
-        messageRef.setId(messageType.getId());
-        messageRef.setName(name);
-        if (!DEFAULT_SCENARIO.equals(scenario)) {
-          messageRef.setScenario(scenario);
-        }
-        messageRef.setMsgType(messageType.getMsgType());
-      } else {
-        eventLogger.error("Unknown messageRef ID; name={0} scenario={1}", name, scenario);
-      }
-      return messageRef;
-    }
-  }
-
-
   private interface ElementBuilder<T> {
     T build();
   }
+
 
   private class FieldBuilder implements ElementBuilder<FieldType> {
     private final String name;
@@ -256,7 +225,6 @@ public class RepositoryBuilder {
     }
   }
 
-
   /**
    *
    * Populates the ID of a FieldRef when the field name is known
@@ -288,6 +256,7 @@ public class RepositoryBuilder {
     }
   }
 
+
   private class GroupBuilder implements ElementBuilder<GroupType> {
 
     private final int currentDepth;
@@ -311,8 +280,7 @@ public class RepositoryBuilder {
         if (groupType != null) {
           FieldRefType numInGroupRef = groupType.getNumInGroup();
           if (numInGroupRef != null) {
-            buildSteps.add(
-                new FieldBuilder(numInGroupRef.getId(), null, scenario, "NumInGroup"));
+            buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, scenario, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
           if (currentDepth < maxDepth) {
@@ -403,6 +371,38 @@ public class RepositoryBuilder {
       return message;
     }
 
+  }
+
+  private class MessageRefBuilder implements ElementBuilder<MessageRefType> {
+
+    private final String name;
+    private final String scenario;
+
+    public MessageRefBuilder(final String name, final String scenario) {
+      this.name = name;
+      this.scenario = scenario;
+    }
+
+    @Override
+    public MessageRefType build() {
+      MessageRefType messageRef = null;
+      MessageType messageType = repositoryAdapter.findMessageByName(name, scenario);
+      if (messageType == null && referenceRepositoryAdapter != null) {
+        messageType = referenceRepositoryAdapter.findMessageByName(name, scenario);
+      }
+      if (messageType != null) {
+        messageRef = new MessageRefType();
+        messageRef.setId(messageType.getId());
+        messageRef.setName(name);
+        if (!DEFAULT_SCENARIO.equals(scenario)) {
+          messageRef.setScenario(scenario);
+        }
+        messageRef.setMsgType(messageType.getMsgType());
+      } else {
+        eventLogger.error("Unknown messageRef ID; name={0} scenario={1}", name, scenario);
+      }
+      return messageRef;
+    }
   }
 
   private class TypeBuilder implements ElementBuilder<DatatypeUnion> {
@@ -566,17 +566,38 @@ public class RepositoryBuilder {
     return eventLogger;
   }
 
-  private final Queue<ElementBuilder<?>> buildSteps = new LinkedList<>();
+  static String getPurpose(final String word) {
+    if (isDocumentationPlaceholder(word)) {
+      return null;
+    } else {
+      return word.toUpperCase();
+    }
+  }
 
+  static boolean isDocumentationKey(final String word) {
+    for (final PurposeEnum purpose : PurposeEnum.values()) {
+      if (purpose.value().compareToIgnoreCase(word) == 0) {
+        return true;
+      }
+    }
+    return isDocumentationPlaceholder(word);
+  }
+
+  static boolean isDocumentationPlaceholder(final String word) {
+    return (DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0)
+        || (DESCRIPTION_KEYWORD.compareToIgnoreCase(word) == 0);
+  }
+
+  private final Queue<ElementBuilder<?>> buildSteps = new LinkedList<>();
   private final String[] contextKeys = new String[] {ACTOR_KEYWORD, CATEGORIES_KEYWORD,
       CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD, FIELDS_KEYWORD, FLOW_KEYWORD,
       GROUP_KEYWORD, MESSAGE_KEYWORD, RESPONSES_KEYWORD, SECTIONS_KEYWORD, STATEMACHINE_KEYWORD};
-
   private TeeEventListener eventLogger;
+
   private final AssociativeSet headings = new AssociativeSet();
+
   private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
   private final Logger logger = LogManager.getLogger(getClass());
-
   private final Consumer<GraphContext> markdownConsumer = graphContext -> {
     final Context keyContext = getKeyContext(graphContext);
     if (keyContext == null) {
@@ -636,11 +657,13 @@ public class RepositoryBuilder {
           }
       }
   };
-
   private int maxComponentDepth = 1;
   private final String paragraphDelimiterInTables;
+
   private RepositoryAdapter referenceRepositoryAdapter = null;
+
   private RepositoryAdapter repositoryAdapter = null;
+
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
 
   RepositoryBuilder(final OutputStream jsonOutputStream) throws Exception {
@@ -707,8 +730,8 @@ public class RepositoryBuilder {
         FieldType field =
             repositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
         if (field == null) {
-          field = referenceRepositoryAdapter.findFieldByTag(fieldRef.getId(),
-              fieldRef.getScenario());
+          field =
+              referenceRepositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
           if (field != null) {
             addFieldAndType(field);
           } else {
@@ -721,13 +744,13 @@ public class RepositoryBuilder {
         GroupType group =
             repositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
         if (group == null) {
-          group = referenceRepositoryAdapter.findGroupByTag(groupRef.getId(),
-              groupRef.getScenario());
+          group =
+              referenceRepositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
           if (group != null) {
             FieldRefType numInGroupRef = group.getNumInGroup();
             if (numInGroupRef != null) {
-              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null,
-                  groupRef.getScenario(), "NumInGroup"));
+              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, groupRef.getScenario(),
+                  "NumInGroup"));
             }
             group = repositoryAdapter.copyGroup(group);
             if (currentDepth < maxDepth) {
@@ -741,8 +764,8 @@ public class RepositoryBuilder {
         }
       } else if (member instanceof ComponentRefType) {
         final ComponentRefType componentRef = (ComponentRefType) member;
-        ComponentType component = repositoryAdapter
-            .findComponentByTag(componentRef.getId(), componentRef.getScenario());
+        ComponentType component =
+            repositoryAdapter.findComponentByTag(componentRef.getId(), componentRef.getScenario());
         if (component == null) {
           component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId(),
               componentRef.getScenario());
@@ -778,9 +801,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+            ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -854,9 +875,9 @@ public class RepositoryBuilder {
                     transition.setTarget(p.getValue());
                     break;
                   default:
-                    if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+                    if (isDocumentationKey(p.getKey())) {
                       repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                          RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                          getPurpose(p.getKey()), annotation);
                       transition.setAnnotation(annotation);
                     } else {
                       repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables,
@@ -952,9 +973,9 @@ public class RepositoryBuilder {
             category.setUpdatedEP(new BigInteger(p.getValue()));
             break;
           default:
-            if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+            if (isDocumentationKey(p.getKey())) {
               repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                  RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                  getPurpose(p.getKey()), annotation);
               category.setAnnotation(annotation);
             } else {
               repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -1035,9 +1056,9 @@ public class RepositoryBuilder {
             annotation = new Annotation();
           }
 
-          if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                getPurpose(p.getKey()), annotation);
             codeType.setAnnotation(annotation);
           } else {
             repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -1110,9 +1131,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+            CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -1188,8 +1207,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
+            COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
     } // make sure it's not a lower currentDepth heading
@@ -1298,9 +1316,9 @@ public class RepositoryBuilder {
           // an attribute of parent datatype
           break;
         default:
-          if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                getPurpose(p.getKey()), annotation);
             mapping.setAnnotation(annotation);
           } else {
             repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -1421,9 +1439,9 @@ public class RepositoryBuilder {
             field.setUpdatedEP(new BigInteger(p.getValue()));
             break;
           default:
-            if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+            if (isDocumentationKey(p.getKey())) {
               repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                  RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                  getPurpose(p.getKey()), annotation);
               field.setAnnotation(annotation);
             } else {
               repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -1465,9 +1483,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(documentation.getDocumentation(),
-            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+            FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } else if (graphContext instanceof DetailTable) {
       final DetailTable table = (DetailTable) graphContext;
@@ -1521,9 +1537,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+            GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -1612,9 +1626,7 @@ public class RepositoryBuilder {
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
         repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null
-                : RepositoryAdapter.getPurpose(parentKey),
-            annotation);
+            MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name,
             scenario, detail.getLine(), detail.getCharPositionInLine());
@@ -1688,8 +1700,8 @@ public class RepositoryBuilder {
             responseList.add(response);
 
             int refId = messageRef.getId() != null ? messageRef.getId().intValue() : -1;
-            buildSteps.add(new MessageBuilder(refName, refScenario, refId,
-                messageRef.getMsgType()));
+            buildSteps
+                .add(new MessageBuilder(refName, refScenario, refId, messageRef.getMsgType()));
           });
         }
       } else {
@@ -1719,8 +1731,8 @@ public class RepositoryBuilder {
           repository.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(),
-            RepositoryAdapter.getPurpose(parentKey), annotation);
+        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+            annotation);
       }
     } else {
       final String name = String.join(" ", keyContext.getKeys());
@@ -1772,9 +1784,9 @@ public class RepositoryBuilder {
             section.setUpdatedEP(new BigInteger(p.getValue()));
             break;
           default:
-            if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+            if (isDocumentationKey(p.getKey())) {
               repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                  RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                  getPurpose(p.getKey()), annotation);
               section.setAnnotation(annotation);
             } else {
               repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -1923,9 +1935,9 @@ public class RepositoryBuilder {
           if (annotation == null) {
             annotation = new Annotation();
           }
-          if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                getPurpose(p.getKey()), annotation);
             componentRefType.setAnnotation(annotation);
           } else {
             repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -2065,9 +2077,9 @@ public class RepositoryBuilder {
           if (annotation == null) {
             annotation = new Annotation();
           }
-          if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                getPurpose(p.getKey()), annotation);
             fieldRefType.setAnnotation(annotation);
           } else {
             repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -2080,8 +2092,7 @@ public class RepositoryBuilder {
     final String scenario =
         RepositoryAdapter.scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     if (fieldRefType.getId() != null) {
-      final FieldType fieldType =
-          repositoryAdapter.findFieldByTag(fieldRefType.getId(), scenario);
+      final FieldType fieldType = repositoryAdapter.findFieldByTag(fieldRefType.getId(), scenario);
       if (fieldType == null) {
         buildSteps.add(new FieldBuilder(fieldRefType.getId(), name, scenario, null));
       }
@@ -2225,9 +2236,9 @@ public class RepositoryBuilder {
           if (annotation == null) {
             annotation = new Annotation();
           }
-          if (RepositoryAdapter.isDocumentationKey(p.getKey())) {
+          if (isDocumentationKey(p.getKey())) {
             repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
-                RepositoryAdapter.getPurpose(p.getKey()), annotation);
+                getPurpose(p.getKey()), annotation);
             groupRefType.setAnnotation(annotation);
           } else {
             repositoryAdapter.addAppinfo(p.getValue(), paragraphDelimiterInTables, p.getKey(),
@@ -2290,7 +2301,7 @@ public class RepositoryBuilder {
     String tagStr = detail.getProperty("id");
     if (tagStr == null) {
       tagStr = detail.getProperty("tag");
-    } 
+    }
     if (tagStr != null) {
       BigInteger id = new BigInteger(tagStr);
       fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);

@@ -50,7 +50,6 @@ import io.fixprotocol._2020.orchestra.repository.Groups;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
 import io.fixprotocol._2020.orchestra.repository.Messages;
 import io.fixprotocol._2020.orchestra.repository.PresenceT;
-import io.fixprotocol._2020.orchestra.repository.PurposeEnum;
 import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.Sections;
@@ -107,20 +106,6 @@ class RepositoryAdapter {
       "publisher", "references", "relation", "replaces", "requires", "rights", "rightsHolder",
       "source", "spatial", "subject", "tableOfContents", "temporal", "title", "type", "valid"};
 
-  static String getPurpose(final String word) {
-    // May or may not match an enumerated value, but force case for all
-    return word.toUpperCase();
-  }
-
-  static boolean isDocumentationKey(final String word) {
-    for (final PurposeEnum purpose : PurposeEnum.values()) {
-      if (purpose.value().compareToIgnoreCase(word) == 0) {
-        return true;
-      }
-    }
-    return (RepositoryBuilder.DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0)
-        || (RepositoryBuilder.DESCRIPTION_KEYWORD.compareToIgnoreCase(word) == 0);
-  }
 
   static boolean isPresence(final String word) {
     if (word == null || word.isEmpty()) {
@@ -302,7 +287,7 @@ class RepositoryAdapter {
     repository.getComponents().getComponent().add(component);
     return component;
   }
-  
+
   Datatype copyDatatype(final Datatype source) {
     final Datatype datatype = (Datatype) source.clone();
     repository.getDatatypes().getDatatype().add(datatype);
