@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import java.io.File;
 import java.io.FileInputStream;
+import java.math.BigInteger;
 import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -96,10 +97,10 @@ class Md2OrchestraTest {
     assertEquals(453, group.getNumInGroup().getId().intValue());
     assertEquals(3, groupMembers.size());
 
-    FieldType field6234 = outfile.findFieldByTag(6234, "base");
+    FieldType field6234 = outfile.findFieldByTag(BigInteger.valueOf(6234), "base");
     assertNotNull(field6234);
 
-    FieldType field6235 = outfile.findFieldByTag(6235, "base");
+    FieldType field6235 = outfile.findFieldByTag(BigInteger.valueOf(6235), "base");
     assertNotNull(field6235);
   }
 
@@ -132,10 +133,10 @@ class Md2OrchestraTest {
     assertEquals(453, group.getNumInGroup().getId().intValue());
     assertEquals(3, groupMembers.size());
 
-    FieldType field6234 = outfile.findFieldByTag(6234, "base");
+    FieldType field6234 = outfile.findFieldByTag(BigInteger.valueOf(6234), "base");
     assertNotNull(field6234);
 
-    FieldType field6235 = outfile.findFieldByTag(6235, "base");
+    FieldType field6235 = outfile.findFieldByTag(BigInteger.valueOf(6235), "base");
     assertNotNull(field6235);
   }
 

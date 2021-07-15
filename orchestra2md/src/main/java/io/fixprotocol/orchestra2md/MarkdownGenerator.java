@@ -324,13 +324,13 @@ public class MarkdownGenerator {
 
   private void addComponentRefRow(Repository repository, ComponentRefType componentRef,
       MutableDetailProperties row) {
-    final int tag = componentRef.getId().intValue();
+    final BigInteger tag = componentRef.getId();
     final String scenario = componentRef.getScenario();
     final ComponentType component = RepositoryAdaptor.findComponentByTag(repository, tag, scenario);
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
-      eventLogger.warn("Unknown component; id={0, number, #0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown component; id={0, number, #0} scenario={1}", tag.intValue(), scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -418,15 +418,15 @@ public class MarkdownGenerator {
 
   private void addFieldRefRow(Repository repository, FieldRefType fieldRef,
       MutableDetailProperties row) {
-    final int tag = fieldRef.getId().intValue();
+    final BigInteger tag = fieldRef.getId();
     final String scenario = fieldRef.getScenario();
     final FieldType field = RepositoryAdaptor.findFieldByTag(repository, tag, scenario);
     if (field != null) {
       row.addProperty("name", field.getName());
     } else {
-      eventLogger.warn("Unknown field; id={0, number, #0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown field; id={0, number, #0} scenario={1}", tag.intValue(), scenario);
     }
-    row.addProperty("tag", Integer.toString(tag));
+    row.addIntProperty("tag", tag.intValue());
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       row.addProperty("scenario", scenario);
     }
@@ -541,13 +541,13 @@ public class MarkdownGenerator {
 
   private void addGroupRefRow(Repository repository, GroupRefType groupRef,
       MutableDetailProperties row) {
-    final int tag = groupRef.getId().intValue();
+    final BigInteger tag = groupRef.getId();
     final String scenario = groupRef.getScenario();
     final GroupType group = RepositoryAdaptor.findGroupByTag(repository, tag, scenario);
     if (group != null) {
       row.addProperty("name", group.getName());
     } else {
-      eventLogger.warn("Unknown group; id={0, number, #0} scenario={1}", tag, scenario);
+      eventLogger.warn("Unknown group; id={0, number, #0} scenario={1}", tag.intValue(), scenario);
     }
     row.addProperty("tag", "group");
     if (!scenario.equals(DEFAULT_SCENARIO)) {

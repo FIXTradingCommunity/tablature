@@ -15,6 +15,7 @@ package io.fixprotocol.md2orchestra;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import javax.xml.bind.JAXBContext;
@@ -396,10 +397,10 @@ class RepositoryAdapter {
     return null;
   }
 
-  ComponentType findComponentByTag(final int tag, final String scenario) {
+  ComponentType findComponentByTag(final BigInteger tag, final String scenario) {
     final List<ComponentType> components = repository.getComponents().getComponent();
     for (final ComponentType component : components) {
-      if (component.getId().intValue() == tag
+      if (component.getId().equals(tag)
           && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }
@@ -429,10 +430,10 @@ class RepositoryAdapter {
     return null;
   }
 
-  FieldType findFieldByTag(final int tag, final String scenario) {
+  FieldType findFieldByTag(final BigInteger tag, final String scenario) {
     final List<FieldType> fields = repository.getFields().getField();
     for (final FieldType field : fields) {
-      if (field.getId().intValue() == tag
+      if (field.getId().equals(tag)
           && scenarioOrDefault(field.getScenario()).equalsIgnoreCase(scenario)) {
         return field;
       }
@@ -467,10 +468,10 @@ class RepositoryAdapter {
     return null;
   }
 
-  GroupType findGroupByTag(final int tag, final String scenario) {
+  GroupType findGroupByTag(final BigInteger tag, final String scenario) {
     final List<GroupType> components = repository.getGroups().getGroup();
     for (final GroupType component : components) {
-      if (component.getId().intValue() == tag
+      if (component.getId().equals(tag)
           && scenarioOrDefault(component.getScenario()).equalsIgnoreCase(scenario)) {
         return component;
       }

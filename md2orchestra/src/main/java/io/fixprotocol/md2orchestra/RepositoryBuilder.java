@@ -179,10 +179,10 @@ public class RepositoryBuilder {
   private class FieldBuilder implements ElementBuilder<FieldType> {
     private final String name;
     private final String scenario;
-    private final int tag;
+    private final BigInteger tag;
     private final String type;
 
-    public FieldBuilder(final int tag, final String name, final String scenario,
+    public FieldBuilder(final BigInteger tag, final String name, final String scenario,
         final String type) {
       this.tag = tag;
       this.name = name;
@@ -193,7 +193,7 @@ public class RepositoryBuilder {
     @Override
     public FieldType build() {
       FieldType fieldType = null;
-      if (tag > 0) {
+      if (!tag.equals(BigInteger.ZERO)) {
         fieldType = repositoryAdapter.findFieldByTag(tag, scenario);
       } else if (name != null) {
         fieldType = repositoryAdapter.findFieldByName(name, scenario);
@@ -201,7 +201,7 @@ public class RepositoryBuilder {
 
       if ((fieldType == null || fieldType.getType() == null)
           && referenceRepositoryAdapter != null) {
-        if (tag > 0) {
+        if (!tag.equals(BigInteger.ZERO)) {
           fieldType = referenceRepositoryAdapter.findFieldByTag(tag, scenario);
         } else if (name != null) {
           fieldType = referenceRepositoryAdapter.findFieldByName(name, scenario);
@@ -215,7 +215,7 @@ public class RepositoryBuilder {
       if (fieldType == null && !DEFAULT_SCENARIO.equals(scenario)
           && referenceRepositoryAdapter != null) {
         FieldType baseFieldType = null;
-        if (tag > 0) {
+        if (!tag.equals(BigInteger.ZERO)) {
           baseFieldType = referenceRepositoryAdapter.findFieldByTag(tag, DEFAULT_SCENARIO);
         } else {
           baseFieldType = referenceRepositoryAdapter.findFieldByName(name, DEFAULT_SCENARIO);
@@ -240,8 +240,8 @@ public class RepositoryBuilder {
         if (!DEFAULT_SCENARIO.equals(scenario)) {
           fieldType.setScenario(scenario);
         }
-        if (tag > 0) {
-          fieldType.setId(BigInteger.valueOf(tag));
+        if (!tag.equals(BigInteger.ZERO)) {
+          fieldType.setId(tag);
         } else {
           fieldType.setId(BigInteger.ZERO);
           eventLogger.error("Unknown field ID; name={0} scenario={1}", name, scenario);
@@ -312,7 +312,7 @@ public class RepositoryBuilder {
           FieldRefType numInGroupRef = groupType.getNumInGroup();
           if (numInGroupRef != null) {
             buildSteps.add(
-                new FieldBuilder(numInGroupRef.getId().intValue(), null, scenario, "NumInGroup"));
+                new FieldBuilder(numInGroupRef.getId(), null, scenario, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
           if (currentDepth < maxDepth) {
@@ -705,9 +705,9 @@ public class RepositoryBuilder {
       if (member instanceof FieldRefType) {
         final FieldRefType fieldRef = (FieldRefType) member;
         FieldType field =
-            repositoryAdapter.findFieldByTag(fieldRef.getId().intValue(), fieldRef.getScenario());
+            repositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
         if (field == null) {
-          field = referenceRepositoryAdapter.findFieldByTag(fieldRef.getId().intValue(),
+          field = referenceRepositoryAdapter.findFieldByTag(fieldRef.getId(),
               fieldRef.getScenario());
           if (field != null) {
             addFieldAndType(field);
@@ -719,14 +719,14 @@ public class RepositoryBuilder {
       } else if (member instanceof GroupRefType) {
         final GroupRefType groupRef = (GroupRefType) member;
         GroupType group =
-            repositoryAdapter.findGroupByTag(groupRef.getId().intValue(), groupRef.getScenario());
+            repositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
         if (group == null) {
-          group = referenceRepositoryAdapter.findGroupByTag(groupRef.getId().intValue(),
+          group = referenceRepositoryAdapter.findGroupByTag(groupRef.getId(),
               groupRef.getScenario());
           if (group != null) {
             FieldRefType numInGroupRef = group.getNumInGroup();
             if (numInGroupRef != null) {
-              buildSteps.add(new FieldBuilder(numInGroupRef.getId().intValue(), null,
+              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null,
                   groupRef.getScenario(), "NumInGroup"));
             }
             group = repositoryAdapter.copyGroup(group);
@@ -742,9 +742,9 @@ public class RepositoryBuilder {
       } else if (member instanceof ComponentRefType) {
         final ComponentRefType componentRef = (ComponentRefType) member;
         ComponentType component = repositoryAdapter
-            .findComponentByTag(componentRef.getId().intValue(), componentRef.getScenario());
+            .findComponentByTag(componentRef.getId(), componentRef.getScenario());
         if (component == null) {
-          component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId().intValue(),
+          component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId(),
               componentRef.getScenario());
           if (component != null) {
             component = repositoryAdapter.copyComponent(component);
@@ -1443,9 +1443,9 @@ public class RepositoryBuilder {
     final String scenario = field.getScenario();
 
     if (id == null) {
-      buildSteps.add(new FieldBuilder(0, name, scenario, type));
+      buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, type));
     } else if (name == null || type == null) {
-      buildSteps.add(new FieldBuilder(id.intValue(), name, scenario, type));
+      buildSteps.add(new FieldBuilder(id, name, scenario, type));
     } else {
       buildSteps.add(new TypeBuilder(type, scenario));
       repositoryAdapter.addField(field);
@@ -2081,9 +2081,9 @@ public class RepositoryBuilder {
         RepositoryAdapter.scenarioOrDefault(detail.getProperty(SCENARIO_KEYWORD));
     if (fieldRefType.getId() != null) {
       final FieldType fieldType =
-          repositoryAdapter.findFieldByTag(fieldRefType.getId().intValue(), scenario);
+          repositoryAdapter.findFieldByTag(fieldRefType.getId(), scenario);
       if (fieldType == null) {
-        buildSteps.add(new FieldBuilder(fieldRefType.getId().intValue(), name, scenario, null));
+        buildSteps.add(new FieldBuilder(fieldRefType.getId(), name, scenario, null));
       }
     } else {
       final FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
@@ -2091,7 +2091,7 @@ public class RepositoryBuilder {
         fieldRefType.setId(fieldType.getId());
       } else {
         fieldRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new FieldBuilder(0, name, scenario, null));
+        buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, null));
         buildSteps.add(new FieldRefBuilder(name, fieldRefType));
       }
     }
@@ -2287,11 +2287,12 @@ public class RepositoryBuilder {
 
   private boolean populateNumInGroup(final DetailTable.TableRow detail, final GroupType group) {
     FieldType fieldType = null;
-    Integer id = detail.getIntProperty("id");
-    if (id == null) {
-      id = detail.getIntProperty("tag");
-    }
-    if (id != null) {
+    String tagStr = detail.getProperty("id");
+    if (tagStr == null) {
+      tagStr = detail.getProperty("tag");
+    } 
+    if (tagStr != null) {
+      BigInteger id = new BigInteger(tagStr);
       fieldType = repositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
       if (fieldType == null && referenceRepositoryAdapter != null) {
         fieldType = referenceRepositoryAdapter.findFieldByTag(id, DEFAULT_SCENARIO);
