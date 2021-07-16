@@ -112,6 +112,66 @@ class RepositoryBuilderTest {
     assertTrue(errors.contains("invalid metadata term version"));
   }
   
+  @Test // ODOC-115
+  void codesetType() throws Exception {
+    String text =
+        "## Group Parties scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Scenario\n"
+        + "|---------------------|--------|----------|----------\n"
+        + "| NoPartyIDs | 453 | req |\n"
+        + "| PartyID | 448 | req |\n"
+        + "| PartyIDSource | 447 | req |\n"
+        + "| PartyRole | 452 | req |\n"
+        + "| PartyRoleQualifier | 2376 | opt | Test\n"
+        + "\n"
+        + "## Codeset PartyRoleQualifierCodeSet type int scenario Test\n"
+        + "\n"
+        + "| Name | Value |\n"
+        + "|------------------|-------|\n"
+        + "| Algorithm | 22 |\n"
+        + "| FirmOrLegalEntity| 23 |\n"
+        + "| NaturalPerson | 24 |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("type=\"int\""));
+    assertFalse(errors.contains("Datatype added"));
+  }
+
+  @Test // ODOC-115
+  void codesetType2() throws Exception {
+    String text =
+        "## Message NewOrderSingle\n"
+        + "\n"
+        + "| Name | Tag | Presence | Scenario |\n"
+        + "|----------------|----:|:---------:|--------------|\n"
+        + "| ClOrdID | 11 | r | |\n"
+        + "| OrdType | 40 | r | Test |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    //String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertFalse(errors.contains("Datatype added"));
+  }
+  
   @Test //ODOC-20
   void constant() throws Exception {
     String text =
@@ -134,7 +194,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(xml.contains("value=\"8\""));
   }
-
+  
   @Test // ODOC-77
   void documentationColumns() throws Exception {
     String text =
@@ -204,7 +264,6 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertFalse(xml.contains("purpose="));
   }
-  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text =
@@ -268,6 +327,7 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Duplicate definition of codeset"));
    }
+  
   @Test // ODOC-31
   void emptyComponent() throws Exception {
     String text =
@@ -623,6 +683,29 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // ODOC-124
+  void messageScenario() throws Exception {
+    String text =
+        "## Message NewOrderSingle type D scenario Test\n"
+        + "\n"
+        + "| Name | Tag | Presence | Notes |\n"
+        + "|----------------|----:|:--:|--------------|\n"
+        + "| ClOrdID | | r | |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    assertTrue(xml.contains("id=\"14\""));
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-121
   void missingCodesetType() throws Exception {
     String text =
@@ -645,66 +728,6 @@ class RepositoryBuilderTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(xml.contains("type=\"int\""));
-  }
-  
-  @Test // ODOC-115
-  void codesetType() throws Exception {
-    String text =
-        "## Group Parties scenario Test\n"
-        + "\n"
-        + "| Name | Tag | Presence | Scenario\n"
-        + "|---------------------|--------|----------|----------\n"
-        + "| NoPartyIDs | 453 | req |\n"
-        + "| PartyID | 448 | req |\n"
-        + "| PartyIDSource | 447 | req |\n"
-        + "| PartyRole | 452 | req |\n"
-        + "| PartyRoleQualifier | 2376 | opt | Test\n"
-        + "\n"
-        + "## Codeset PartyRoleQualifierCodeSet type int scenario Test\n"
-        + "\n"
-        + "| Name | Value |\n"
-        + "|------------------|-------|\n"
-        + "| Algorithm | 22 |\n"
-        + "| FirmOrLegalEntity| 23 |\n"
-        + "| NaturalPerson | 24 |";
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.appendInput(inputStream);
-    builder.write(xmlStream);
-    builder.closeEventLogger();
-    String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertTrue(xml.contains("type=\"int\""));
-    assertFalse(errors.contains("Datatype added"));
-  }
-  
-  @Test // ODOC-115
-  void codesetType2() throws Exception {
-    String text =
-        "## Message NewOrderSingle\n"
-        + "\n"
-        + "| Name | Tag | Presence | Scenario |\n"
-        + "|----------------|----:|:---------:|--------------|\n"
-        + "| ClOrdID | 11 | r | |\n"
-        + "| OrdType | 40 | r | Test |";
-    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
-    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
-    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
-    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
-    builder.appendInput(inputStream);
-    builder.write(xmlStream);
-    builder.closeEventLogger();
-    //String xml = xmlStream.toString();
-    //System.out.println(xml);
-    builder.closeEventLogger();
-    String errors = jsonOutputStream.toString();
-    //System.out.println(errors);
-    assertFalse(errors.contains("Datatype added"));
   }
   
   @Test // ODOC-40

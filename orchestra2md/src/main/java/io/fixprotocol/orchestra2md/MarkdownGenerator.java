@@ -347,7 +347,7 @@ public class MarkdownGenerator {
 
       final BigInteger addedEp = componentRef.getAddedEP();
       if (addedEp != null) {
-        row.addIntProperty("addedEp", addedEp.intValue());
+        row.addIntProperty("addedep", addedEp.intValue());
       }
 
       final String issue = componentRef.getIssue();
@@ -372,7 +372,7 @@ public class MarkdownGenerator {
 
       final BigInteger replacedEp = componentRef.getReplacedEP();
       if (replacedEp != null) {
-        row.addIntProperty("replacedEp", replacedEp.intValue());
+        row.addIntProperty("replacedep", replacedEp.intValue());
       }
 
       final String updated = componentRef.getUpdated();
@@ -382,7 +382,7 @@ public class MarkdownGenerator {
 
       final BigInteger updatedEp = componentRef.getUpdatedEP();
       if (updatedEp != null) {
-        row.addIntProperty("updatedEp", updatedEp.intValue());
+        row.addIntProperty("updatedep", updatedEp.intValue());
       }
 
       final String deprecated = componentRef.getDeprecated();
@@ -392,7 +392,7 @@ public class MarkdownGenerator {
 
       final BigInteger deprecatedEp = componentRef.getDeprecatedEP();
       if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
     addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
@@ -488,7 +488,7 @@ public class MarkdownGenerator {
 
       final BigInteger addedEp = fieldRef.getAddedEP();
       if (addedEp != null) {
-        row.addIntProperty("addedEp", addedEp.intValue());
+        row.addIntProperty("addedep", addedEp.intValue());
       }
 
       final String issue = fieldRef.getIssue();
@@ -513,7 +513,7 @@ public class MarkdownGenerator {
 
       final BigInteger replacedEp = fieldRef.getReplacedEP();
       if (replacedEp != null) {
-        row.addIntProperty("replacedEp", replacedEp.intValue());
+        row.addIntProperty("replacedep", replacedEp.intValue());
       }
 
       final String updated = fieldRef.getUpdated();
@@ -523,7 +523,7 @@ public class MarkdownGenerator {
 
       final BigInteger updatedEp = fieldRef.getUpdatedEP();
       if (updatedEp != null) {
-        row.addIntProperty("updatedEp", updatedEp.intValue());
+        row.addIntProperty("updatedep", updatedEp.intValue());
       }
 
       final String deprecated = fieldRef.getDeprecated();
@@ -533,7 +533,7 @@ public class MarkdownGenerator {
 
       final BigInteger deprecatedEp = fieldRef.getDeprecatedEP();
       if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
     addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
@@ -564,7 +564,7 @@ public class MarkdownGenerator {
 
       final BigInteger addedEp = groupRef.getAddedEP();
       if (addedEp != null) {
-        row.addIntProperty("addedEp", addedEp.intValue());
+        row.addIntProperty("addedep", addedEp.intValue());
       }
 
       final String issue = groupRef.getIssue();
@@ -589,7 +589,7 @@ public class MarkdownGenerator {
 
       final BigInteger replacedEp = groupRef.getReplacedEP();
       if (replacedEp != null) {
-        row.addIntProperty("replacedEp", replacedEp.intValue());
+        row.addIntProperty("replacedep", replacedEp.intValue());
       }
 
       final String updated = groupRef.getUpdated();
@@ -599,7 +599,7 @@ public class MarkdownGenerator {
 
       final BigInteger updatedEp = groupRef.getUpdatedEP();
       if (updatedEp != null) {
-        row.addIntProperty("updatedEp", updatedEp.intValue());
+        row.addIntProperty("updatedep", updatedEp.intValue());
       }
 
       final String deprecated = groupRef.getDeprecated();
@@ -609,7 +609,7 @@ public class MarkdownGenerator {
 
       final BigInteger deprecatedEp = groupRef.getDeprecatedEP();
       if (deprecatedEp != null) {
-        row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+        row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
     addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
@@ -714,7 +714,7 @@ public class MarkdownGenerator {
 
         final BigInteger addedEp = category.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
+          row.addIntProperty("addedep", addedEp.intValue());
         }
 
         final String issue = category.getIssue();
@@ -734,7 +734,7 @@ public class MarkdownGenerator {
 
         final BigInteger replacedEp = category.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
+          row.addIntProperty("replacedep", replacedEp.intValue());
         }
 
         final String updated = category.getUpdated();
@@ -744,7 +744,7 @@ public class MarkdownGenerator {
 
         final BigInteger updatedEp = category.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
+          row.addIntProperty("updatedep", updatedEp.intValue());
         }
 
         final String deprecated = category.getDeprecated();
@@ -754,7 +754,7 @@ public class MarkdownGenerator {
 
         final BigInteger deprecatedEp = category.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+          row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
@@ -818,7 +818,7 @@ public class MarkdownGenerator {
 
         final BigInteger addedEp = code.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
+          row.addIntProperty("addedep", addedEp.intValue());
         }
 
         final String issue = code.getIssue();
@@ -843,7 +843,7 @@ public class MarkdownGenerator {
 
         final BigInteger replacedEp = code.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
+          row.addIntProperty("replacedep", replacedEp.intValue());
         }
 
         final String updated = code.getUpdated();
@@ -853,7 +853,7 @@ public class MarkdownGenerator {
 
         final BigInteger updatedEp = code.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
+          row.addIntProperty("updatedep", updatedEp.intValue());
         }
 
         final String deprecated = code.getDeprecated();
@@ -863,7 +863,7 @@ public class MarkdownGenerator {
 
         final BigInteger deprecatedEp = code.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+          row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
@@ -1122,7 +1122,7 @@ public class MarkdownGenerator {
 
         final BigInteger addedEp = field.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
+          row.addIntProperty("addedep", addedEp.intValue());
         }
 
         final String issue = field.getIssue();
@@ -1147,7 +1147,7 @@ public class MarkdownGenerator {
 
         final BigInteger replacedEp = field.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
+          row.addIntProperty("replacedep", replacedEp.intValue());
         }
 
         final String updated = field.getUpdated();
@@ -1157,7 +1157,7 @@ public class MarkdownGenerator {
 
         final BigInteger updatedEp = field.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
+          row.addIntProperty("updatedep", updatedEp.intValue());
         }
 
         final String deprecated = field.getDeprecated();
@@ -1167,7 +1167,7 @@ public class MarkdownGenerator {
 
         final BigInteger deprecatedEp = field.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+          row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
@@ -1426,7 +1426,7 @@ public class MarkdownGenerator {
 
         final BigInteger addedEp = category.getAddedEP();
         if (shouldOutputPedigree && addedEp != null) {
-          row.addIntProperty("addedEp", addedEp.intValue());
+          row.addIntProperty("addedep", addedEp.intValue());
         }
 
         final String issue = category.getIssue();
@@ -1446,7 +1446,7 @@ public class MarkdownGenerator {
 
         final BigInteger replacedEp = category.getReplacedEP();
         if (shouldOutputPedigree && replacedEp != null) {
-          row.addIntProperty("replacedEp", replacedEp.intValue());
+          row.addIntProperty("replacedep", replacedEp.intValue());
         }
 
         final String updated = category.getUpdated();
@@ -1456,7 +1456,7 @@ public class MarkdownGenerator {
 
         final BigInteger updatedEp = category.getUpdatedEP();
         if (shouldOutputPedigree && updatedEp != null) {
-          row.addIntProperty("updatedEp", updatedEp.intValue());
+          row.addIntProperty("updatedep", updatedEp.intValue());
         }
 
         final String deprecated = category.getDeprecated();
@@ -1466,7 +1466,7 @@ public class MarkdownGenerator {
 
         final BigInteger deprecatedEp = category.getDeprecatedEP();
         if (shouldOutputPedigree && deprecatedEp != null) {
-          row.addIntProperty("deprecatedEp", deprecatedEp.intValue());
+          row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
         addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());

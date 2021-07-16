@@ -351,23 +351,24 @@ public class RepositoryBuilder {
           }
         }
         if (refMessage != null) {
-          message = repositoryAdapter.copyMessage(refMessage);
-        } else {
-          if (tag == -1) {
-            tag = assignId(name, scenario);
-            message.setId(BigInteger.valueOf(tag));
-          }
-          message.setName(name);
-          if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
-            message.setScenario(scenarioOrDefault);
-          }
-
-          if (msgType != null) {
-            message.setMsgType(msgType);
-          }
-          repositoryAdapter.addMessage(message);
+          tag = refMessage.getId().intValue();
+          msgType = refMessage.getMsgType();
         }
+        if (tag == -1) {
+          tag = assignId(name, scenario);        
+        }
+        message.setId(BigInteger.valueOf(tag));
+        message.setName(name);
+        if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+          message.setScenario(scenarioOrDefault);
+        }
+
+        if (msgType != null) {
+          message.setMsgType(msgType);
+        }
+        repositoryAdapter.addMessage(message);
       }
+
       return message;
     }
 
