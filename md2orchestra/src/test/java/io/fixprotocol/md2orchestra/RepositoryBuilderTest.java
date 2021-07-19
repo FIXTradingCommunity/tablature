@@ -390,6 +390,7 @@ class RepositoryBuilderTest {
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
     RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.setMaxComponentDepth(1);
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
@@ -679,6 +680,8 @@ class RepositoryBuilderTest {
     //System.out.println(xml);
     builder.closeEventLogger();
     assertTrue(xml.contains("messageRef"));
+    // message structure of response message should be copied from reference file
+    assertTrue(xml.contains("name=\"OrderID\""));
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   }
@@ -702,6 +705,8 @@ class RepositoryBuilderTest {
     //System.out.println(xml);
     builder.closeEventLogger();
     assertTrue(xml.contains("id=\"14\""));
+    // other message members should not be copied from reference 
+    assertFalse(xml.contains("name=\"OrderID\""));
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   }
@@ -1012,6 +1017,7 @@ class RepositoryBuilderTest {
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
     RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    builder.setMaxComponentDepth(1);
     builder.appendInput(inputStream);
     ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
     builder.write(xmlStream);
@@ -1020,9 +1026,9 @@ class RepositoryBuilderTest {
     builder.closeEventLogger();
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-    assertTrue(xml.contains("Symbol")); // in message root
+    assertTrue(xml.contains("Account")); // in message root
     assertTrue(xml.contains("Product")); // in Instrument
-    assertFalse(xml.contains("ComplexEventStartDate")); // in nested component
+    assertFalse(xml.contains("ComplexEventStartDate")); // in further nested component--out of scope
   }
   
   @Test // ODOC-98

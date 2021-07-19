@@ -102,6 +102,65 @@ class MarkdownGeneratorTest {
     assertTrue(errors.contains("Group has no members"));
   }
   
+  @Test //ODOC-118
+  void messageResponses() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\r\n"
+        + "    <fixr:metadata/>\r\n"
+        + "    <fixr:datatypes>\r\n"
+        + "        <fixr:datatype name=\"String\" added=\"FIX.4.2\">\r\n"
+        + "            <fixr:mappedDatatype standard=\"XML\" builtin=\"true\" base=\"xs:string\">\r\n"
+        + "                <fixr:annotation>\r\n"
+        + "                    <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
+        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\r\n"
+        + "      </fixr:documentation>\r\n"
+        + "                </fixr:annotation>\r\n"
+        + "            </fixr:mappedDatatype>\r\n"
+        + "            <fixr:annotation>\r\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
+        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\r\n"
+        + "      </fixr:documentation>\r\n"
+        + "            </fixr:annotation>\r\n"
+        + "        </fixr:datatype>\r\n"
+        + "    </fixr:datatypes>\r\n"
+        + "    <fixr:codeSets/>\r\n"
+        + "    <fixr:fields>\r\n"
+        + "        <fixr:field type=\"String\" baseCategory=\"SingleGeneralOrderHandling\" baseCategoryAbbrName=\"ID\" added=\"FIX.2.7\" id=\"11\" name=\"ClOrdID\" abbrName=\"ClOrdID\">\r\n"
+        + "            <fixr:annotation>\r\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
+        + "         Unique identifier for Order as assigned by the buy-side (institution, broker, intermediary etc.) (identified by SenderCompID (49) or OnBehalfOfCompID (5) as appropriate). Uniqueness must be guaranteed within a single trading day. Firms, particularly those which electronically submit multi-day orders, trade globally or throughout market close periods, should ensure uniqueness across days, for example by embedding a date within the ClOrdID field.\r\n"
+        + "      </fixr:documentation>\r\n"
+        + "            </fixr:annotation>\r\n"
+        + "        </fixr:field>\r\n"
+        + "    </fixr:fields>\r\n"
+        + "    <fixr:components/>\r\n"
+        + "    <fixr:groups/>\r\n"
+        + "    <fixr:messages>\r\n"
+        + "        <fixr:message msgType=\"D\" id=\"14\" name=\"NewOrderSingle\">\r\n"
+        + "            <fixr:structure>\r\n"
+        + "                <fixr:fieldRef id=\"11\" presence=\"required\"/>\r\n"
+        + "            </fixr:structure>\r\n"
+        + "            <fixr:responses>\r\n"
+        + "                <fixr:response>\r\n"
+        + "                    <fixr:messageRef name=\"ExecutionReport\" msgType=\"8\" id=\"9\"/>\r\n"
+        + "                </fixr:response>\r\n"
+        + "            </fixr:responses>\r\n"
+        + "        </fixr:message>\r\n"
+        + "        <fixr:message msgType=\"8\" id=\"9\" name=\"ExecutionReport\"/>\r\n"
+        + "    </fixr:messages>\r\n"
+        + "</fixr:repository>";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-94
   void messageWithCategory() throws Exception {
     String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
@@ -141,6 +200,7 @@ class MarkdownGeneratorTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Message has no structure"));
   }
+
   
   @Test // ODOC-33
   void missingNumInGroup() throws Exception {
@@ -173,7 +233,6 @@ class MarkdownGeneratorTest {
     assertTrue(errors.contains("Unknown numInGroup for group"));
     assertTrue(errors.contains("Group has no members"));
   }
-
   
   @Test // ODOC-64
   void noFields() throws Exception {
@@ -310,7 +369,7 @@ class MarkdownGeneratorTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
     assertTrue(md.contains("Line 1\nLine 2\nLine 3"));
-  }
+  }  
   
   @Test // ODOC-74
   void paragraphBreak() throws Exception {
@@ -345,7 +404,7 @@ class MarkdownGeneratorTest {
     //System.out.println(md);
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-  }  
+  } 
   
   @Test
   void roundTrip() throws Exception {
@@ -580,7 +639,7 @@ class MarkdownGeneratorTest {
     //System.out.println(md);
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
-  } 
+  }  
   
   @BeforeEach
   void setUp() throws Exception {

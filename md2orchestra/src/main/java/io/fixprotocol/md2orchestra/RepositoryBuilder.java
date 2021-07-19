@@ -99,10 +99,6 @@ public class RepositoryBuilder {
         componentType = referenceRepositoryAdapter.findComponentByName(name, scenario);
         if (componentType != null) {
           repositoryAdapter.copyComponent(componentType);
-          if (currentDepth < maxDepth) {
-            final List<Object> members = componentType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, currentDepth + 1, maxDepth);
-          }
         } else {
           eventLogger.error("Unknown component; name={0} scenario={1}", name, scenario);
         }
@@ -144,6 +140,26 @@ public class RepositoryBuilder {
     T build();
   }
 
+
+  private class ElementBuilderWrapper<T> implements ElementBuilder<T> {
+    private final ElementBuilder<T> builder;
+    private final Consumer<T> consumer;
+      
+
+    public ElementBuilderWrapper(ElementBuilder<T> builder, Consumer<T> consumer) {
+      this.builder = builder;
+      this.consumer = consumer;
+    }
+
+
+    @Override
+    public T build() {
+      T result = builder.build();
+      consumer.accept(result);
+      return result;
+    }
+    
+  }
 
   private class FieldBuilder implements ElementBuilder<FieldType> {
     private final String name;
@@ -225,6 +241,7 @@ public class RepositoryBuilder {
     }
   }
 
+
   /**
    *
    * Populates the ID of a FieldRef when the field name is known
@@ -256,7 +273,6 @@ public class RepositoryBuilder {
     }
   }
 
-
   private class GroupBuilder implements ElementBuilder<GroupType> {
 
     private final int currentDepth;
@@ -283,10 +299,6 @@ public class RepositoryBuilder {
             buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, scenario, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
-          if (currentDepth < maxDepth) {
-            final List<Object> members = groupType.getComponentRefOrGroupRefOrFieldRef();
-            copyMembers(members, currentDepth + 1, maxDepth);
-          }
         } else {
           eventLogger.error("Unknown group; name={0} scenario={1}", name, scenario);
         }
@@ -324,17 +336,21 @@ public class RepositoryBuilder {
 
   private class MessageBuilder implements ElementBuilder<MessageType> {
 
+    private final int currentDepth;
+    private final int maxDepth;
     private String msgType;
     private final String name;
     private final String scenario;
-
     private int tag;
 
-    public MessageBuilder(String name, String scenario, int tag, String msgType) {
+    public MessageBuilder(String name, String scenario, int tag, String msgType, int currentDepth,
+        int maxDepth) {
       this.name = name;
       this.scenario = scenario;
       this.tag = tag;
       this.msgType = msgType;
+      this.currentDepth = currentDepth;
+      this.maxDepth = maxDepth;
     }
 
     @Override
@@ -342,7 +358,6 @@ public class RepositoryBuilder {
       final String scenarioOrDefault = RepositoryAdapter.scenarioOrDefault(scenario);
       MessageType message = repositoryAdapter.findMessageByName(name, scenarioOrDefault);
       if (message == null) {
-        message = new MessageType();
         MessageType refMessage = null;
         if (referenceRepositoryAdapter != null) {
           refMessage = referenceRepositoryAdapter.findMessageByName(name, scenarioOrDefault);
@@ -351,22 +366,25 @@ public class RepositoryBuilder {
           }
         }
         if (refMessage != null) {
-          tag = refMessage.getId().intValue();
-          msgType = refMessage.getMsgType();
-        }
-        if (tag == -1) {
-          tag = assignId(name, scenario);        
-        }
-        message.setId(BigInteger.valueOf(tag));
-        message.setName(name);
-        if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
-          message.setScenario(scenarioOrDefault);
+          message = repositoryAdapter.copyMessage(refMessage);
+          message.setScenario(scenario);
+        } else {
+          message = new MessageType();
+          if (tag == -1) {
+            tag = assignId(name, scenario);
+          }
+          message.setId(BigInteger.valueOf(tag));
+          message.setName(name);
+          if (!DEFAULT_SCENARIO.equals(scenarioOrDefault)) {
+            message.setScenario(scenarioOrDefault);
+          }
+
+          if (msgType != null) {
+            message.setMsgType(msgType);
+          }
+          repositoryAdapter.addMessage(message);
         }
 
-        if (msgType != null) {
-          message.setMsgType(msgType);
-        }
-        repositoryAdapter.addMessage(message);
       }
 
       return message;
@@ -390,6 +408,9 @@ public class RepositoryBuilder {
       MessageType messageType = repositoryAdapter.findMessageByName(name, scenario);
       if (messageType == null && referenceRepositoryAdapter != null) {
         messageType = referenceRepositoryAdapter.findMessageByName(name, scenario);
+        if (messageType == null) {
+          messageType = referenceRepositoryAdapter.findMessageByName(name, DEFAULT_SCENARIO);
+        }
       }
       if (messageType != null) {
         messageRef = new MessageRefType();
@@ -403,6 +424,96 @@ public class RepositoryBuilder {
         eventLogger.error("Unknown messageRef ID; name={0} scenario={1}", name, scenario);
       }
       return messageRef;
+    }
+  }
+
+  private class ReferencedMemberBuilder implements ElementBuilder<List<Object>> {
+
+    private final int currentDepth;
+    private final int maxDepth;
+    private List<Object> members;
+
+    public ReferencedMemberBuilder(List<Object> members, int currentDepth, int maxDepth) {
+      this.members = members;
+      this.currentDepth = currentDepth;
+      this.maxDepth = maxDepth;
+    }
+
+    @Override
+    public List<Object> build() {
+      if (currentDepth <= maxDepth) {
+        copyReferencedMembers(members, currentDepth + 1, maxDepth);
+      }
+      return members;
+    }
+    
+    private void copyReferencedMembers(final List<Object> members, int currentDepth,
+        final int maxDepth) {
+      if (referenceRepositoryAdapter == null) {
+        return;
+      }
+      for (final Object member : members) {
+        if (member instanceof FieldRefType) {
+          final FieldRefType fieldRef = (FieldRefType) member;
+          FieldType field =
+              repositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
+          if (field == null) {
+            field =
+                referenceRepositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
+            if (field != null) {
+              addFieldAndType(field);
+            } else {
+              eventLogger.error("Unknown field; id={0, number, ##0} scenario={1}",
+                  fieldRef.getId().intValue(), fieldRef.getScenario());
+            }
+          }
+        } else if (member instanceof GroupRefType) {
+          final GroupRefType groupRef = (GroupRefType) member;
+          GroupType group =
+              repositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
+          if (group == null) {
+            group =
+                referenceRepositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
+            if (group != null) {
+              group = repositoryAdapter.copyGroup(group);
+            }
+          }
+          if (group != null) {
+            FieldRefType numInGroupRef = group.getNumInGroup();
+            if (numInGroupRef != null) {
+              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, groupRef.getScenario(),
+                  "NumInGroup"));
+              if (currentDepth <= maxDepth) {
+                final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
+                copyReferencedMembers(groupMembers, currentDepth + 1, maxDepth);
+              }
+            } else {
+              eventLogger.error("Unknown group; id={0, number, ##0} scenario={1}",
+                  groupRef.getId().intValue(), groupRef.getScenario());
+            }
+          }
+        } else if (member instanceof ComponentRefType) {
+          final ComponentRefType componentRef = (ComponentRefType) member;
+          ComponentType component = repositoryAdapter.findComponentByTag(componentRef.getId(),
+              componentRef.getScenario());
+          if (component == null) {
+            component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId(),
+                componentRef.getScenario());
+            if (component != null) {
+              component = repositoryAdapter.copyComponent(component);
+            }
+          }
+          if (component != null) {
+            if (currentDepth <= maxDepth) {
+              final List<Object> componentMembers = component.getComponentRefOrGroupRefOrFieldRef();
+              copyReferencedMembers(componentMembers, currentDepth + 1, maxDepth);
+            }
+          } else {
+            eventLogger.error("Unknown component; id={0, number, ##0} scenario={1}",
+                componentRef.getId().intValue(), componentRef.getScenario());
+          }
+        }
+      }
     }
   }
 
@@ -479,20 +590,19 @@ public class RepositoryBuilder {
       return union;
     }
   }
-
   public static final String ABBRNAME_KEYWORD = "abbrname";
   public static final String ACTOR_KEYWORD = "actor";
   public static final String ASSIGN_KEYWORD = "assign";
   public static final String CATEGORIES_KEYWORD = "categories";
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
+
   public static final String DATATYPES_KEYWORD = "datatypes";
 
   /**
    * Default token to represent a paragraph break in tables (not natively supported by markdown)
    */
   public static final String DEFAULT_PARAGRAPH_DELIMITER = "/P/";
-
   public static final String DESCRIPTION_KEYWORD = "description";
   public static final String DOCUMENTATION_KEYWORD = "documentation";
   public static final String FIELDS_KEYWORD = "fields";
@@ -504,13 +614,14 @@ public class RepositoryBuilder {
   public static final String SECTIONS_KEYWORD = "sections";
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
+
   public static final String WHEN_KEYWORD = "when";
 
   // the form code=name with optional space before and after =
   private static final Pattern codePattern = Pattern.compile("(\\S+) *= *([^ \"]+|\".+\")");
-
   private static final String DEFAULT_CODE_TYPE = "char";
   private static final int KEY_POSITION = 0;
+
   private static final int NAME_POSITION = 1;
 
   /**
@@ -588,15 +699,14 @@ public class RepositoryBuilder {
     return (DOCUMENTATION_KEYWORD.compareToIgnoreCase(word) == 0)
         || (DESCRIPTION_KEYWORD.compareToIgnoreCase(word) == 0);
   }
-
   private final Queue<ElementBuilder<?>> buildSteps = new LinkedList<>();
   private final String[] contextKeys = new String[] {ACTOR_KEYWORD, CATEGORIES_KEYWORD,
       CODESET_KEYWORD, COMPONENT_KEYWORD, DATATYPES_KEYWORD, FIELDS_KEYWORD, FLOW_KEYWORD,
       GROUP_KEYWORD, MESSAGE_KEYWORD, RESPONSES_KEYWORD, SECTIONS_KEYWORD, STATEMACHINE_KEYWORD};
+
   private TeeEventListener eventLogger;
 
   private final AssociativeSet headings = new AssociativeSet();
-
   private final IdGenerator idGenerator = new IdGenerator(5000, 39999);
   private final Logger logger = LogManager.getLogger(getClass());
   private final Consumer<GraphContext> markdownConsumer = graphContext -> {
@@ -659,6 +769,7 @@ public class RepositoryBuilder {
       }
   };
   private int maxComponentDepth = 1;
+
   private final String paragraphDelimiterInTables;
 
   private RepositoryAdapter referenceRepositoryAdapter = null;
@@ -701,6 +812,11 @@ public class RepositoryBuilder {
   /**
    * Controls the depth of a search in a reference file for nested components
    * 
+   * The search depth applies to any component member of a message. Thus, members of the message are
+   * populated, and members of a member component are populated to the specified depth. If
+   * {@code maxComponentDepth} set to one, the first level of a member component is also populated,
+   * but no further nesting is followed.
+   * 
    * @param maxComponentDepth number of levels of nesting to search. Set to
    *        {@code Integer.MAX_VALUE} for full tree walk.
    */
@@ -722,67 +838,6 @@ public class RepositoryBuilder {
 
   void closeEventLogger() throws Exception {
     eventLogger.close();
-  }
-
-  void copyMembers(final List<Object> members, int currentDepth, final int maxDepth) {
-    for (final Object member : members) {
-      if (member instanceof FieldRefType) {
-        final FieldRefType fieldRef = (FieldRefType) member;
-        FieldType field =
-            repositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
-        if (field == null) {
-          field =
-              referenceRepositoryAdapter.findFieldByTag(fieldRef.getId(), fieldRef.getScenario());
-          if (field != null) {
-            addFieldAndType(field);
-          } else {
-            eventLogger.error("Unknown field; lastId={0, number, ##0} scenario={1}",
-                fieldRef.getId().intValue(), fieldRef.getScenario());
-          }
-        }
-      } else if (member instanceof GroupRefType) {
-        final GroupRefType groupRef = (GroupRefType) member;
-        GroupType group =
-            repositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
-        if (group == null) {
-          group =
-              referenceRepositoryAdapter.findGroupByTag(groupRef.getId(), groupRef.getScenario());
-          if (group != null) {
-            FieldRefType numInGroupRef = group.getNumInGroup();
-            if (numInGroupRef != null) {
-              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, groupRef.getScenario(),
-                  "NumInGroup"));
-            }
-            group = repositoryAdapter.copyGroup(group);
-            if (currentDepth < maxDepth) {
-              final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(groupMembers, currentDepth + 1, maxDepth);
-            }
-          } else {
-            eventLogger.error("Unknown group; lastId={0, number, ##0} scenario={1}",
-                groupRef.getId().intValue(), groupRef.getScenario());
-          }
-        }
-      } else if (member instanceof ComponentRefType) {
-        final ComponentRefType componentRef = (ComponentRefType) member;
-        ComponentType component =
-            repositoryAdapter.findComponentByTag(componentRef.getId(), componentRef.getScenario());
-        if (component == null) {
-          component = referenceRepositoryAdapter.findComponentByTag(componentRef.getId(),
-              componentRef.getScenario());
-          if (component != null) {
-            component = repositoryAdapter.copyComponent(component);
-            if (currentDepth < maxDepth) {
-              final List<Object> componentMembers = component.getComponentRefOrGroupRefOrFieldRef();
-              copyMembers(componentMembers, currentDepth + 1, maxDepth);
-            }
-          } else {
-            eventLogger.error("Unknown component; lastId={0, number, ##0} scenario={1}",
-                componentRef.getId().intValue(), componentRef.getScenario());
-          }
-        }
-      }
-    }
   }
 
   void setReference(final RepositoryAdapter reference) {
@@ -1197,6 +1252,7 @@ public class RepositoryBuilder {
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       final List<Object> members = component.getComponentRefOrGroupRefOrFieldRef();
       addMembers(detailTable.rows(), members);
+      buildSteps.add(new ReferencedMemberBuilder(members, 0, maxComponentDepth));
     } else if (graphContext instanceof Documentation) {
       final Documentation detail = (Documentation) graphContext;
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
@@ -1211,7 +1267,7 @@ public class RepositoryBuilder {
             COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
-    } // make sure it's not a lower currentDepth heading
+    } // make sure it's not a lower level heading
     else if (graphContext instanceof Context
         && COMPONENT_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       int tag = textUtil.getTag(keyContext.getKeys());
@@ -1527,6 +1583,7 @@ public class RepositoryBuilder {
           StreamSupport.stream(detailTable.rows().spliterator(), false).skip(skipRows)
               .collect(Collectors.toList());
       addMembers(remainingRows, members);
+      buildSteps.add(new ReferencedMemberBuilder(members, 0, maxComponentDepth));
     } else if (graphContext instanceof Documentation) {
       final Documentation detail = (Documentation) graphContext;
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
@@ -1612,6 +1669,7 @@ public class RepositoryBuilder {
         message.setStructure(structure);
         final List<Object> members = structure.getComponentRefOrGroupRefOrFieldRef();
         addMembers(detailTable.rows(), members);
+        buildSteps.add(new ReferencedMemberBuilder(members, 0, maxComponentDepth));
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name,
             scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
@@ -1637,7 +1695,8 @@ public class RepositoryBuilder {
         && MESSAGE_KEYWORD.equalsIgnoreCase(((Context) graphContext).getKey(KEY_POSITION))) {
       final int tag = textUtil.getTag(keyContext.getKeys());
       final String msgType = keyContext.getKeyValue("type");
-      MessageBuilder builder = new MessageBuilder(name, scenario, tag, msgType);
+      MessageBuilder builder =
+          new MessageBuilder(name, scenario, tag, msgType, 0, maxComponentDepth);
       final MessageType message = builder.build();
       final String flow = keyContext.getKeyValue(FLOW_KEYWORD);
       if (flow != null) {
@@ -1670,7 +1729,8 @@ public class RepositoryBuilder {
           eventLogger.error("Unknown message name for responses at line {0} char {1}",
               keyContext.getLine(), keyContext.getCharPositionInLine());
         } else {
-          MessageBuilder builder = new MessageBuilder(name, scenario, tag, msgType);
+          MessageBuilder builder =
+              new MessageBuilder(name, scenario, tag, msgType, 0, maxComponentDepth);
           final MessageType message = builder.build();
           final MessageType.Responses responses = new MessageType.Responses();
           message.setResponses(responses);
@@ -1701,8 +1761,14 @@ public class RepositoryBuilder {
             responseList.add(response);
 
             int refId = messageRef.getId() != null ? messageRef.getId().intValue() : -1;
-            buildSteps
-                .add(new MessageBuilder(refName, refScenario, refId, messageRef.getMsgType()));
+
+            // asynchronously build a message, and then asynchronously add its members
+            buildSteps.add(new ElementBuilderWrapper<MessageType>(
+                new MessageBuilder(refName, refScenario, refId, messageRef.getMsgType(), 0,
+                    maxComponentDepth),
+                (m) -> buildSteps.add(new ReferencedMemberBuilder(
+                    m.getStructure().getComponentRefOrGroupRefOrFieldRef(), 1,
+                    maxComponentDepth))));
           });
         }
       } else {
@@ -1853,7 +1919,7 @@ public class RepositoryBuilder {
 
     repositoryAdapter.addCodeset(codeset);
   }
-
+  
   private void executeDefferedBuildSteps() {
     ElementBuilder<?> builder;
     while ((builder = buildSteps.poll()) != null) {
