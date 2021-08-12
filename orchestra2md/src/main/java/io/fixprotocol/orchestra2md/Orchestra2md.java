@@ -222,7 +222,10 @@ public class Orchestra2md {
       boolean shouldOutputInlineCodes) throws Exception {
     Objects.requireNonNull(inputFilename, "Input file is missing");
     Objects.requireNonNull(outputFilename, "Output file is missing");
-
+    String version = getClass().getPackage().getImplementationVersion();
+    if (version != null) {
+      logger.info("{} version {}", getClass().getCanonicalName(), version);
+    }
     final File outputFile = new File(outputFilename);
     final File outputDir = outputFile.getParentFile();
     if (outputDir != null) {

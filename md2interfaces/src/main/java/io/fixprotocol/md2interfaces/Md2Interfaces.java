@@ -155,7 +155,10 @@ public class Md2Interfaces {
       throws Exception {
     Objects.requireNonNull(inputFiles, "Input File is missing");
     Objects.requireNonNull(outputFile, "Output File is missing");
-
+    String version = getClass().getPackage().getImplementationVersion();
+    if (version != null) {
+      logger.info("{} version {}", getClass().getCanonicalName(), version);
+    }
 
     final File outputFile = new File(outputFilename);
     final File outputDir = outputFile.getParentFile();

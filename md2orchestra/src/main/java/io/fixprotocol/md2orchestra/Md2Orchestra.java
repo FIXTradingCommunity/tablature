@@ -276,6 +276,10 @@ public class Md2Orchestra {
     if (inputFilePatterns.isEmpty()) {
       throw new IllegalArgumentException("No input file specified");
     }
+    String version = getClass().getPackage().getImplementationVersion();
+    if (version != null) {
+      logger.info("{} version {}", getClass().getCanonicalName(), version);
+    }
 
     final File outputFile = new File(outputFilename);
     final File outputDir = outputFile.getParentFile();

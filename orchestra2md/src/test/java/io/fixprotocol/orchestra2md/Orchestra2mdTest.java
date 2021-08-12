@@ -43,6 +43,14 @@ class Orchestra2mdTest {
   }
   
   @Test
+  void message() throws Exception {
+    Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("src/test/resources/message.xml")
+        .outputFile("target/test/message.md").eventFile("target/test/message.json")
+        .pedigree(true).datatypes(false).build();
+    orchestra2md.generate();
+  }
+  
+  @Test
   void FixLatest() throws Exception {
     Orchestra2md orchestra2md = Orchestra2md.builder().inputFile("src/test/resources/OrchestraFIXLatest.xml")
         .outputFile("target/test/OrchestraFIXLatest.md").eventFile("target/test/OrchestraFIXLatest.json")

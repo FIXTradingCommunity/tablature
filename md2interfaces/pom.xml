@@ -98,6 +98,7 @@
 						<configuration>
 							<archive>
 								<manifest>
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 									<mainClass>io.fixprotocol.md2interfaces.Md2Interfaces</mainClass>
 								</manifest>
 							</archive>

@@ -130,6 +130,10 @@ public class Interfaces2md {
 
   public void generate() {
     try {
+      String version = getClass().getPackage().getImplementationVersion();
+      if (version != null) {
+        logger.info("{} version {}", getClass().getCanonicalName(), version);
+      }
       generate(inputFilename, outputFilename, eventFilename);
       logger.info("Interfaces2md complete");
     } catch (final Exception e) {

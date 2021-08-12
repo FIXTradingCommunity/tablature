@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fixr:repository xmlns:dc="http://purl.org/dc/elements/1.1/"
+                 xmlns:fixr="http://fixprotocol.io/2020/orchestra/repository"
+                 xmlns:functx="http://www.functx.com"
+                 xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                 name="FIX.5.0SP2"
+                 version="FIX.5.0SP2_EP258">
+   <fixr:metadata/>
+   <fixr:codeSets/>
+   <fixr:datatypes/>
+   <fixr:fields/>
+   <fixr:components/>
+   <fixr:groups/>
+   <fixr:messages latestEP="257">
+      <fixr:message name="AllocationInstructionAck"
+                    id="24"
+                    msgType="P"
+                    category="Allocation"
+                    added="FIX.2.7"
+                    abbrName="AllocInstrctnAck">
+         <fixr:structure>
+            <fixr:componentRef id="1024" presence="required" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation>
+         MsgType = P
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:componentRef>
+            <fixr:fieldRef id="70" presence="required" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="2758" added="FIX.5.0SP2" addedEP="241">
+               <fixr:annotation>
+                  <fixr:documentation>
+         May be used to link to a previously submitted AllocationInstructionAlertRequest(35=DU) message.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:componentRef id="1003" added="FIX.5.0SP2" addedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:componentRef>
+            <fixr:groupRef id="1012" added="FIX.4.3" updated="FIX.5.0SP2" updatedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:groupRef>
+            <fixr:fieldRef id="793" added="FIX.4.4">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Optional second identifier for the allocation instruction being acknowledged (need not be unique)
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1730" added="FIX.5.0SP2" addedEP="118">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Group identifier assigned by the clearinghouse
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1728" added="FIX.5.0SP2" addedEP="118">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Firm assigned entity identifier for the allocation
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1731" added="FIX.5.0SP2" addedEP="118">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Firm designated group identifier for average pricing
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="75" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="60" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Date/Time Allocation Instruction Ack generated
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="87" presence="required" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Denotes the status of the allocation instruction; received (but not yet processed), rejected (at block or account level) or accepted (and processed).
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="88" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Required for AllocStatus = 1 ( block level reject) and for AllocStatus 2 (account level reject) if the individual accounts and reject reasons are not provided in this message
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="626" added="FIX.4.4">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="808" added="FIX.4.4">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Required if AllocType = 8 (Request to Intermediary)
+         Indicates status that is requested to be transmitted to counterparty by the intermediary (i.e. clearing house)
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="573" added="FIX.4.4">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Denotes whether the financial details provided on the Allocation Instruction were successfully matched.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="58" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Can include explanation for AllocRejCode = 7 (other)
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="354" added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Must be set if EncodedText(355) field is specified and must immediately precede it.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="355" added="FIX.4.2" updated="FIX.5.0SP2" updatedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Encoded (non-ASCII characters) representation of the Text(58) field in the encoded format specified via the MessageEncoding(347) field.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1328" added="FIX.5.0SP2" addedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1664" added="FIX.5.0SP2" addedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Must be set if EncodedRejectText(1665) field is specified and must immediately precede it.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:fieldRef id="1665" added="FIX.5.0SP2" addedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation>
+         Encoded (non-ASCII characters) representation of the RejectText(1328) field in the encoded format specified via the MessageEncoding(347) field.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:fieldRef>
+            <fixr:groupRef id="2220" added="FIX.5.0SP2" addedEP="192">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:groupRef>
+            <fixr:groupRef id="2002" added="FIX.4.4">
+               <fixr:annotation>
+                  <fixr:documentation>
+         This repeating group is optionally used for messages with AllocStatus = 2 (account level reject) to provide details of the individual accounts that caused the rejection, together with reject reasons. This group should not be populated when AllocStatus has any other value.
+         Indicates number of allocation groups to follow.
+      </fixr:documentation>
+               </fixr:annotation>
+            </fixr:groupRef>
+            <fixr:componentRef id="1025" presence="required" added="FIX.2.7">
+               <fixr:annotation>
+                  <fixr:documentation/>
+               </fixr:annotation>
+            </fixr:componentRef>
+         </fixr:structure>
+         <fixr:annotation>
+            <fixr:documentation purpose="SYNOPSIS">
+         In versions of FIX prior to version 4.4, this message was known as the Allocation ACK message.
+         The Allocation Instruction Ack message is used to acknowledge the receipt of and provide status for an Allocation Instruction message.
+      </fixr:documentation>
+         </fixr:annotation>
+      </fixr:message>
+   </fixr:messages>
+</fixr:repository>

@@ -105,6 +105,7 @@
 						<configuration>
 							<archive>
 								<manifest>
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 									<mainClass>io.fixprotocol.orchestra2md.Orchestra2md</mainClass>
 								</manifest>
 							</archive>

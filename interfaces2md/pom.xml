@@ -97,6 +97,7 @@
 						<configuration>
 							<archive>
 								<manifest>
+									<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 									<mainClass>io.fixprotocol.interfaces2md.Interfaces2md</mainClass>
 								</manifest>
 							</archive>
