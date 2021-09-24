@@ -1,6 +1,6 @@
 # tablature
 
-Converts a markdown document to a specification and documents a specification as markdown. Markdown can automatically be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Roundtrip is supported, allowing a user to update a specification iteratively with an ordinary text editor.
+Converts a Markdown document to a specification and documents a specification as markdown. Markdown can automatically be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Roundtrip is supported, allowing a user to update a specification iteratively with an ordinary text editor.
 
 For a brief introduction to markdown, see [Markdown Notation](https://github.com/FIXTradingCommunity/tablature/wiki/Markdown-Notation).
 
@@ -17,23 +17,23 @@ See these projects for the Orchestra standard and related resources:
 
 ### md2orchestra
 
-Translates a markdown document to an Orchestra repository file. 
+Translates a Markdown document to an Orchestra repository file. 
 
 See the [Tablature User Guide for Messages](https://github.com/FIXTradingCommunity/tablature/wiki/Tablature-User-Guide-for-Messages)
 
 ### orchestra2md
 
-Translates an Orchestra repository file to a markdown document. 
+Translates an Orchestra repository file to a Markdown document. 
 
 ### md2interfaces
 
-Translates a markdown document to an Orchestra interfaces file. 
+Translates a Markdown document to an Orchestra interfaces file. 
 
 See the [Tablature User Guide for Interfaces](https://github.com/FIXTradingCommunity/tablature/wiki/Tablature-User-Guide-for-Interfaces)
 
 ### interfaces2md
 
-Translates an Orchestra interfaces file to a markdown document. 
+Translates an Orchestra interfaces file to a Markdown document. 
 
 ## Prerequisites
 This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including [AdoptOpenJDK](https://adoptopenjdk.net/).

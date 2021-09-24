@@ -208,7 +208,7 @@ class RepositoryAdapter {
   /**
    * Add documentation or replace an existing one with the same purpose
    * 
-   * @param markdown text in markdown format
+   * @param markdown text in Markdown format
    * @param purpose purpose attribute of the documentation element
    * @param annotation parent element to add new child
    */

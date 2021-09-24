@@ -256,7 +256,7 @@ public class MarkdownGenerator {
   /**
    * Constructor
    *
-   * @param paragraphDelimiterInTables token to for a paragraph break in a markdown table, not
+   * @param paragraphDelimiterInTables token to for a paragraph break in a Markdown table, not
    *        natively supported
    * @param shouldOutputPedigree output pedigree attributes -- when an element was added or changed
    * @param shouldOutputFixml output FIXML attributes -- abbreviated name, etc.
@@ -401,7 +401,7 @@ public class MarkdownGenerator {
   private void addDocumentationColumns(MutableDetailProperties properties, Annotation annotation,
       String paragraphDelimiter) {
     if (annotation != null) {
-      // Synopsis may explicit or implicit (null purpose)
+      // Synopsis may be explicit or implicit (null purpose)
       // handle all 'purpose' values, including appinfo
 
       final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
@@ -1012,7 +1012,7 @@ public class MarkdownGenerator {
   private void generateDocumentationBlocks(final Annotation annotation,
       DocumentWriter documentWriter) throws IOException {
     if (annotation != null) {
-      // Synopsis may explicit or implicit (null purpose)
+      // Synopsis may be explicit or implicit (null purpose)
       // handle all 'purpose' values, including appinfo
 
       final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);

@@ -1,6 +1,6 @@
 # md2interfaces
 
-The interfaces2md utilty translates a markdown document into an Orchestra interfaces file.
+The interfaces2md utilty translates a Markdown document into an Orchestra interfaces file.
 
 Supported elements include:
 

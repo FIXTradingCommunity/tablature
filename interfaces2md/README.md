@@ -1,6 +1,6 @@
 # interfaces2md
 
-The interfaces2md utilty documents an Orchestra interfaces file as a markdown document.
+The interfaces2md utilty documents an Orchestra interfaces file as a Markdown document.
 
 ## Running interfaces2md
 

@@ -112,9 +112,9 @@ public class InterfacesBuilder {
   }
 
   /**
-   * Append input to a interfaces file
+   * Append input to an interfaces file
    *
-   * @param inputStream an markdown file input
+   * @param inputStream a Markdown file input
    * @throws IOException if an IO error occurs
    */
   public void appendInput(final InputStream inputStream) throws IOException {

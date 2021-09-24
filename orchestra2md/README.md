@@ -1,6 +1,6 @@
 # orchestra2md
 
-The orchestra2md utilty documents an Orchestra repository as a markdown document.
+The orchestra2md utilty documents an Orchestra repository as a Markdown document.
 
 ## Running orchestra2md
 
