@@ -36,7 +36,7 @@ See the [Tablature User Guide for Interfaces](https://github.com/FIXTradingCommu
 Translates an Orchestra interfaces file to a Markdown document. 
 
 ## Prerequisites
-This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source implementations are available, including [AdoptOpenJDK](https://adoptopenjdk.net/).
+This project requires Java 11 or later. It should run on any platform for which a JVM is supported. Several open-source JDK implementations are available, including [Eclipse Temurin](https://adoptium.net/) and [Azul Zulu](https://www.azul.com/downloads/?package=jdk).
 
 ## Build
 The project is built with Maven version 3.0 or later. See [Building this Project](https://github.com/FIXTradingCommunity/tablature/wiki/Building-this-Project)
