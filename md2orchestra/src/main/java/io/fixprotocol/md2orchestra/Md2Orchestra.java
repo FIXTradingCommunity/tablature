@@ -25,6 +25,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.PathMatcher;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -56,10 +57,10 @@ public class Md2Orchestra {
     public int componentDepth = 1;
     public String eventFilename;
     public String paragraphDelimiter = RepositoryBuilder.DEFAULT_PARAGRAPH_DELIMITER;
+    private String importPath;
     private List<String> inputFilePatterns = new ArrayList<>();
     private String outputFilename;
     private String referenceFile;
-
 
     public Md2Orchestra build() {
       return new Md2Orchestra(this);
@@ -72,6 +73,11 @@ public class Md2Orchestra {
 
     public Builder eventFile(final String eventFilename) {
       this.eventFilename = eventFilename;
+      return this;
+    }
+
+    public Builder importPath(final String importPath) {
+      this.importPath = importPath;
       return this;
     }
 
@@ -125,6 +131,7 @@ public class Md2Orchestra {
    -d,--searchdepth &lt;arg&gt;   nested component search depth
    -e,--eventlog &lt;arg&gt;      path of JSON event file
    -f,--fullsearch          full nested component search
+      --import &lt;arg&gt;        directory for file import
    -o,--output &lt;arg&gt;        path of output Orchestra file (required)
       --paragraph &lt;arg&gt;     paragraph delimiter for tables
    -r,--reference &lt;arg&gt;     path of reference Orchestra file
@@ -151,19 +158,21 @@ public class Md2Orchestra {
         .longOpt("reference").numberOfArgs(1).build());
     options.addOption(Option.builder("e").desc("path of JSON event file").longOpt("eventlog")
         .numberOfArgs(1).build());
+    options.addOption(Option.builder().desc("directory for file import").longOpt("import")
+        .numberOfArgs(1).build());
     options.addOption(
         Option.builder("?").numberOfArgs(0).desc("display usage").longOpt("help").build());
     options.addOption(Option.builder().desc("paragraph delimiter for tables").longOpt("paragraph")
         .numberOfArgs(1).build());
     OptionGroup depthGroup = new OptionGroup();
-    depthGroup.addOption(Option.builder("d").desc("nested component search depth").longOpt("searchdepth")
-        .numberOfArgs(1).type(Number.class).build());
-    depthGroup.addOption(Option.builder("f").desc("full nested component search").longOpt("fullsearch").build());
+    depthGroup.addOption(Option.builder("d").desc("nested component search depth")
+        .longOpt("searchdepth").numberOfArgs(1).type(Number.class).build());
+    depthGroup.addOption(
+        Option.builder("f").desc("full nested component search").longOpt("fullsearch").build());
     options.addOptionGroup(depthGroup);
-
+    
     final DefaultParser parser = new DefaultParser();
     final CommandLine cmd;
-
     final Builder builder = new Builder();
 
     try {
@@ -221,6 +230,7 @@ public class Md2Orchestra {
     }
 
   };
+  private final String importPath;
   private final List<String> inputFilePatterns;
   private final Logger logger = LogManager.getLogger(getClass());
   private final String outputFilename;
@@ -235,6 +245,7 @@ public class Md2Orchestra {
     this.eventFilename = builder.eventFilename;
     this.paragraphDelimiter = builder.paragraphDelimiter;
     this.componentDepth = builder.componentDepth;
+    this.importPath = builder.importPath;
   }
 
   /**
@@ -266,8 +277,9 @@ public class Md2Orchestra {
    * @param outputFilename name of Orchestra file to create
    * @param referenceFilename optional Orchestra reference file
    * @param eventFilename optional JSON event file suitable for rendering
-   * @throws Exception IllegalArgumentException if inputFilePatterns is empty NullPointerException
-   *         if inputFilePatterns or outputFilename is {@code null}
+   * @throws Exception IllegalArgumentException if inputFilePatterns is empty
+   * @throws NullPointerException if inputFilePatterns or outputFilename is {@code null}
+   * @throws InvalidPathException if the non-null importPath string cannot be converted to a {@code Path}
    */
   void generate(final List<String> inputFilePatterns, final String outputFilename,
       final String referenceFilename, final String eventFilename) throws Exception {
@@ -298,8 +310,8 @@ public class Md2Orchestra {
       if (eventFilename != null) {
         jsonOutputStream = new FileOutputStream(eventFilename);
       }
-      outputRepositoryBuilder =
-          RepositoryBuilder.instance(referenceStream, jsonOutputStream, paragraphDelimiter);
+      outputRepositoryBuilder = RepositoryBuilder.instance(referenceStream, jsonOutputStream,
+          paragraphDelimiter, this.importPath != null ? Path.of(this.importPath) : null);
       outputRepositoryBuilder.setMaxComponentDepth(componentDepth);
       processFiles(inputFilePatterns, fileConsumer);
 

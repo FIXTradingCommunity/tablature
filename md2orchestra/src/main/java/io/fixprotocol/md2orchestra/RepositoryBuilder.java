@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -69,6 +70,7 @@ import io.fixprotocol.md.event.DocumentParser;
 import io.fixprotocol.md.event.Documentation;
 import io.fixprotocol.md.event.GraphContext;
 import io.fixprotocol.md.event.MarkdownUtil;
+import io.fixprotocol.md.event.DocumentParser.ParserErrorListener;
 import io.fixprotocol.md.util.AssociativeSet;
 import io.fixprotocol.md2orchestra.util.IdGenerator;
 import io.fixprotocol.orchestra.event.EventListener;
@@ -141,7 +143,7 @@ public class RepositoryBuilder {
   }
 
 
-  private class ElementBuilderWrapper<T> implements ElementBuilder<T> {
+  private static class ElementBuilderWrapper<T> implements ElementBuilder<T> {
     private final ElementBuilder<T> builder;
     private final Consumer<T> consumer;
       
@@ -338,7 +340,7 @@ public class RepositoryBuilder {
 
     private final int currentDepth;
     private final int maxDepth;
-    private String msgType;
+    private final String msgType;
     private final String name;
     private final String scenario;
     private int tag;
@@ -431,7 +433,7 @@ public class RepositoryBuilder {
 
     private final int currentDepth;
     private final int maxDepth;
-    private List<Object> members;
+    private final List<Object> members;
 
     public ReferencedMemberBuilder(List<Object> members, int currentDepth, int maxDepth) {
       this.members = members;
@@ -580,7 +582,7 @@ public class RepositoryBuilder {
       }
       if (!found) {
         // if not found as a datatype or codeset in either current or referenceRepositoryAdapter
-        // repository, then assume its a datatype name
+        // repository, then assume it is a datatype name
         datatype = new io.fixprotocol._2020.orchestra.repository.Datatype();
         datatype.setName(type);
         repositoryAdapter.addDatatype(datatype);
@@ -635,7 +637,7 @@ public class RepositoryBuilder {
    */
   public static RepositoryBuilder instance(final InputStream referenceStream,
       final OutputStream jsonOutputStream) throws Exception {
-    return instance(referenceStream, jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
+    return instance(referenceStream, jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER, null);
   }
 
   /**
@@ -644,15 +646,17 @@ public class RepositoryBuilder {
    * @param referenceStream an InputStream from an Orchestra file used as a reference. May be
    *        {@code null}.
    * @param jsonOutputStream output stream with JSON errors or warnings
-   * @param paragraphDelimiterInTables token to represent a paragraph break in markdown tables
+   * @param paragraphDelimiterInTables token to represent a paragraph break in Markdown tables
+   * @param importPath base directory for file imports to fenced code blocks. May be {@code null}.
    * @return an instance of RepositoryBuilder
    * @throws Exception if streams cannot be read or written, or a reference cannot be parsed
+   * @see <a href="https://github.com/FIXTradingCommunity/md-grammar#markdown-extension-for-file-import">md-grammar file import</a>
    */
   public static RepositoryBuilder instance(final InputStream referenceStream,
-      final OutputStream jsonOutputStream, final String paragraphDelimiterInTables)
+      final OutputStream jsonOutputStream, final String paragraphDelimiterInTables, Path importPath)
       throws Exception {
     final RepositoryBuilder outputRepositoryBuilder =
-        new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables);
+        new RepositoryBuilder(jsonOutputStream, paragraphDelimiterInTables, importPath);
 
     if (referenceStream != null) {
       final RepositoryAdapter referenceRepository =
@@ -768,26 +772,25 @@ public class RepositoryBuilder {
           }
       }
   };
+  
   private int maxComponentDepth = 1;
-
   private final String paragraphDelimiterInTables;
-
   private RepositoryAdapter referenceRepositoryAdapter = null;
-
   private RepositoryAdapter repositoryAdapter = null;
-
   private final RepositoryTextUtil textUtil = new RepositoryTextUtil();
+  private final Path importPath;
 
   RepositoryBuilder(final OutputStream jsonOutputStream) throws Exception {
-    this(jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER);
+    this(jsonOutputStream, DEFAULT_PARAGRAPH_DELIMITER, null);
   }
 
-  RepositoryBuilder(final OutputStream jsonOutputStream, final String paragraphDelimiterInTables)
+  RepositoryBuilder(final OutputStream jsonOutputStream, final String paragraphDelimiterInTables, Path importPath)
       throws Exception {
     this.paragraphDelimiterInTables = paragraphDelimiterInTables;
     this.eventLogger = createEventListener(this.logger, jsonOutputStream);
     this.repositoryAdapter = new RepositoryAdapter(this.eventLogger);
     this.repositoryAdapter.createRepository();
+    this.importPath = Objects.requireNonNullElse(importPath, Path.of(".").toAbsolutePath().normalize());
 
     // Populate column heading translations. First element is lower case key, second is display
     // format.
@@ -801,12 +804,14 @@ public class RepositoryBuilder {
   /**
    * Append input to a repository
    *
-   * @param inputStream an markdown file input
+   * @param inputStream a Markdown file input
    * @throws IOException if an IO error occurs
    */
   public void appendInput(final InputStream inputStream) throws IOException {
     final DocumentParser parser = new DocumentParser();
-    parser.parse(inputStream, markdownConsumer);
+    ParserErrorListener parserListener = (line, charPositionInLine, msg) -> eventLogger
+        .error("Input parse error: {0} at line {1} char {2}", msg, line, charPositionInLine);
+    parser.parse(inputStream, markdownConsumer, parserListener, this.importPath);
   }
 
   /**
@@ -856,7 +861,7 @@ public class RepositoryBuilder {
           actor.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             ACTOR_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
@@ -932,7 +937,7 @@ public class RepositoryBuilder {
                     break;
                   default:
                     if (isDocumentationKey(p.getKey())) {
-                      repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+                      repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                           getPurpose(p.getKey()), annotation);
                       transition.setAnnotation(annotation);
                     } else {
@@ -1030,7 +1035,7 @@ public class RepositoryBuilder {
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
-              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+              repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                   getPurpose(p.getKey()), annotation);
               category.setAnnotation(annotation);
             } else {
@@ -1113,7 +1118,7 @@ public class RepositoryBuilder {
           }
 
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+            repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
             codeType.setAnnotation(annotation);
           } else {
@@ -1186,7 +1191,7 @@ public class RepositoryBuilder {
           codeset.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             CODESET_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
@@ -1254,7 +1259,7 @@ public class RepositoryBuilder {
       addMembers(detailTable.rows(), members);
       buildSteps.add(new ReferencedMemberBuilder(members, 0, maxComponentDepth));
     } else if (graphContext instanceof Documentation) {
-      final Documentation detail = (Documentation) graphContext;
+      final Documentation documentation = (Documentation) graphContext;
       final ComponentType component = repositoryAdapter.findComponentByName(name, scenario);
       if (component != null) {
         Annotation annotation = component.getAnnotation();
@@ -1263,7 +1268,7 @@ public class RepositoryBuilder {
           component.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             COMPONENT_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey),
             annotation);
       }
@@ -1321,7 +1326,7 @@ public class RepositoryBuilder {
               annotation = new Annotation();
               datatype.setAnnotation(annotation);
             }
-            repositoryAdapter.addDocumentation(markdown, null, annotation);
+            repositoryAdapter.addDocumentationAsMarkdown(markdown, paragraphDelimiterInTables, "markdown", annotation);
           }
         }
         final List<MappedDatatype> mappings = datatype.getMappedDatatype();
@@ -1374,7 +1379,7 @@ public class RepositoryBuilder {
           break;
         default:
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+            repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
             mapping.setAnnotation(annotation);
           } else {
@@ -1497,7 +1502,7 @@ public class RepositoryBuilder {
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
-              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+              repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                   getPurpose(p.getKey()), annotation);
               field.setAnnotation(annotation);
             } else {
@@ -1539,7 +1544,7 @@ public class RepositoryBuilder {
           flow.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(documentation.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             FLOW_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } else if (graphContext instanceof DetailTable) {
@@ -1585,7 +1590,7 @@ public class RepositoryBuilder {
       addMembers(remainingRows, members);
       buildSteps.add(new ReferencedMemberBuilder(members, 0, maxComponentDepth));
     } else if (graphContext instanceof Documentation) {
-      final Documentation detail = (Documentation) graphContext;
+      final Documentation documentation = (Documentation) graphContext;
       final GroupType group = repositoryAdapter.findGroupByName(name, scenario);
       if (group != null) {
         Annotation annotation = group.getAnnotation();
@@ -1594,7 +1599,7 @@ public class RepositoryBuilder {
           group.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             GROUP_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       }
     } // make sure it's not a lower currentDepth heading
@@ -1675,7 +1680,7 @@ public class RepositoryBuilder {
             scenario, detailTable.getLine(), detailTable.getCharPositionInLine());
       }
     } else if (graphContext instanceof Documentation) {
-      final Documentation detail = (Documentation) graphContext;
+      final Documentation documentation = (Documentation) graphContext;
       final MessageType message = repositoryAdapter.findMessageByName(name, scenario);
       if (message != null) {
         Annotation annotation = message.getAnnotation();
@@ -1684,11 +1689,11 @@ public class RepositoryBuilder {
           message.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(),
             MESSAGE_KEYWORD.equalsIgnoreCase(parentKey) ? null : getPurpose(parentKey), annotation);
       } else {
         eventLogger.error("Unknown message; name={0} scenario={1} at line {2} char {3}", name,
-            scenario, detail.getLine(), detail.getCharPositionInLine());
+            scenario, documentation.getLine(), documentation.getCharPositionInLine());
       }
     } // make sure it's not a lower currentDepth heading
     else if (graphContext instanceof Context
@@ -1755,7 +1760,7 @@ public class RepositoryBuilder {
                 annotation = new Annotation();
                 response.setAnnotation(annotation);
               }
-              repositoryAdapter.addDocumentation(markdown, null, annotation);
+              repositoryAdapter.addDocumentationAsMarkdown(markdown, paragraphDelimiterInTables, "markdown", annotation);
             }
             responseRefs.add(messageRef);
             responseList.add(response);
@@ -1764,11 +1769,11 @@ public class RepositoryBuilder {
 
             // asynchronously build a message, and then asynchronously add its members
             buildSteps.add(new ElementBuilderWrapper<MessageType>(
-                new MessageBuilder(refName, refScenario, refId, messageRef.getMsgType(), 0,
-                    maxComponentDepth),
-                (m) -> buildSteps.add(new ReferencedMemberBuilder(
-                    m.getStructure().getComponentRefOrGroupRefOrFieldRef(), 1,
-                    maxComponentDepth))));
+                    new MessageBuilder(refName, refScenario, refId, messageRef.getMsgType(), 0,
+                            maxComponentDepth),
+                    (m) -> buildSteps.add(new ReferencedMemberBuilder(
+                            m.getStructure().getComponentRefOrGroupRefOrFieldRef(), 1,
+                            maxComponentDepth))));
           });
         }
       } else {
@@ -1789,7 +1794,7 @@ public class RepositoryBuilder {
         }
       });
     } else if (graphContext instanceof Documentation) {
-      final Documentation detail = (Documentation) graphContext;
+      final Documentation documentation = (Documentation) graphContext;
       final Repository repository = repositoryAdapter.getRepository();
       if (repository != null) {
         Annotation annotation = repository.getAnnotation();
@@ -1798,7 +1803,7 @@ public class RepositoryBuilder {
           repository.setAnnotation(annotation);
         }
         final String parentKey = graphContext.getParent().getKey(KEY_POSITION);
-        repositoryAdapter.addDocumentation(detail.getDocumentation(), getPurpose(parentKey),
+        repositoryAdapter.addDocumentation(documentation.getDocumentation(), documentation.getFormat(), getPurpose(parentKey),
             annotation);
       }
     } else {
@@ -1852,7 +1857,7 @@ public class RepositoryBuilder {
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
-              repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+              repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                   getPurpose(p.getKey()), annotation);
               section.setAnnotation(annotation);
             } else {
@@ -2003,7 +2008,7 @@ public class RepositoryBuilder {
             annotation = new Annotation();
           }
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+            repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
             componentRefType.setAnnotation(annotation);
           } else {
@@ -2145,7 +2150,7 @@ public class RepositoryBuilder {
             annotation = new Annotation();
           }
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+            repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
             fieldRefType.setAnnotation(annotation);
           } else {
@@ -2304,7 +2309,7 @@ public class RepositoryBuilder {
             annotation = new Annotation();
           }
           if (isDocumentationKey(p.getKey())) {
-            repositoryAdapter.addDocumentation(p.getValue(), paragraphDelimiterInTables,
+            repositoryAdapter.addDocumentationAsMarkdown(p.getValue(), paragraphDelimiterInTables,
                 getPurpose(p.getKey()), annotation);
             groupRefType.setAnnotation(annotation);
           } else {

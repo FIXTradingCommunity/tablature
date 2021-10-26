@@ -55,6 +55,7 @@ import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.Sections;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol.md.event.MarkdownUtil;
+import io.fixprotocol.md2orchestra.util.MediaTypes;
 import io.fixprotocol.orchestra.event.EventListener;
 
 /**
@@ -208,16 +209,16 @@ class RepositoryAdapter {
   /**
    * Add documentation or replace an existing one with the same purpose
    * 
-   * @param markdown text in markdown format
+   * @param text contents of the documentation
    * @param purpose purpose attribute of the documentation element
    * @param annotation parent element to add new child
    */
-  void addDocumentation(final String markdown, final String purpose, final Annotation annotation) {
+  void addDocumentation(final String text, final String format, final String purpose, final Annotation annotation) {
     final List<Object> elements = annotation.getDocumentationOrAppinfo();
     final io.fixprotocol._2020.orchestra.repository.Documentation documentation =
         new io.fixprotocol._2020.orchestra.repository.Documentation();
-    documentation.setContentType(MarkdownUtil.MARKDOWN_MEDIA_TYPE);
-    documentation.getContent().add(markdown);
+    documentation.setContentType(MediaTypes.formatToMediaType(format));
+    documentation.getContent().add(text);
     if (purpose != null) {
       documentation.setPurpose(purpose);
     }
@@ -241,9 +242,9 @@ class RepositoryAdapter {
     }
   }
 
-  void addDocumentation(final String markdown, final String paragraphDelmiter, final String purpose,
+  void addDocumentationAsMarkdown(final String markdown, final String paragraphDelmiter, final String purpose,
       final Annotation annotation) {
-    addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), purpose, annotation);
+    addDocumentation(substitute(markdown, paragraphDelmiter, "\n\n"), "markdown", purpose, annotation);
   }
 
   void addField(final FieldType field) {

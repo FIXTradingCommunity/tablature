@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>io.fixprotocol.tablature</groupId>
 		<artifactId>tablature-parent</artifactId>
-		<version>1.0.1-SNAPSHOT</version>
+		<version>1.0.1</version>
 	</parent>
 	<artifactId>md2orchestra</artifactId>
 
@@ -40,7 +40,7 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<version>2.11.2</version>
+			<version>${jackson.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
