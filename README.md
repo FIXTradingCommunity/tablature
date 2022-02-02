@@ -1,6 +1,6 @@
 # tablature
 
-![Java CI with Maven](https://github.com/FIXTradingCommunity/tablature/workflows/maven.yml/badge.svg)
+![Java CI with Maven](https://github.com/FIXTradingCommunity/tablature/workflows/Java%20CI%20with%20Maven/badge.svg)
 
 Converts a Markdown document to a specification and documents a specification as markdown. Markdown can automatically be rendered as a web page in GitHub or other sites. This is an easy way to publish rules of engagement. Roundtrip is supported, allowing a user to update a specification iteratively with an ordinary text editor.
 

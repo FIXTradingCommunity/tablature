@@ -60,6 +60,7 @@ import io.fixprotocol._2020.orchestra.repository.ResponseType;
 import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
 import io.fixprotocol._2020.orchestra.repository.StateType;
+import io.fixprotocol._2020.orchestra.repository.SupportType;
 import io.fixprotocol._2020.orchestra.repository.TransitionType;
 import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.Context;
@@ -1111,6 +1112,15 @@ public class RepositoryBuilder {
         case "updatedep":
           codeType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
+        case "supported":
+          try {
+            SupportType supportType = SupportType.fromValue(p.getValue().toLowerCase());
+            codeType.setSupported(supportType );
+          } catch (IllegalArgumentException e) {
+            eventLogger.error("Invalid value for Support attribute {0} of code {1}",
+                p.getValue(), name);
+          }
+          break;
         default:
           Annotation annotation = codeType.getAnnotation();
           if (annotation == null) {
@@ -1499,6 +1509,15 @@ public class RepositoryBuilder {
             break;
           case "updatedep":
             field.setUpdatedEP(new BigInteger(p.getValue()));
+            break;
+          case "supported":
+            try {
+              SupportType supportType = SupportType.fromValue(p.getValue().toLowerCase());
+              field.setSupported(supportType );
+            } catch (IllegalArgumentException e) {
+              eventLogger.error("Invalid value for Support attribute {0}  at line {1} char {2}",
+                  p.getValue(), detail.getLine(), detail.getCharPositionInLine());
+            }
             break;
           default:
             if (isDocumentationKey(p.getKey())) {
@@ -2002,6 +2021,15 @@ public class RepositoryBuilder {
         case "updatedep":
           componentRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
+        case "supported":
+          try {
+            SupportType supportType = SupportType.fromValue(p.getValue().toLowerCase());
+            componentRefType.setSupported(supportType );
+          } catch (IllegalArgumentException e) {
+            eventLogger.error("Invalid value for Support attribute {0} at line {1} char {2}",
+                p.getValue(), detail.getLine(), detail.getCharPositionInLine());
+          }
+          break;           
         default:
           Annotation annotation = componentRefType.getAnnotation();
           if (annotation == null) {
@@ -2144,6 +2172,15 @@ public class RepositoryBuilder {
         case "updatedep":
           fieldRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
+        case "supported":
+          try {
+            SupportType supportType = SupportType.fromValue(p.getValue().toLowerCase());
+            fieldRefType.setSupported(supportType );
+          } catch (IllegalArgumentException e) {
+            eventLogger.error("Invalid value for Support attribute {0} at line {1} char {2}",
+                p.getValue(), detail.getLine(), detail.getCharPositionInLine());
+          }
+          break;          
         default:
           Annotation annotation = fieldRefType.getAnnotation();
           if (annotation == null) {
@@ -2251,7 +2288,7 @@ public class RepositoryBuilder {
     return fieldRefType;
   }
 
-  private GroupRefType populateGroupRef(final DetailProperties detail) {
+  private GroupRefType populateGroupRef(final DetailTable.TableRow detail) {
     final GroupRefType groupRefType = new GroupRefType();
 
     String name = null;
@@ -2303,6 +2340,15 @@ public class RepositoryBuilder {
         case "updatedep":
           groupRefType.setUpdatedEP(new BigInteger(p.getValue()));
           break;
+        case "supported":
+          try {
+            SupportType supportType = SupportType.fromValue(p.getValue().toLowerCase());
+            groupRefType.setSupported(supportType );
+          } catch (IllegalArgumentException e) {
+            eventLogger.error("Invalid value for Support attribute {0} at line {1} char {2}",
+                p.getValue(), detail.getLine(), detail.getCharPositionInLine());
+          }
+          break;           
         default:
           Annotation annotation = groupRefType.getAnnotation();
           if (annotation == null) {

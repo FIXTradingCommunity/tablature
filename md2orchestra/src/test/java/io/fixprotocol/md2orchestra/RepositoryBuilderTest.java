@@ -127,11 +127,11 @@ class RepositoryBuilderTest {
         + "\n"
         + "## Codeset PartyRoleQualifierCodeSet type int scenario Test\n"
         + "\n"
-        + "| Name | Value |\n"
-        + "|------------------|-------|\n"
-        + "| Algorithm | 22 |\n"
-        + "| FirmOrLegalEntity| 23 |\n"
-        + "| NaturalPerson | 24 |";
+        + "| Name             | Value | Supported |\n"
+        + "|------------------|-------|-----------|\n"
+        + "| Algorithm        | 22    | Supported |\n"
+        + "| FirmOrLegalEntity| 23    | Forbidden |\n"
+        + "| NaturalPerson    | 24    | Ignored   |\n";
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
     InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
     RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);

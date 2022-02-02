@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import javax.xml.bind.JAXBException;
 import org.apache.commons.cli.CommandLine;
@@ -355,6 +356,7 @@ public class Md2Orchestra {
           glob);
 
       final PathMatcher matcher = fileSystem.getPathMatcher("glob:" + glob);
+      final AtomicInteger filesMatched = new AtomicInteger();
       Files.walkFileTree(dirPath, EnumSet.of(FileVisitOption.FOLLOW_LINKS), Integer.MAX_VALUE,
           new FileVisitor<Path>() {
 
@@ -375,6 +377,7 @@ public class Md2Orchestra {
                 throws IOException {
 
               if (matcher.matches(filePath)) {
+                filesMatched.incrementAndGet();
                 fileConsumer.accept(filePath);
               }
               return FileVisitResult.CONTINUE;
@@ -389,6 +392,7 @@ public class Md2Orchestra {
             }
 
           });
+      logger.info("Md2Orchestra matched {} file(s)", filesMatched.get());
     }
   }
 
