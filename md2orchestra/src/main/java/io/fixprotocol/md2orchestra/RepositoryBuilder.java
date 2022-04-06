@@ -1068,7 +1068,7 @@ public class RepositoryBuilder {
           break;
         case "tag":
         case "id":
-          codeType.setId(BigInteger.valueOf(textUtil.tagToInt(p.getValue())));
+          codeType.setId(new BigInteger(p.getValue()));
           break;
         case "sort":
           codeType.setSort(p.getValue());
