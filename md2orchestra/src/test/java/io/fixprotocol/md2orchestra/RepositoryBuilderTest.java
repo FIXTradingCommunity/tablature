@@ -196,6 +196,31 @@ class RepositoryBuilderTest {
     assertFalse(xml.contains("id=\"-1\""));
   }
   
+  @Test // ODOC-129
+  void codesetWithRef() throws Exception {
+    String text =
+        "### Codeset ExecInstCodeSet type MultipleCharValue (18)\n"
+        + "\n"
+        + "| Name                     | Value | Id    | Sort | Synopsis                    | Elaboration                                     |\n"
+        + "|--------------------------|-------|-------|------|-----------------------------|-------------------------------------------------|\n"
+        + "| ParticipateDoNotInitiate | 6     | 18000 | 7    | Participate don't initiate  |                                                 |\n"
+        + "| ReinstateOnSystemFailure | H     | 18018 | 18   | Reinstate on system failure | Mutually exclusive with Q and l (lower case L). |\n"
+        + "| CancelOnSystemFailure    | Q     | 18027 | 27   | Cancel on system failure    | Mutually exclusive with H and l(lower case L).  |";
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    InputStream referenceStream = new FileInputStream("src/test/resources/OrchestraFIXLatest.xml");
+    RepositoryBuilder builder = RepositoryBuilder.instance(referenceStream , jsonOutputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.appendInput(inputStream);
+    builder.write(xmlStream);
+    builder.closeEventLogger();
+    String xml = xmlStream.toString();
+    System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+    assertTrue(xml.contains("id=\"18000\""));
+  }
+  
   @Test //ODOC-20
   void constant() throws Exception {
     String text =

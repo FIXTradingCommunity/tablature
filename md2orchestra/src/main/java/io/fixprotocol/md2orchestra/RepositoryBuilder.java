@@ -1139,11 +1139,20 @@ public class RepositoryBuilder {
       }
     }
 
-    if (referenceRepositoryAdapter != null) {
+    if (referenceRepositoryAdapter != null && 
+        (codeType.getId() == null || codeType.getName() == null || codeType.getValue() == null)) {
       CodeType refCode = referenceRepositoryAdapter.findCodeByValue(codeset.getName(),
           RepositoryAdapter.scenarioOrDefault(codeset.getScenario()), codeType.getValue());
       if (refCode != null) {
-        codeType.setId(refCode.getId());
+        if (codeType.getId() == null) {
+          codeType.setId(refCode.getId());
+        }
+        if (codeType.getName() == null) {
+          codeType.setName(refCode.getName());
+        }
+        if (codeType.getValue() == null) {
+          codeType.setValue(refCode.getValue());
+        }
       }
     }
 
