@@ -44,7 +44,7 @@ This project requires Java 11 or later. It should run on any platform for which 
 The project is built with Maven version 3.0 or later. See [Building this Project](https://github.com/FIXTradingCommunity/tablature/wiki/Building-this-Project)
 
 ## License
-© Copyright 2020-2021 FIX Protocol Limited
+© Copyright 2020-2022 FIX Protocol Limited
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
