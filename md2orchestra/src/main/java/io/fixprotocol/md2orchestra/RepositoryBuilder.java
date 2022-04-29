@@ -299,7 +299,7 @@ public class RepositoryBuilder {
         if (groupType != null) {
           FieldRefType numInGroupRef = groupType.getNumInGroup();
           if (numInGroupRef != null) {
-            buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, scenario, "NumInGroup"));
+            buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, DEFAULT_SCENARIO, "NumInGroup"));
           }
           repositoryAdapter.copyGroup(groupType);
         } else {
@@ -484,7 +484,7 @@ public class RepositoryBuilder {
           if (group != null) {
             FieldRefType numInGroupRef = group.getNumInGroup();
             if (numInGroupRef != null) {
-              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, groupRef.getScenario(),
+              buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, numInGroupRef.getScenario(),
                   "NumInGroup"));
               if (currentDepth <= maxDepth) {
                 final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
