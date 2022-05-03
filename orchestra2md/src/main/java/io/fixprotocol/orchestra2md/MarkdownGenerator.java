@@ -15,7 +15,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.xml.bind.JAXBElement;
@@ -101,15 +100,10 @@ public class MarkdownGenerator {
         .collect(Collectors.joining(paragraphDelimiter));
   }
 
-  static String concatenateDocumentation(List<Object> objects, String paragraphDelimiter) {
-    return objects.stream().map(o -> {
-      if (o instanceof io.fixprotocol._2020.orchestra.repository.Documentation) {
-        return documentToString((io.fixprotocol._2020.orchestra.repository.Documentation) o,
-            paragraphDelimiter);
-      } else {
-        return appinfoToString(o, paragraphDelimiter);
-      }
-    }).collect(Collectors.joining(paragraphDelimiter));
+  static String concatenateDocumentation(List<Documentation> documentations,
+      String paragraphDelimiter) {
+    return documentations.stream().map(d -> documentToString(d, paragraphDelimiter))
+        .collect(Collectors.joining(paragraphDelimiter));
   }
 
   static String documentToString(io.fixprotocol._2020.orchestra.repository.Documentation d,
@@ -144,20 +138,14 @@ public class MarkdownGenerator {
     }
   }
 
-  static SortedMap<String, List<Object>> groupDocumentationByPurpose(Annotation annotation) {
+  static SortedMap<String, List<Documentation>> groupDocumentationByPurpose(Annotation annotation) {
     if (annotation == null) {
       return Collections.emptySortedMap();
     } else {
       final List<Object> annotations = annotation.getDocumentationOrAppinfo();
-      final Function<Object, String> classifier = o -> {
-        if (o instanceof Documentation) {
-          return Objects.requireNonNullElse(((Documentation) o).getPurpose(), "");
-        } else {
-          return Objects.requireNonNullElse(((Appinfo) o).getPurpose(), "");
-        }
-      };
-      return sortDocumentationByPurpose(
-          annotations.stream().collect(Collectors.groupingBy(classifier)));
+      return sortDocumentationByPurpose(annotations.stream().filter(Documentation.class::isInstance)
+          .map(Documentation.class::cast)
+          .collect(Collectors.groupingBy(d -> Objects.requireNonNullElse(d.getPurpose(), ""))));
     }
   }
 
@@ -198,39 +186,38 @@ public class MarkdownGenerator {
     return codes.stream().sorted(codeComparator).collect(Collectors.toList());
   }
 
-  static SortedMap<String, List<Object>> sortDocumentationByPurpose(
-      Map<String, ? extends List<Object>> groups) {
-    final SortedMap<String, List<Object>> sorted =
-            new TreeMap<>(new Comparator<>() {
+  static SortedMap<String, List<Documentation>> sortDocumentationByPurpose(
+      Map<String, List<Documentation>> map) {
+    final SortedMap<String, List<Documentation>> sorted = new TreeMap<>(new Comparator<>() {
 
-              @Override
-              public int compare(String o1, String o2) {
-                return purposeRank(o1) - purposeRank(o2);
-              }
+      @Override
+      public int compare(String o1, String o2) {
+        return purposeRank(o1) - purposeRank(o2);
+      }
 
-              private int purposeRank(String purpose) {
-                // null or empty purpose is equivalent to synopsis
-                if (purpose == null) {
-                  return 0;
-                }
-                switch (purpose.toLowerCase()) {
-                  case "":
-                  case "synopsis":
-                  case DOCUMENTATION_KEYWORD:
-                    return 0;
-                  case "elaboration":
-                    return 1;
-                  case "example":
-                    return 2;
-                  case "display":
-                    return 3;
-                  default:
-                    return 4;
-                }
-              }
+      private int purposeRank(String purpose) {
+        // null or empty purpose is equivalent to synopsis
+        if (purpose == null) {
+          return 0;
+        }
+        switch (purpose.toLowerCase()) {
+          case "":
+          case "synopsis":
+          case DOCUMENTATION_KEYWORD:
+            return 0;
+          case "elaboration":
+            return 1;
+          case "example":
+            return 2;
+          case "display":
+            return 3;
+          default:
+            return 4;
+        }
+      }
 
-            });
-    sorted.putAll(groups);
+    });
+    sorted.putAll(map);
     return sorted;
   }
 
@@ -272,10 +259,11 @@ public class MarkdownGenerator {
     this.shouldOutputDatatypes = shouldOutputDatatypes;
     // Populate column heading translations. First element is lower case key, second is display
     // format.
-    this.headings.addAll(new String[][] {{"abbrname", "XMLName"},
-        {"basecategoryabbrname", "Category XMLName"}, {"basecategory", "Category"},
-        {"discriminatorid", "Discriminator"}, {"addedep", "Added EP"}, {"updatedep", "Updated EP"},
-        {"deprecatedep", "Deprecated EP"}, {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
+    this.headings.addAll(
+        new String[][] {{"abbrname", "XMLName"}, {"basecategoryabbrname", "Category XMLName"},
+            {"basecategory", "Category"}, {"discriminatorid", "Discriminator"},
+            {"addedep", "Added EP"}, {"updatedep", "Updated EP"}, {"deprecatedep", "Deprecated EP"},
+            {"uniondatatype", "Union Type"}, {"msgtype", "MsgType"}});
   }
 
   public void generate(InputStream inputStream, OutputStreamWriter outputWriter,
@@ -322,6 +310,11 @@ public class MarkdownGenerator {
     generate(inputStream, outputWriter, eventLogger);
   }
 
+  void generateNoneComment(DocumentWriter documentWriter) throws IOException {
+    final MutableDocumentation documentation = contextFactory.createDocumentation("None");
+    documentWriter.write(documentation);
+  }
+
   private void addComponentRefRow(Repository repository, ComponentRefType componentRef,
       MutableDetailProperties row) {
     final BigInteger tag = componentRef.getId();
@@ -330,7 +323,8 @@ public class MarkdownGenerator {
     if (component != null) {
       row.addProperty("name", component.getName());
     } else {
-      eventLogger.warn("Unknown component; id={0, number, #0} scenario={1}", tag.intValue(), scenario);
+      eventLogger.warn("Unknown component; id={0, number, #0} scenario={1}", tag.intValue(),
+          scenario);
     }
     row.addProperty("tag", "component");
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -395,24 +389,23 @@ public class MarkdownGenerator {
         row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
-    addDocumentationColumns(row, componentRef.getAnnotation(), getParagraphDelimiterInTables());
+    addDocumentationColumns(row, componentRef.getAnnotation());
   }
 
-  private void addDocumentationColumns(MutableDetailProperties properties, Annotation annotation,
-      String paragraphDelimiter) {
+  private void addDocumentationColumns(MutableDetailProperties properties, Annotation annotation) {
     if (annotation != null) {
-      // Synopsis may be explicit or implicit (null purpose)
-      // handle all 'purpose' values, including appinfo
-
-      final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
-      final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
-      for (final Entry<String, List<Object>> e : entries) {
+      final SortedMap<String, List<Documentation>> sorted = groupDocumentationByPurpose(annotation);
+      final Set<Entry<String, List<Documentation>>> entries = sorted.entrySet();
+      for (final Entry<String, List<Documentation>> e : entries) {
         final String text = concatenateDocumentation(e.getValue(), getParagraphDelimiterInTables());
         if (!text.isBlank()) {
           final String key = e.getKey();
           properties.addProperty(key != null && !key.isEmpty() ? key : DOCUMENTATION_KEYWORD, text);
         }
       }
+      final List<Object> annotations = annotation.getDocumentationOrAppinfo();
+      annotations.stream().filter(Appinfo.class::isInstance).map(Appinfo.class::cast)
+          .forEach(a -> properties.addProperty(a.getPurpose(), a.getContent().toString()));
     }
   }
 
@@ -536,8 +529,9 @@ public class MarkdownGenerator {
         row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
-    addDocumentationColumns(row, fieldRef.getAnnotation(), getParagraphDelimiterInTables());
+    addDocumentationColumns(row, fieldRef.getAnnotation());
   }
+
 
   private void addGroupRefRow(Repository repository, GroupRefType groupRef,
       MutableDetailProperties row) {
@@ -612,9 +606,8 @@ public class MarkdownGenerator {
         row.addIntProperty("deprecatedep", deprecatedEp.intValue());
       }
     }
-    addDocumentationColumns(row, groupRef.getAnnotation(), getParagraphDelimiterInTables());
+    addDocumentationColumns(row, groupRef.getAnnotation());
   }
-
 
   private void addMemberRows(MutableDetailTable table, Repository repository,
       List<Object> members) {
@@ -674,7 +667,7 @@ public class MarkdownGenerator {
         if (actorOrFlow instanceof ActorType) {
           generateActor((ActorType) actorOrFlow, repository, documentWriter);
         } else if (actorOrFlow instanceof FlowType) {
-          generateFlow((FlowType) actorOrFlow, repository, documentWriter);
+          generateFlow((FlowType) actorOrFlow, documentWriter);
         }
       }
       if (actorsOrFlows.isEmpty()) {
@@ -683,11 +676,6 @@ public class MarkdownGenerator {
     } else {
       generateNoneComment(documentWriter);
     }
-  }
-
-  void generateNoneComment(DocumentWriter documentWriter) throws IOException {
-    final MutableDocumentation documentation = contextFactory.createDocumentation("None");
-    documentWriter.write(documentation);
   }
 
   private void generateCategories(Repository repository, DocumentWriter documentWriter)
@@ -757,7 +745,7 @@ public class MarkdownGenerator {
           row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
-        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+        addDocumentationColumns(row, category.getAnnotation());
       }
       documentWriter.write(table, headings);
     }
@@ -866,7 +854,7 @@ public class MarkdownGenerator {
           row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
-        addDocumentationColumns(row, code.getAnnotation(), getParagraphDelimiterInTables());
+        addDocumentationColumns(row, code.getAnnotation());
       }
 
       documentWriter.write(table, headings);
@@ -968,7 +956,7 @@ public class MarkdownGenerator {
           final Annotation annotation = datatype.getAnnotation();
           MutableDetailProperties row = table.newRow();
           row.addProperty("name", datatype.getName());
-          addDocumentationColumns(row, annotation, getParagraphDelimiterInTables());
+          addDocumentationColumns(row, annotation);
 
           for (final MappedDatatype mapping : mappings) {
             row = table.newRow();
@@ -999,7 +987,7 @@ public class MarkdownGenerator {
             if (max != null) {
               row.addProperty("maxInclusive", max);
             }
-            addDocumentationColumns(row, mapping.getAnnotation(), getParagraphDelimiterInTables());
+            addDocumentationColumns(row, mapping.getAnnotation());
           }
         }
         documentWriter.write(table, headings);
@@ -1012,13 +1000,10 @@ public class MarkdownGenerator {
   private void generateDocumentationBlocks(final Annotation annotation,
       DocumentWriter documentWriter) throws IOException {
     if (annotation != null) {
-      // Synopsis may be explicit or implicit (null purpose)
-      // handle all 'purpose' values, including appinfo
-
-      final SortedMap<String, List<Object>> sorted = groupDocumentationByPurpose(annotation);
-      final Set<Entry<String, List<Object>>> entries = sorted.entrySet();
-      for (final Entry<String, List<Object>> e : entries) {
-        final boolean hasMarkdown = e.getValue().stream().map(o -> (Documentation) o)
+      final SortedMap<String, List<Documentation>> sorted = groupDocumentationByPurpose(annotation);
+      final Set<Entry<String, List<Documentation>>> entries = sorted.entrySet();
+      for (final Entry<String, List<Documentation>> e : entries) {
+        final boolean hasMarkdown = e.getValue().stream()
             .anyMatch(d -> MarkdownUtil.MARKDOWN_MEDIA_TYPE.equals(d.getContentType()));
         final String text = concatenateDocumentation(e.getValue(), hasMarkdown ? "\n\n" : "\n");
         if (!text.isBlank()) {
@@ -1170,7 +1155,7 @@ public class MarkdownGenerator {
           row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
-        addDocumentationColumns(row, field.getAnnotation(), getParagraphDelimiterInTables());
+        addDocumentationColumns(row, field.getAnnotation());
       }
 
       documentWriter.write(table, headings);
@@ -1179,7 +1164,7 @@ public class MarkdownGenerator {
     }
   }
 
-  private void generateFlow(FlowType flow, Repository repository, DocumentWriter documentWriter)
+  private void generateFlow(FlowType flow, DocumentWriter documentWriter)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
     context.addPair("Flow", flow.getName());
@@ -1265,7 +1250,7 @@ public class MarkdownGenerator {
     }
   }
 
-  private void generateMessageResponses(Repository repository, DocumentWriter documentWriter,
+  private void generateMessageResponses(DocumentWriter documentWriter,
       MessageType message) throws IOException {
     final Responses responses = message.getResponses();
     if (responses != null) {
@@ -1293,7 +1278,7 @@ public class MarkdownGenerator {
               row.addProperty("msgType", msgType);
             }
             row.addProperty("when", response.getWhen());
-            addDocumentationColumns(row, response.getAnnotation(), getParagraphDelimiterInTables());
+            addDocumentationColumns(row, response.getAnnotation());
           }
         }
       }
@@ -1314,7 +1299,7 @@ public class MarkdownGenerator {
       }
       for (final MessageType message : messages) {
         generateMessageStructure(repository, documentWriter, message);
-        generateMessageResponses(repository, documentWriter, message);
+        generateMessageResponses(documentWriter, message);
       }
     } else {
       generateNoneComment(documentWriter);
@@ -1469,7 +1454,7 @@ public class MarkdownGenerator {
           row.addIntProperty("deprecatedep", deprecatedEp.intValue());
         }
 
-        addDocumentationColumns(row, category.getAnnotation(), getParagraphDelimiterInTables());
+        addDocumentationColumns(row, category.getAnnotation());
       }
       documentWriter.write(table, headings);
     }
@@ -1501,7 +1486,7 @@ public class MarkdownGenerator {
       row.addProperty("state", state.getName());
       row.addProperty("transition", transition.getName());
       row.addProperty("target", transition.getTarget());
-      addDocumentationColumns(row, transition.getAnnotation(), getParagraphDelimiterInTables());
+      addDocumentationColumns(row, transition.getAnnotation());
       row.addProperty("when", transition.getWhen());
     }
   }

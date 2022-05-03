@@ -14,6 +14,41 @@ class MarkdownGeneratorTest {
   private MarkdownGenerator generator;
   private ByteArrayOutputStream jsonOutputStream;
   
+  @Test // #66
+  void appinfo() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups>\n "
+        + "       <fixr:group id=\"2071\" name=\"SecAltIDGrp\" scenario=\"EXXXXX\">\n"
+        + "            <fixr:numInGroup id=\"454\"/>\n"
+        + "            <fixr:fieldRef id=\"455\">\n"
+        + "              <fixr:annotation>\n"
+        + "                <fixr:appinfo purpose=\"P1\">Hanno</fixr:appinfo>\n"
+        + "                <fixr:appinfo purpose=\"P2\">Klein</fixr:appinfo>\n"
+        + "              </fixr:annotation>\n"
+        + "            </fixr:fieldRef>\n"
+        + "            <fixr:fieldRef id=\"456\" scenario=\"EXXXXX\"/>\n"
+        + "        </fixr:group>"
+        + "    </fixr:groups>\n"
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // ODOC-63
   void duplicateCodes() throws Exception {
     String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
@@ -104,50 +139,50 @@ class MarkdownGeneratorTest {
   
   @Test //ODOC-118
   void messageResponses() throws Exception {
-    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\r\n"
-        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\r\n"
-        + "    <fixr:metadata/>\r\n"
-        + "    <fixr:datatypes>\r\n"
-        + "        <fixr:datatype name=\"String\" added=\"FIX.4.2\">\r\n"
-        + "            <fixr:mappedDatatype standard=\"XML\" builtin=\"true\" base=\"xs:string\">\r\n"
-        + "                <fixr:annotation>\r\n"
-        + "                    <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
-        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\r\n"
-        + "      </fixr:documentation>\r\n"
-        + "                </fixr:annotation>\r\n"
-        + "            </fixr:mappedDatatype>\r\n"
-        + "            <fixr:annotation>\r\n"
-        + "                <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
-        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\r\n"
-        + "      </fixr:documentation>\r\n"
-        + "            </fixr:annotation>\r\n"
-        + "        </fixr:datatype>\r\n"
-        + "    </fixr:datatypes>\r\n"
-        + "    <fixr:codeSets/>\r\n"
-        + "    <fixr:fields>\r\n"
-        + "        <fixr:field type=\"String\" baseCategory=\"SingleGeneralOrderHandling\" baseCategoryAbbrName=\"ID\" added=\"FIX.2.7\" id=\"11\" name=\"ClOrdID\" abbrName=\"ClOrdID\">\r\n"
-        + "            <fixr:annotation>\r\n"
-        + "                <fixr:documentation purpose=\"SYNOPSIS\">\r\n"
-        + "         Unique identifier for Order as assigned by the buy-side (institution, broker, intermediary etc.) (identified by SenderCompID (49) or OnBehalfOfCompID (5) as appropriate). Uniqueness must be guaranteed within a single trading day. Firms, particularly those which electronically submit multi-day orders, trade globally or throughout market close periods, should ensure uniqueness across days, for example by embedding a date within the ClOrdID field.\r\n"
-        + "      </fixr:documentation>\r\n"
-        + "            </fixr:annotation>\r\n"
-        + "        </fixr:field>\r\n"
-        + "    </fixr:fields>\r\n"
-        + "    <fixr:components/>\r\n"
-        + "    <fixr:groups/>\r\n"
-        + "    <fixr:messages>\r\n"
-        + "        <fixr:message msgType=\"D\" id=\"14\" name=\"NewOrderSingle\">\r\n"
-        + "            <fixr:structure>\r\n"
-        + "                <fixr:fieldRef id=\"11\" presence=\"required\"/>\r\n"
-        + "            </fixr:structure>\r\n"
-        + "            <fixr:responses>\r\n"
-        + "                <fixr:response>\r\n"
-        + "                    <fixr:messageRef name=\"ExecutionReport\" msgType=\"8\" id=\"9\"/>\r\n"
-        + "                </fixr:response>\r\n"
-        + "            </fixr:responses>\r\n"
-        + "        </fixr:message>\r\n"
-        + "        <fixr:message msgType=\"8\" id=\"9\" name=\"ExecutionReport\"/>\r\n"
-        + "    </fixr:messages>\r\n"
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:datatypes>\n"
+        + "        <fixr:datatype name=\"String\" added=\"FIX.4.2\">\n"
+        + "            <fixr:mappedDatatype standard=\"XML\" builtin=\"true\" base=\"xs:string\">\n"
+        + "                <fixr:annotation>\n"
+        + "                    <fixr:documentation purpose=\"SYNOPSIS\">\n"
+        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\n"
+        + "      </fixr:documentation>\n"
+        + "                </fixr:annotation>\n"
+        + "            </fixr:mappedDatatype>\n"
+        + "            <fixr:annotation>\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\">\n"
+        + "         Alpha-numeric free format strings, can include any character or punctuation except the delimiter. All String fields are case sensitive (i.e. morstatt != Morstatt).\n"
+        + "      </fixr:documentation>\n"
+        + "            </fixr:annotation>\n"
+        + "        </fixr:datatype>\n"
+        + "    </fixr:datatypes>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields>\n"
+        + "        <fixr:field type=\"String\" baseCategory=\"SingleGeneralOrderHandling\" baseCategoryAbbrName=\"ID\" added=\"FIX.2.7\" id=\"11\" name=\"ClOrdID\" abbrName=\"ClOrdID\">\n"
+        + "            <fixr:annotation>\n"
+        + "                <fixr:documentation purpose=\"SYNOPSIS\">\n"
+        + "         Unique identifier for Order as assigned by the buy-side (institution, broker, intermediary etc.) (identified by SenderCompID (49) or OnBehalfOfCompID (5) as appropriate). Uniqueness must be guaranteed within a single trading day. Firms, particularly those which electronically submit multi-day orders, trade globally or throughout market close periods, should ensure uniqueness across days, for example by embedding a date within the ClOrdID field.\n"
+        + "      </fixr:documentation>\n"
+        + "            </fixr:annotation>\n"
+        + "        </fixr:field>\n"
+        + "    </fixr:fields>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n"
+        + "    <fixr:messages>\n"
+        + "        <fixr:message msgType=\"D\" id=\"14\" name=\"NewOrderSingle\">\n"
+        + "            <fixr:structure>\n"
+        + "                <fixr:fieldRef id=\"11\" presence=\"required\"/>\n"
+        + "            </fixr:structure>\n"
+        + "            <fixr:responses>\n"
+        + "                <fixr:response>\n"
+        + "                    <fixr:messageRef name=\"ExecutionReport\" msgType=\"8\" id=\"9\"/>\n"
+        + "                </fixr:response>\n"
+        + "            </fixr:responses>\n"
+        + "        </fixr:message>\n"
+        + "        <fixr:message msgType=\"8\" id=\"9\" name=\"ExecutionReport\"/>\n"
+        + "    </fixr:messages>\n"
         + "</fixr:repository>";
     
     InputStream inputStream = new ByteArrayInputStream(text.getBytes());
@@ -399,9 +434,9 @@ class MarkdownGeneratorTest {
     OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
     generator.generate(inputStream, outputWriter, jsonOutputStream);
     outputWriter.close();
-    String md = mdStream.toString();
-    assertTrue(md.contains("Line 1/P/Line 2"));
+    String md = mdStream.toString();    
     //System.out.println(md);
+    assertTrue(md.contains("Line 1/P/Line 2"));
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   } 
