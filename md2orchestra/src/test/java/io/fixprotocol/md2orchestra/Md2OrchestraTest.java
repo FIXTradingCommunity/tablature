@@ -41,6 +41,26 @@ class Md2OrchestraTest {
 
   private final Logger logger = LogManager.getLogger(getClass());
 
+  
+  @Test
+  void firstNoReference() throws Exception {
+    final String inputPath = getResourcePath("FIRST.md");
+    final String outputFilename = "target/test/FIRST-noref.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+        .outputFile(outputFilename).eventFile("target/test/FIRST-noref.json").build();
+    md2Orchestra1.generate();
+  }
+  
+  @Test
+  void firstWithReference() throws Exception {
+    final String inputPath = getResourcePath("FIRST.md");
+    final String outputFilename = "target/test/FIRST-ref.xml";
+    String referencePath = getResourcePath("OrchestraFIXLatest.xml");
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath).referenceFile(referencePath)
+        .outputFile(outputFilename).eventFile("target/test/FIRST-ref.json").build();
+    md2Orchestra1.generate();
+  }
+  
   @Test
   void noInput() throws Exception {
     final String outputFilename = "target/test/mit_2016.xml";
