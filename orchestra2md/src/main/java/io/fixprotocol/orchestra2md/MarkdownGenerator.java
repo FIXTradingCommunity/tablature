@@ -90,8 +90,8 @@ public class MarkdownGenerator {
   static String appinfoToString(Object o, String paragraphDelimiter) {
     final io.fixprotocol._2020.orchestra.repository.Appinfo a =
         (io.fixprotocol._2020.orchestra.repository.Appinfo) o;
-    return a.getContent().stream().map(c -> c.toString().strip().replace("\n", paragraphDelimiter))
-        .map(MarkdownUtil::plainTextToMarkdown).collect(Collectors.joining(paragraphDelimiter));
+    return a.getContent().stream().map(c -> c.toString().trim())
+       .collect(Collectors.joining(paragraphDelimiter));
   }
 
   static String codesToString(CodeSetType codeset, String paragraphDelimiter) {
@@ -405,7 +405,8 @@ public class MarkdownGenerator {
       }
       final List<Object> annotations = annotation.getDocumentationOrAppinfo();
       annotations.stream().filter(Appinfo.class::isInstance).map(Appinfo.class::cast)
-          .forEach(a -> properties.addProperty(a.getPurpose(), a.getContent().toString()));
+        .filter(a-> !("FIXML".equals(a.getPurpose()) && !shouldOutputFixml))
+        .forEach(a -> properties.addProperty(a.getPurpose(), appinfoToString(a, getParagraphDelimiterInTables())));
     }
   }
 
