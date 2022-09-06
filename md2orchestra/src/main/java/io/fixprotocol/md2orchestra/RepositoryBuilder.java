@@ -65,13 +65,12 @@ import io.fixprotocol._2020.orchestra.repository.TransitionType;
 import io.fixprotocol._2020.orchestra.repository.UnionDataTypeT;
 import io.fixprotocol.md.event.Context;
 import io.fixprotocol.md.event.Detail;
-import io.fixprotocol.md.event.DetailProperties;
 import io.fixprotocol.md.event.DetailTable;
 import io.fixprotocol.md.event.DocumentParser;
+import io.fixprotocol.md.event.DocumentParser.ParserErrorListener;
 import io.fixprotocol.md.event.Documentation;
 import io.fixprotocol.md.event.GraphContext;
 import io.fixprotocol.md.event.MarkdownUtil;
-import io.fixprotocol.md.event.DocumentParser.ParserErrorListener;
 import io.fixprotocol.md.util.AssociativeSet;
 import io.fixprotocol.md2orchestra.util.IdGenerator;
 import io.fixprotocol.orchestra.event.EventListener;
@@ -1252,6 +1251,7 @@ public class RepositoryBuilder {
         }
         if (type != null) {
           codeset.setType(type);
+          buildSteps.add(new TypeBuilder(type, null));
         } else {
           eventLogger.error("Unknown CodeSet underlying datatype; name={0} at line {1} char {2}",
               name, context.getLine(), context.getCharPositionInLine());
@@ -1549,6 +1549,8 @@ public class RepositoryBuilder {
     final String name = field.getName();
     final String type = field.getType();
     final String scenario = field.getScenario();
+    final UnionDataTypeT unionDatatype = field.getUnionDataType();
+    final String unionType = unionDatatype != null ? unionDatatype.value() : null;
 
     if (id == null) {
       buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, type));
@@ -1557,6 +1559,9 @@ public class RepositoryBuilder {
     } else {
       buildSteps.add(new TypeBuilder(type, scenario));
       repositoryAdapter.addField(field);
+    }
+    if (unionType != null) {
+      buildSteps.add(new TypeBuilder(unionType, null));
     }
   }
 

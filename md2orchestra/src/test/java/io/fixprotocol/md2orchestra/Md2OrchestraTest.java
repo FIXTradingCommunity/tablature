@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import io.fixprotocol._2020.orchestra.repository.CodeSetType;
 import io.fixprotocol._2020.orchestra.repository.CodeType;
 import io.fixprotocol._2020.orchestra.repository.ComponentType;
+import io.fixprotocol._2020.orchestra.repository.Datatype;
 import io.fixprotocol._2020.orchestra.repository.FieldType;
 import io.fixprotocol._2020.orchestra.repository.GroupType;
 import io.fixprotocol._2020.orchestra.repository.MessageType;
@@ -169,6 +170,29 @@ class Md2OrchestraTest {
         .outputFile(outputFilename).build();
     md2Orchestra1.generate();
   }
+  
+
+  @Test
+  void datatypes() throws Exception {
+    String inputPath = getResourcePath("itiviti.md");
+    final String outputFilename = "target/test/itiviti.xml";
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+        .outputFile(outputFilename).build();
+    md2Orchestra1.generate();
+
+    RepositoryAdapter outfile = new RepositoryAdapter(RepositoryBuilder.createEventListener(logger, null));
+    outfile.unmarshal(new FileInputStream(outputFilename));
+    
+    Datatype datatype = outfile.findDatatypeByName("Length");
+    assertNotNull(datatype);
+    
+    datatype = outfile.findDatatypeByName("MultipleStringValue");
+    assertNotNull(datatype);
+    
+    //datatype = outfile.findDatatypeByName("Reserved100Plus");
+    //assertNotNull(datatype);
+  }
+
 
   private String getResourcePath(String filename) {
     final File resourcesFile = new File("src/test/resources");
