@@ -1380,7 +1380,7 @@ public class MarkdownGenerator {
       for (final JAXBElement<SimpleLiteral> element : elements) {
         final MutableDetailProperties row = table.newRow();
         final String name = element.getName().getLocalPart();
-        final String value = String.join(" ", element.getValue().getContent());
+        final String value = String.join(" ", element.getValue().getContent()).trim();
         row.addProperty("term", name);
         row.addProperty("value", value);
       }

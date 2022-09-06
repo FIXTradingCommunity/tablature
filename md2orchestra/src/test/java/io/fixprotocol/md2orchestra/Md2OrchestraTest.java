@@ -80,7 +80,7 @@ class Md2OrchestraTest {
   }
   
   @Test
-  void roundtrip2() throws Exception {
+  void fixLatest() throws Exception {
     final String inputPath = getResourcePath("OrchestraFIXLatest.md");
     final String outputFilename = "target/test/OrchestraFIXLatest.xml";
     Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
