@@ -190,8 +190,8 @@ class Md2OrchestraTest {
     datatype = outfile.findDatatypeByName("MultipleStringValue");
     assertNotNull(datatype);
     
-    datatype = outfile.findDatatypeByName("Reserved100Plus");
-    assertNotNull(datatype);
+    //datatype = outfile.findDatatypeByName("Reserved100Plus");
+    //assertNotNull(datatype);
   }
 
 

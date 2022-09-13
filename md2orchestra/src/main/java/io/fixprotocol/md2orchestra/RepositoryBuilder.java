@@ -1231,6 +1231,7 @@ public class RepositoryBuilder {
         if (refCodeset != null) {
           // Copy all codeset attributes but without codes
           codeset = repositoryAdapter.copyCodeset(refCodeset);
+          buildSteps.add(new TypeBuilder(refCodeset.getType(), DEFAULT_SCENARIO));
           codeset.getCode().clear();
         }
       }
