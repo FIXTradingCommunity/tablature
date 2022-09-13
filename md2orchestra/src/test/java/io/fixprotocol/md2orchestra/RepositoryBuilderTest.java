@@ -1096,7 +1096,7 @@ class RepositoryBuilderTest {
     String xml = xmlStream.toString();
     //System.out.println(xml);
     builder.closeEventLogger();
-    Pattern pattern = Pattern.compile("purpose=\"SYNOPSIS\"");
+    Pattern pattern = Pattern.compile("purpose=\"SYNOPSIS\" contentType=\"text/markdown\"");
     Matcher matcher = pattern.matcher(xml);
     long count = matcher.results().count();
     assertEquals(1, count);
