@@ -195,7 +195,12 @@ public class RepositoryBuilder {
         }
         if (fieldType != null) {
           repositoryAdapter.copyField(fieldType);
-        }
+          final UnionDataTypeT unionDatatype = fieldType.getUnionDataType();
+          final String unionType = unionDatatype != null ? unionDatatype.value() : null;
+          if (unionType != null) {
+            buildSteps.add(new TypeBuilder(unionType, DEFAULT_SCENARIO));
+          }
+        } 
       }
 
       // if not found retry with base scenario

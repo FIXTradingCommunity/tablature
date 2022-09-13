@@ -176,7 +176,8 @@ class Md2OrchestraTest {
   void datatypes() throws Exception {
     String inputPath = getResourcePath("itiviti.md");
     final String outputFilename = "target/test/itiviti.xml";
-    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath)
+    final String referencePath = getResourcePath("OrchestraFIXLatest.xml");
+    Md2Orchestra md2Orchestra1 = Md2Orchestra.builder().inputFilePattern(inputPath).referenceFile(referencePath)
         .outputFile(outputFilename).build();
     md2Orchestra1.generate();
 
@@ -189,8 +190,8 @@ class Md2OrchestraTest {
     datatype = outfile.findDatatypeByName("MultipleStringValue");
     assertNotNull(datatype);
     
-    //datatype = outfile.findDatatypeByName("Reserved100Plus");
-    //assertNotNull(datatype);
+    datatype = outfile.findDatatypeByName("Reserved100Plus");
+    assertNotNull(datatype);
   }
 
 
