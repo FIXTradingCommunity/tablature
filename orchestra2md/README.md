@@ -9,6 +9,8 @@ The orchestra2md utilty documents an Orchestra repository as a Markdown document
 ```
 usage: Orchestra2md [options] <input-file>
  -?,--help              display usage
+ -a,--all               output all elements
+    --datatypes         output datatypes
  -e,--eventlog <arg>    path of JSON event file
     --fixml             output fixml attributes
  -o,--output <arg>      path of markdown output file (required)
