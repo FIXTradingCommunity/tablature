@@ -54,7 +54,6 @@ import io.fixprotocol._2020.orchestra.repository.Repository;
 import io.fixprotocol._2020.orchestra.repository.SectionType;
 import io.fixprotocol._2020.orchestra.repository.Sections;
 import io.fixprotocol._2020.orchestra.repository.StateMachineType;
-import io.fixprotocol.md.event.MarkdownUtil;
 import io.fixprotocol.md2orchestra.util.MediaTypes;
 import io.fixprotocol.orchestra.event.EventListener;
 

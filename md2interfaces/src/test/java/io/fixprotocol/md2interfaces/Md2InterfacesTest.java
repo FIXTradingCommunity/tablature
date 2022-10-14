@@ -15,9 +15,8 @@
 package io.fixprotocol.md2interfaces;
 
 import java.io.File;
-import java.io.FileOutputStream;
+
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 class Md2InterfacesTest {

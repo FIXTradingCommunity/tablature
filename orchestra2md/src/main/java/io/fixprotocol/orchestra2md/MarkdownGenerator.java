@@ -631,7 +631,8 @@ public class MarkdownGenerator {
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
     context.addPair("Actor", actor.getName());
-
+    documentWriter.write(context);
+    
     final Annotation annotation = actor.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
     documentWriter.write(context);
@@ -1169,6 +1170,7 @@ public class MarkdownGenerator {
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
     context.addPair("Flow", flow.getName());
+    documentWriter.write(context);
     final Annotation annotation = flow.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
     documentWriter.write(context);

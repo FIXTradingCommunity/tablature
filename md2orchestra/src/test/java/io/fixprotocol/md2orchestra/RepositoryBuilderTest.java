@@ -214,7 +214,7 @@ class RepositoryBuilderTest {
     builder.write(xmlStream);
     builder.closeEventLogger();
     String xml = xmlStream.toString();
-    System.out.println(xml);
+    //System.out.println(xml);
     builder.closeEventLogger();
     String errors = jsonOutputStream.toString();
     //System.out.println(errors);

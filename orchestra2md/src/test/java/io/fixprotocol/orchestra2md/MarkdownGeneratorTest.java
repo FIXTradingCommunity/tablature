@@ -14,6 +14,42 @@ class MarkdownGeneratorTest {
   private MarkdownGenerator generator;
   private ByteArrayOutputStream jsonOutputStream;
   
+  @Test // #71
+  void actor() throws Exception {
+    String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
+        + "<fixr:repository xmlns:dc=\"http://purl.org/dc/elements/1.1/\" xmlns:dcterms=\"http://purl.org/dc/terms/\" xmlns:fixr=\"http://fixprotocol.io/2020/orchestra/repository\">\n"
+        + "    <fixr:metadata/>\n"
+        + "    <fixr:actors>\n"
+        + "    <fixr:actor name=\"TradingAdapter\">\n"
+        + "       <fixr:annotation>\n"
+        + "           <fixr:documentation contentType=\"text/markdown\">This actor connects the BLOXX Order Management to the Trading System of the customer.</fixr:documentation>\n"
+        + "        </fixr:annotation>\n"
+        + "    </fixr:actor>\n"
+        + "    <fixr:actor name=\"TradingSystem\">\n"
+        + "        <fixr:annotation>\n"
+        + "            <fixr:documentation contentType=\"text/markdown\">This is the customers Trading System receiving orders from the Trading Adapter and sending executions back.</fixr:documentation>\n"
+        + "       </fixr:annotation>\n"
+        + "     </fixr:actor>\n"
+        + "    </fixr:actors>\n"
+        + "    <fixr:datatypes/>\n"
+        + "    <fixr:codeSets/>\n"
+        + "    <fixr:fields/>\n"
+        + "    <fixr:components/>\n"
+        + "    <fixr:groups/>\n "
+        + "    <fixr:messages/>\n"
+        + "</fixr:repository>\n";
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    ByteArrayOutputStream mdStream = new ByteArrayOutputStream(8096);
+    OutputStreamWriter outputWriter = new OutputStreamWriter(mdStream, StandardCharsets.UTF_8);
+    generator.generate(inputStream, outputWriter, jsonOutputStream);
+    outputWriter.close();
+    String md = mdStream.toString();
+    //System.out.println(md);
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @Test // #66
   void appinfo() throws Exception {
     String text ="<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n"
