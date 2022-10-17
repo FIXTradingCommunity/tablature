@@ -1170,9 +1170,9 @@ public class MarkdownGenerator {
     final MutableContext context = contextFactory.createContext(3);
     context.addPair("Flow", flow.getName());
     documentWriter.write(context);
+
     final Annotation annotation = flow.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
-    documentWriter.write(context);
 
     final MutableDetailTable table = contextFactory.createDetailTable();
     final MutableDetailProperties row = table.newRow();
