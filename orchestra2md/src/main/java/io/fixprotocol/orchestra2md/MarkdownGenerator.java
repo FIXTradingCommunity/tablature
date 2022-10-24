@@ -637,7 +637,6 @@ public class MarkdownGenerator {
     
     final Annotation annotation = actor.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
-    documentWriter.write(context);
 
     final List<Object> elements = actor.getFieldOrFieldRefOrComponent();
     final List<Object> members = elements.stream().filter(e -> !(e instanceof StateMachineType))
