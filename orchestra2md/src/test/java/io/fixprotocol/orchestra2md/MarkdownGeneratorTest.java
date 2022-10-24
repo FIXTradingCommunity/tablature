@@ -476,7 +476,7 @@ class MarkdownGeneratorTest {
     //String errors = jsonOutputStream.toString();
     //System.out.println(errors);
   } 
-  
+ 
   @Test
   void roundTrip() throws Exception {
     String text =
