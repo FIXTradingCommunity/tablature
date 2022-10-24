@@ -1104,6 +1104,38 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
   }
   
+  @Test // #73
+  void repositoryVersion() throws Exception {
+    String text = "# MyRepository version 2.0";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
+  @Test // #73
+  void repositoryVersion2() throws Exception {
+    String text = "# Repository MyRepository version 2.0";   
+    
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    //System.out.println(xml);
+    builder.closeEventLogger();
+    //String errors = jsonOutputStream.toString();
+    //System.out.println(errors);
+  }
+  
   @BeforeEach
   void setUp() throws Exception {
     jsonOutputStream = new ByteArrayOutputStream(8096);

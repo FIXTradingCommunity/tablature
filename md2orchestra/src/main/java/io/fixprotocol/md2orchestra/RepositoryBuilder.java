@@ -603,7 +603,6 @@ public class RepositoryBuilder {
   public static final String CATEGORIES_KEYWORD = "categories";
   public static final String CODESET_KEYWORD = "codeset";
   public static final String COMPONENT_KEYWORD = "component";
-
   public static final String DATATYPES_KEYWORD = "datatypes";
 
   /**
@@ -616,12 +615,12 @@ public class RepositoryBuilder {
   public static final String FLOW_KEYWORD = "flow";
   public static final String GROUP_KEYWORD = "group";
   public static final String MESSAGE_KEYWORD = "message";
+  public static final String REPOSITORY_KEYWORD = "repository";
   public static final String RESPONSES_KEYWORD = "responses";
   public static final String SCENARIO_KEYWORD = "scenario";
   public static final String SECTIONS_KEYWORD = "sections";
   public static final String STATEMACHINE_KEYWORD = "statemachine";
   public static final String VARIABLES_KEYWORD = "variables";
-
   public static final String WHEN_KEYWORD = "when";
 
   // the form code=name with optional space before and after =
@@ -1846,10 +1845,21 @@ public class RepositoryBuilder {
             annotation);
       }
     } else {
-      final String name = String.join(" ", keyContext.getKeys());
-      repositoryAdapter.setName(name);
       final String version = keyContext.getKeyValue("version");
       repositoryAdapter.setVersion(Objects.requireNonNullElse(version, "1.0"));
+      String name;
+      if (REPOSITORY_KEYWORD.equalsIgnoreCase(keyContext.getKey(KEY_POSITION))) {
+        name = keyContext.getKey(NAME_POSITION);
+      } else {
+        String[] keys = keyContext.getKeys();
+        int versionIndex = Arrays.asList(keys).indexOf("version");
+        if (versionIndex == -1) {
+          name = String.join(" ", keys);
+        } else {
+          name = String.join(" ", Arrays.copyOfRange(keys, 0, versionIndex));
+        }
+      }
+      repositoryAdapter.setName(name);      
     }
   }
 

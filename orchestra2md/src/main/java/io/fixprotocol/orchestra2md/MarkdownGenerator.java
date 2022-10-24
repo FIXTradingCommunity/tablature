@@ -630,7 +630,9 @@ public class MarkdownGenerator {
   private void generateActor(ActorType actor, Repository repository, DocumentWriter documentWriter)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
-    context.addPair("Actor", actor.getName());
+    String name = actor.getName();
+    name = decorateName(name);  
+    context.addPair("Actor", name);
     documentWriter.write(context);
     
     final Annotation annotation = actor.getAnnotation();
@@ -756,7 +758,9 @@ public class MarkdownGenerator {
   private void generateCodeset(DocumentWriter documentWriter, final CodeSetType codeset)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
-    context.addPair("Codeset", codeset.getName());
+    String name = codeset.getName();
+    name = decorateName(name); 
+    context.addPair("Codeset", name);
     final String scenario = codeset.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
       context.addPair("scenario", scenario);
@@ -783,14 +787,14 @@ public class MarkdownGenerator {
 
       for (final CodeType code : sortedCodes) {
         final MutableDetailProperties row = table.newRow();
-        final String name = code.getName();
-        row.addProperty("name", name);
+        final String codeName = code.getName();
+        row.addProperty("name", codeName);
         row.addProperty("value", code.getValue());
         final BigInteger codeId = code.getId();
         if (codeId != null) {
           row.addProperty("id", codeId.toString());
         } else {
-          eventLogger.warn("Unknown code id; name={0} scenario={1}", name, scenario);
+          eventLogger.warn("Unknown code id; name={0} scenario={1}", codeName, scenario);
         }
         final String group = code.getGroup();
         if (group != null) {
@@ -886,7 +890,8 @@ public class MarkdownGenerator {
   private void generateComponent(Repository repository, DocumentWriter documentWriter,
       final ComponentType component) throws IOException {
     final MutableContext context = contextFactory.createContext(3);
-    final String name = component.getName();
+    String name = component.getName();
+    name = decorateName(name); 
     context.addPair("Component", name);
     final String scenario = component.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -1169,7 +1174,9 @@ public class MarkdownGenerator {
   private void generateFlow(FlowType flow, DocumentWriter documentWriter)
       throws IOException {
     final MutableContext context = contextFactory.createContext(3);
-    context.addPair("Flow", flow.getName());
+    String name = flow.getName();
+    name = decorateName(name); 
+    context.addPair("Flow", name);
     documentWriter.write(context);
     final Annotation annotation = flow.getAnnotation();
     generateDocumentationBlocks(annotation, documentWriter);
@@ -1186,7 +1193,8 @@ public class MarkdownGenerator {
       final GroupType group) throws IOException {
     final MutableContext context = contextFactory.createContext(3);
 
-    final String name = group.getName();
+    String name = group.getName();
+    name = decorateName(name); 
     context.addPair("Group", name);
     final String scenario = group.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -1312,7 +1320,8 @@ public class MarkdownGenerator {
   private void generateMessageStructure(Repository repository, DocumentWriter documentWriter,
       final MessageType message) throws IOException {
     final MutableContext context = contextFactory.createContext(3);
-    final String name = message.getName();
+    String name = message.getName();
+    name = decorateName(name); 
     context.addPair("Message", name);
     final String scenario = message.getScenario();
     if (!scenario.equals(DEFAULT_SCENARIO)) {
@@ -1362,16 +1371,14 @@ public class MarkdownGenerator {
   private void generateRepositoryMetadata(Repository repository, DocumentWriter documentWriter)
       throws IOException {
     final MutableContext context = contextFactory.createContext(1);
-
-    final String repositoryName = repository.getName();
-    if (repositoryName != null) {
-      context.addKey(repositoryName);
-      if (!repositoryName.toLowerCase().contains("version")) {
-        context.addKey(repository.getVersion());
-      }
-    } else {
-      context.addKey("Repository");
+    String repositoryName = repository.getName();
+    repositoryName = decorateName(repositoryName);
+    context.addPair("Repository", repositoryName);
+    String version = repository.getVersion();
+    if (version == null || version.isBlank()) {
+      version = "1.0";
     }
+    context.addPair("version", version);
     documentWriter.write(context);
 
     final Annotation annotation = repository.getAnnotation();
@@ -1389,6 +1396,16 @@ public class MarkdownGenerator {
       }
       documentWriter.write(table, headings);
     }
+  }
+
+  private String decorateName(String name) {
+    if (name == null || name.isBlank()) {
+      name = "New";
+    } else if (name.matches(".*\\s.*")) {
+      // if name contains internal whitespace, surround it with quotes
+      name = "\""+name+"\"";
+    }
+    return name;
   }
 
   private void generateSections(Repository repository, DocumentWriter documentWriter)
@@ -1466,7 +1483,9 @@ public class MarkdownGenerator {
   private void generateStateMachine(StateMachineType stateMachine, DocumentWriter documentWriter)
       throws IOException {
     final MutableContext context = contextFactory.createContext(4);
-    context.addPair("StateMachine", stateMachine.getName());
+    String name = stateMachine.getName();
+    name = decorateName(name); 
+    context.addPair("StateMachine", name);
     documentWriter.write(context);
 
     final Annotation annotation = stateMachine.getAnnotation();
