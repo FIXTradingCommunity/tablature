@@ -63,7 +63,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<antlr.version>4.8-1</antlr.version>
 		<commons-cli.version>1.4</commons-cli.version>
-		<jackson.version>2.13.4.1</jackson.version>
+		<jackson.version>2.19.2</jackson.version>
 		<java.version>11</java.version>
 		<junit.version>5.9.1</junit.version>
 		<log4j.version>2.19.0</log4j.version>

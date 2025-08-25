@@ -168,13 +168,15 @@ public class RepositoryBuilder {
     private final String scenario;
     private final BigInteger tag;
     private final String type;
+    private final BigInteger lengthId;
 
     public FieldBuilder(final BigInteger tag, final String name, final String scenario,
-        final String type) {
+        final String type, final BigInteger lengthId) {
       this.tag = tag;
       this.name = name;
       this.scenario = scenario;
       this.type = type;
+      this.lengthId = lengthId;
     }
 
     @Override
@@ -217,6 +219,7 @@ public class RepositoryBuilder {
           fieldType.setId(baseFieldType.getId());
           fieldType.setName(baseFieldType.getName());
           fieldType.setType(baseFieldType.getType());
+          fieldType.setLengthId(baseFieldType.getLengthId());
           fieldType.setScenario(scenario);
           repositoryAdapter.addField(fieldType);
         }
@@ -303,7 +306,7 @@ public class RepositoryBuilder {
         if (groupType != null) {
           FieldRefType numInGroupRef = groupType.getNumInGroup();
           if (numInGroupRef != null) {
-            buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, DEFAULT_SCENARIO, "NumInGroup"));
+            buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, DEFAULT_SCENARIO, "NumInGroup", null));
           }
           repositoryAdapter.copyGroup(groupType);
         } else {
@@ -489,7 +492,7 @@ public class RepositoryBuilder {
             FieldRefType numInGroupRef = group.getNumInGroup();
             if (numInGroupRef != null) {
               buildSteps.add(new FieldBuilder(numInGroupRef.getId(), null, numInGroupRef.getScenario(),
-                  "NumInGroup"));
+                  "NumInGroup", null));
               if (currentDepth <= maxDepth) {
                 final List<Object> groupMembers = group.getComponentRefOrGroupRefOrFieldRef();
                 copyReferencedMembers(groupMembers, currentDepth + 1, maxDepth);
@@ -1437,6 +1440,9 @@ public class RepositoryBuilder {
           case "type":
             field.setType(p.getValue());
             break;
+          case "lengthId":
+            field.setLengthId(new BigInteger(p.getValue()));
+            break;
           case "values":
             final String values = p.getValue();
             if (values != null && !values.isEmpty()) {
@@ -1556,11 +1562,13 @@ public class RepositoryBuilder {
     final String scenario = field.getScenario();
     final UnionDataTypeT unionDatatype = field.getUnionDataType();
     final String unionType = unionDatatype != null ? unionDatatype.value() : null;
-
+    final BigInteger lengthId = "data".equals(type) ? id.subtract(BigInteger.ONE) : null;
+    field.setLengthId(lengthId);
+    
     if (id == null) {
-      buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, type));
+      buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, type, null));
     } else if (name == null || type == null) {
-      buildSteps.add(new FieldBuilder(id, name, scenario, type));
+      buildSteps.add(new FieldBuilder(id, name, scenario, type, lengthId));
     } else {
       buildSteps.add(new TypeBuilder(type, scenario));
       repositoryAdapter.addField(field);
@@ -2233,7 +2241,7 @@ public class RepositoryBuilder {
     if (fieldRefType.getId() != null) {
       final FieldType fieldType = repositoryAdapter.findFieldByTag(fieldRefType.getId(), scenario);
       if (fieldType == null) {
-        buildSteps.add(new FieldBuilder(fieldRefType.getId(), name, scenario, null));
+        buildSteps.add(new FieldBuilder(fieldRefType.getId(), name, scenario, null, null));
       }
     } else {
       final FieldType fieldType = repositoryAdapter.findFieldByName(name, scenario);
@@ -2241,7 +2249,7 @@ public class RepositoryBuilder {
         fieldRefType.setId(fieldType.getId());
       } else {
         fieldRefType.setId(BigInteger.ZERO);
-        buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, null));
+        buildSteps.add(new FieldBuilder(BigInteger.ZERO, name, scenario, null, null));
         buildSteps.add(new FieldRefBuilder(name, fieldRefType));
       }
     }

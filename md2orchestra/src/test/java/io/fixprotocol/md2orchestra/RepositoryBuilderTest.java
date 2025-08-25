@@ -1271,4 +1271,23 @@ class RepositoryBuilderTest {
     //System.out.println(errors);
     assertTrue(errors.contains("Unknown type for field"));
   }
+
+  @Test
+  void dataFieldLengthId() throws Exception {
+    String text =
+        "## Fields\n"
+            + "\n"
+            + "| Name | Tag | Type | Values |\n"
+            + "|------------------|----:|--------------|--------------------------|\n"
+            + "| CustomRawData | 10060 | data | |\n";
+
+    InputStream inputStream = new ByteArrayInputStream(text.getBytes());
+    RepositoryBuilder builder = RepositoryBuilder.instance(null , jsonOutputStream);
+    builder.appendInput(inputStream);
+    ByteArrayOutputStream xmlStream = new ByteArrayOutputStream(8096);
+    builder.write(xmlStream);
+    String xml = xmlStream.toString();
+    assertTrue(xml.contains("lengthId=\"10059\""));
+    builder.closeEventLogger();
+  }
 }
